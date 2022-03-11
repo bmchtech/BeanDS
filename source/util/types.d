@@ -19,12 +19,11 @@ struct Unit(T) {
     }
 
     Unit!T opSlice(size_t start, size_t end) {
-        auto mask = create_mask(start, end);
-        return Unit!T((this.value >> start) & mask);
+        return Unit!T(this.value.bits(start, end));
     }
 
     Unit!T opSlice(size_t index) {
-        return Unit!T((this.value >> index) & 1);
+        return Unit!T(this.value.bit(index));
     }
 }
 
