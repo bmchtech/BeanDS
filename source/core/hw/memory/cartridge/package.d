@@ -1,5 +1,5 @@
 module core.hw.memory.cartridge;
 
 public {
-    import cartridge;
+    import core.hw.memory.cartridge.cartridge;
 }

@@ -1,5 +1,7 @@
 module core.hw.memory.cartridge.header;
 
+import util;
+
 struct CartridgeHeader {
     align(1):
 
