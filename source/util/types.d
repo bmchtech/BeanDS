@@ -1,5 +1,7 @@
 module util.types;
 
+import util;
+
 struct Unit(T) {
     T value;
     alias value this;
