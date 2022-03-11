@@ -59,3 +59,7 @@ struct CartridgeHeader {
     Word       debug_ram_address;
     Byte[3732] reserved_4;
 }
+
+CartridgeHeader* get_cartridge_header(Byte[] rom) {
+    return cast(CartridgeHeader*) cast(void*) rom;
+}
