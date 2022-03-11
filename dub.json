@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"zayd"
+	],
+	"copyright": "Copyright © 2022, zayd",
+	"description": "A Nintendo DS Emulator in D",
+	"license": "GPL 3",
+	"name": "BeanDS"
+}

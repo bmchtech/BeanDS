@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/beands
+beands.so
+beands.dylib
+beands.dll
+beands.a
+beands.lib
+beands-test-*
+*.exe
+*.o
+*.obj
+*.lst
