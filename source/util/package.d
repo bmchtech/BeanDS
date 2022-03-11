@@ -1,6 +1,7 @@
 module util;
 
 public {
-    import util.types;
     import util.bitwise;
+    import util.file;
+    import util.types;
 }
