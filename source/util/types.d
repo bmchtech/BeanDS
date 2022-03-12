@@ -18,6 +18,12 @@ struct MemoryUnit(T) {
         );
     }
 
+    MemoryUnit!T opBinary(string s)(T other) {
+        return mixin(
+            "MemoryUnit!T(this " ~ s ~ " other)"
+        );
+    }
+
     MemoryUnit!T opSlice(size_t start, size_t end) {
         return MemoryUnit!T(this.value.bits(start, end));
     }
