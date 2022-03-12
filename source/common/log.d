@@ -1,7 +1,8 @@
 module common.log;
 
 enum LogSource {
-    MEMORY
+    MEMORY,
+    UNIMPLEMENTED
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

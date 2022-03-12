@@ -1,5 +1,9 @@
 module core.nds;
 
+import core.hw.memory.cart;
+
+import util;
+
 struct NDS {
     Cart* cart;
 
@@ -8,6 +12,6 @@ struct NDS {
     }
 
     void direct_boot() {
-        
+
     }
 }

@@ -1,5 +1,6 @@
 import std.stdio;
 
+import common;
 import core.hw.memory.cart;
 
 void main(string[] args) {
@@ -14,4 +15,5 @@ void main(string[] args) {
 	import std.conv;
 	import std.format;
 	writefln("%s", cast(char[]) s);
+	error_memory("Attempt for ARM7 to access instruction TCM!");
 }
