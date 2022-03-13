@@ -3,7 +3,7 @@ module core.hw.memory.mem7;
 import core.hw.memory;
 import util;
 
-final class Mem7 {
+final class Mem7 : Mem {
     enum MAIN_MEMORY_SIZE = 1 << 22;
     Byte[MAIN_MEMORY_SIZE] main_memory = new Byte[MAIN_MEMORY_SIZE];
 
@@ -48,5 +48,14 @@ final class Mem7 {
         
             default: error_unimplemented("Attempt from ARM7 to write %x to an invalid region of memory: %x", value, address); break;
         }
+    }
+
+    override {
+        void write_word(Word address, Word value) { write!Word(address, value); }
+        void write_half(Word address, Half value) { write!Half(address, value); }
+        void write_byte(Word address, Byte value) { write!Byte(address, value); }
+        Word read_word(Word address) { return read!Word(address); }
+        Half read_half(Word address) { return read!Half(address); }
+        Byte read_byte(Word address) { return read!Byte(address); }
     }
 }

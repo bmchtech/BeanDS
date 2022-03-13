@@ -11,4 +11,9 @@ final class Cart {
         this.rom = rom;
         this.cart_header = get_cart_header(rom);
     }
+
+    @property 
+    size_t rom_size() {
+        return rom.length;
+    }
 }

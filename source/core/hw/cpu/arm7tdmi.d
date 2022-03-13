@@ -386,11 +386,11 @@ final class ARM7TDMI : ArmCPU {
         return !(current_mode == MODE_USER || current_mode == MODE_SYSTEM);
     }
 
-    Word read_word(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read!Word(address); }
-    Half read_half(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read!Half(address); }
-    Byte read_byte(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read!Byte(address); }
+    Word read_word(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_word(address); }
+    Half read_half(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_half(address); }
+    Byte read_byte(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_byte(address); }
 
-    void write_word(Word address, Word value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write!Word(address, value); }
-    void write_half(Word address, Half value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write!Half(address, value); }
-    void write_byte(Word address, Byte value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write!Byte(address, value); }
+    void write_word(Word address, Word value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_word(address, value); }
+    void write_half(Word address, Half value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_half(address, value); }
+    void write_byte(Word address, Byte value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_byte(address, value); }
 }

@@ -2,7 +2,7 @@ module core.hw.memory.cart.header;
 
 import util;
 
-final class CartHeader {
+struct CartHeader {
     align(1):
 
     Byte[12]   game_title;
