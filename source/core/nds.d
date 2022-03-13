@@ -6,15 +6,17 @@ import core.hw.memory;
 import util;
 
 final class NDS {
-    Cart     cart;
-    ARM7TDMI arm7;
-    Mem7     mem7;
-    Mem9     mem9;
+    Cart      cart;
+    ARM7TDMI  arm7;
+    ARM946E_S arm9;
+    Mem7      mem7;
+    Mem9      mem9;
 
     this() {
         mem7 = new Mem7();
         mem9 = new Mem9();
         arm7 = new ARM7TDMI(mem7);
+        arm9 = new ARM946E_S(mem9);
     }
 
     void load_rom(Byte[] rom) {
