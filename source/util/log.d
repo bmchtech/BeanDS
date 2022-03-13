@@ -1,8 +1,10 @@
-module common.log;
+module util.log;
 
 enum LogSource {
     MEMORY,
-    UNIMPLEMENTED
+    UNIMPLEMENTED,
+    ARM7,
+    ARM9
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

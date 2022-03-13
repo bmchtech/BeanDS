@@ -1,5 +1,7 @@
 module util.bitwise;
 
+import std.traits;
+
 pragma(inline, true) {
     auto create_mask(size_t start, size_t end) {
         return (1 << (end - start + 1)) - 1;
@@ -14,7 +16,8 @@ pragma(inline, true) {
         return (value >> index) & 1;
     }
 
-    pure uint rotate_right(uint val, int shift) {
-        return (val >> shift) | (val << (32 - shift));
+    pure T rotate_right(T)(T value, size_t shift) 
+    if (isIntegral!T) {
+        return cast(T) ((value >> shift) | (value << (32 - shift)));
     }
 }

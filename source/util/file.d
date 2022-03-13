@@ -1,7 +1,5 @@
 module util.file;
 
-import std.conv;
-
 import util;
 
 Byte[] load_file_as_bytes(string file_name) {
@@ -11,5 +9,5 @@ Byte[] load_file_as_bytes(string file_name) {
     auto buffer = new ubyte[file.size()];
     file.rawRead(buffer);
 
-    return to!(Byte[])(buffer);
+    return cast(Byte[]) buffer;
 }

@@ -1,10 +1,9 @@
 module core.hw.memory.mem9;
 
-import common;
-import core.hw.mem;
+import core.hw.memory;
 import util;
 
-struct Mem9 {
+final class Mem9 {
     enum MAIN_MEMORY_SIZE = 1 << 22;
     Byte[MAIN_MEMORY_SIZE] main_memory = new Byte[MAIN_MEMORY_SIZE];
 

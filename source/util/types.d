@@ -2,9 +2,13 @@ module util.types;
 
 import util;
 
-struct MemoryUnit(T) {
+union MemoryUnit(T) {
     T value;
     alias value this;
+
+    this(S)(S value) {
+        this.value = cast(T) value;
+    }
 
     MemoryUnit!T opUnary(string s)() {
         return mixin(
@@ -14,13 +18,13 @@ struct MemoryUnit(T) {
 
     MemoryUnit!T opBinary(string s)(MemoryUnit!T other) {
         return mixin(
-            "MemoryUnit!T(this " ~ s ~ " other)"
+            "MemoryUnit!T(this.value " ~ s ~ " other.value)"
         );
     }
 
     MemoryUnit!T opBinary(string s)(T other) {
         return mixin(
-            "MemoryUnit!T(this " ~ s ~ " other)"
+            "MemoryUnit!T(this.value " ~ s ~ " other)"
         );
     }
 
@@ -28,8 +32,24 @@ struct MemoryUnit(T) {
         return MemoryUnit!T(this.value.bits(start, end));
     }
 
-    MemoryUnit!T opSlice(size_t index) {
-        return MemoryUnit!T(this.value.bit(index));
+    bool opIndex(size_t index) {
+        return this.value.bit(index) & 1;
+    }
+
+    T opCast(T)() {
+        return cast(T) value;
+    }
+
+    MemoryUnit!T rotate_right(size_t shift) {
+        return MemoryUnit!T(
+            util.rotate_right(this.value, this.bitsize())
+        );
+    }
+
+    size_t bitsize() {
+        static if (is(T == uint))   return 32;
+        static if (is(T == ushort)) return 16;
+        static if (is(T == ubyte))  return 8;
     }
 }
 

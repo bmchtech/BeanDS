@@ -3,7 +3,7 @@ module core.hw.memory.cart.cart;
 import core.hw.memory.cart;
 import util;
 
-struct Cart {
+final class Cart {
     CartHeader* cart_header;
     Byte[] rom;
 

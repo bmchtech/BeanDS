@@ -1,6 +1,5 @@
 import std.stdio;
 
-import common;
 import core.hw.memory.cart;
 
 void main(string[] args) {

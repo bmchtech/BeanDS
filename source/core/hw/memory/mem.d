@@ -1,5 +1,12 @@
 module core.hw.memory.mem;
 
+import util;
+
+enum AccessType {
+    NONSEQUENTIAL,
+    SEQUENTIAL
+}
+
 auto get_region(Word address) {
     return address[24..27];
 }
