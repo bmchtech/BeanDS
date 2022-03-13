@@ -41,5 +41,8 @@ final class NDS {
             &cart.rom[cart.cart_header.arm9_rom_offset],
             cart.cart_header.arm9_size
         );
+
+        arm7.regs[pc] = cart.cart_header.arm7_entry_address;
+        arm9.regs[pc] = cart.cart_header.arm9_entry_address;
     }
 }
