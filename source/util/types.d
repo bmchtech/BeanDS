@@ -42,7 +42,7 @@ union MemoryUnit(T) {
 
     MemoryUnit!T rotate_right(size_t shift) {
         return MemoryUnit!T(
-            util.rotate_right(this.value, this.bitsize())
+            util.rotate_right(this.value, shift)
         );
     }
 

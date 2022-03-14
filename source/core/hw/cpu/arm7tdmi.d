@@ -12,7 +12,7 @@ final class ARM7TDMI : ArmCPU {
     Word[2] arm_pipeline;
     Half[2] thumb_pipeline;
     
-    Mem7 memory;
+    Mem memory;
 
     InstructionSet instruction_set;   
 
@@ -23,7 +23,7 @@ final class ARM7TDMI : ArmCPU {
 
     AccessType pipeline_access_type;
 
-    this(Mem7 memory) {
+    this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
         
@@ -91,6 +91,9 @@ final class ARM7TDMI : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
+        import std.stdio;
+        writefln("Executing opcode %08x", opcode);
+
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {

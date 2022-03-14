@@ -2,11 +2,15 @@ import std.stdio;
 
 import core.nds;
 
+import ui.cli;
+
 import util;
 
 void main(string[] args) {
-	import ui.cli;
 	auto cli_args = parse_cli_args(args);
 
-	new NDS().load_rom(load_file_as_bytes(cli_args.rom_path));
+	auto nds = new NDS();
+	nds.load_rom(load_file_as_bytes(cli_args.rom_path));
+	nds.direct_boot();
+	while (true) nds.cycle();
 }

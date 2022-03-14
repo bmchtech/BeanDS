@@ -21,7 +21,6 @@ final class NDS {
 
     void load_rom(Byte[] rom) {
         cart = new Cart(rom);
-        direct_boot();
     }
 
     void direct_boot() {
@@ -42,7 +41,13 @@ final class NDS {
             cart.cart_header.arm9_size
         );
 
-        arm7.regs[pc] = cart.cart_header.arm7_entry_address;
-        arm9.regs[pc] = cart.cart_header.arm9_entry_address;
+        arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
+        arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
+    }
+
+    void cycle() {
+        // arm7.run_instruction();
+        arm9.run_instruction();
+        arm9.run_instruction();
     }
 }

@@ -18,6 +18,6 @@ pragma(inline, true) {
 
     pure T rotate_right(T)(T value, size_t shift) 
     if (isIntegral!T) {
-        return cast(T) ((value >> shift) | (value << (32 - shift)));
+        return cast(T) ((value >> shift) | (value << (T.sizeof * 8 - shift)));
     }
 }
