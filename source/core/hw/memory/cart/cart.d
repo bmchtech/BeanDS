@@ -8,7 +8,9 @@ final class Cart {
     Byte[] rom;
 
     this(Byte[] rom) {
-        this.rom = rom;
+        this.rom = new Byte[rom.length];
+        this.rom[0..rom.length] = rom[0..rom.length];
+        
         this.cart_header = get_cart_header(rom);
     }
 
