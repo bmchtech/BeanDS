@@ -20,4 +20,17 @@ pragma(inline, true) {
     if (isIntegral!T) {
         return cast(T) ((value >> shift) | (value << (T.sizeof * 8 - shift)));
     }
+
+    void opSliceAssign(T value, size_t start, size_t end) {
+        auto mask = create_mask(start, end);
+        value &= mask;
+
+        this.value &= ~(mask << start);
+        this.value |=  value << start;
+    }
+
+    void opIndexAssign(T value, size_t index) {
+        this.value &= ~(1     << index);
+        this.value |=  (value << index);
+    }
 }
