@@ -51,6 +51,19 @@ union MemoryUnit(T) {
         static if (is(T == ushort)) return 16;
         static if (is(T == ubyte))  return 8;
     }
+
+    void opSliceAssign(T value, size_t start, size_t end) {
+        auto mask = create_mask(start, end);
+        value &= mask;
+
+        this.value &= ~(mask << start);
+        this.value |=  value << start;
+    }
+
+    void opIndexAssign(T value, size_t index) {
+        this.value &= ~(1     << index);
+        this.value |=  (value << index);
+    }
 }
 
 void check_memory_unit(T)() {
