@@ -64,6 +64,10 @@ union MemoryUnit(T) {
         this.value &= ~(1     << index);
         this.value |=  (value << index);
     }
+
+    void opAssign(S)(S value) {
+        this.value = cast(T) value;
+    }
 }
 
 void check_memory_unit(T)() {

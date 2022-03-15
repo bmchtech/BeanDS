@@ -1,5 +1,5 @@
 module core.hw.memory.mmio;
 
 public {
-    import core.hw.memory.mmio9;
+    import core.hw.memory.mmio.mmio9;
 }
