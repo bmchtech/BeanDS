@@ -25,6 +25,7 @@ final class NDS {
 
         // TODO: maybe this doesnt belong in nds.d... i need to learn more
         //       about the two GBA engines to find out
+        new GPU();
         new GPUEngineA();
     }
 
@@ -58,5 +59,6 @@ final class NDS {
         // arm7.run_instruction();
         arm9.run_instruction();
         arm9.run_instruction();
+        scheduler.process_events();
     }
 }

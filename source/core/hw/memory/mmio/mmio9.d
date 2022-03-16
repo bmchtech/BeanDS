@@ -8,7 +8,8 @@ final class MMIO9 {
 
     // IO Registers
     //   NAME            ADDRESS       SIZE  R/W   DESCRIPTION
-    enum DISPCNT       = 0x4000000; //  4      W   Engine A LCD Control
+    enum DISPCNT       = 0x4000000; //  4    R/W   Engine A LCD Control
+    enum DISPSTAT      = 0x4000004; //  4    R/W   General LCD Status
     enum DMA0SAD       = 0x40000B0; //  4      W   DMA 0 Source Address
     enum DMA0DAD       = 0x40000B4; //  4      W   DMA 0 Destination Address
     enum DMA0CNT_L     = 0x40000B8; //  2      W   DMA 0 Word Count
@@ -32,6 +33,10 @@ final class MMIO9 {
             case DISPCNT     + 1: return gpu_engine_a.read_DISPCNT(1);
             case DISPCNT     + 2: return gpu_engine_a.read_DISPCNT(2);
             case DISPCNT     + 3: return gpu_engine_a.read_DISPCNT(3);
+            case DISPSTAT    + 0: return gpu.read_DISPSTAT        (0);
+            case DISPSTAT    + 1: return gpu.read_DISPSTAT        (1);
+            case DISPSTAT    + 2: return gpu.read_DISPSTAT        (2);
+            case DISPSTAT    + 3: return gpu.read_DISPSTAT        (3);
 
             case DMA0SAD     + 0: return dma9.read_DMAXSAD        (0, 0);
             case DMA0SAD     + 1: return dma9.read_DMAXSAD        (1, 0);
@@ -94,6 +99,10 @@ final class MMIO9 {
             case DISPCNT     + 1: gpu_engine_a.write_DISPCNT(1, data);    break;
             case DISPCNT     + 2: gpu_engine_a.write_DISPCNT(2, data);    break;
             case DISPCNT     + 3: gpu_engine_a.write_DISPCNT(3, data);    break;
+            case DISPSTAT    + 0: gpu.write_DISPSTAT        (0, data);    break;
+            case DISPSTAT    + 1: gpu.write_DISPSTAT        (1, data);    break;
+            case DISPSTAT    + 2: gpu.write_DISPSTAT        (2, data);    break;
+            case DISPSTAT    + 3: gpu.write_DISPSTAT        (3, data);    break;
 
             case DMA0SAD     + 0: dma9.write_DMAXSAD        (0, data, 0); break;
             case DMA0SAD     + 1: dma9.write_DMAXSAD        (1, data, 0); break;
