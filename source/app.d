@@ -1,6 +1,6 @@
 import std.stdio;
 
-import core.nds;
+import core.hw.nds;
 
 import ui.cli;
 

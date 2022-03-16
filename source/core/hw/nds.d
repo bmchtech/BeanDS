@@ -1,7 +1,7 @@
-module core.nds;
+module core.hw.nds;
 
-import core.hw.cpu;
-import core.hw.memory;
+import core.hw;
+import core.scheduler;
 
 import util;
 
@@ -17,6 +17,15 @@ final class NDS {
         mem9 = new Mem9();
         arm7 = new ARM7TDMI(mem7);
         arm9 = new ARM946E_S(mem9);
+
+        // TODO: find some way to standardize this global variable mess.
+        //       either make everything a global variable
+        //       or make nothing.
+        new Scheduler();
+
+        // TODO: maybe this doesnt belong in nds.d... i need to learn more
+        //       about the two GBA engines to find out
+        new GPUEngineA();
     }
 
     void load_rom(Byte[] rom) {
