@@ -5,6 +5,7 @@ import core.scheduler;
 
 import util;
 
+__gshared GPUEngineA gpu_engine_a;
 final class GPUEngineA {
     int  dot;
     int  scanline;
@@ -20,6 +21,8 @@ final class GPUEngineA {
 
         // frame_buffer = new Pixel[SCREEN_HEIGHT][SCREEN_WIDTH];
         enabled = true;
+
+        gpu_engine_a = this;
     }
 
     // void set_frontend_vblank_callback(void delegate(Pixel[SCREEN_HEIGHT][SCREEN_WIDTH]) frontend_vblank_callback) {
@@ -84,5 +87,9 @@ final class GPUEngineA {
 
             case 3: break; 
         }    
+    }
+
+    Byte read_DISPCNT(int target_byte) {
+        return Byte(0);
     }
 }
