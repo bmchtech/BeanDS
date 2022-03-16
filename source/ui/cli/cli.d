@@ -1,4 +1,4 @@
-module ui.cli;
+module ui.cli.cli;
 
 import commandr;
 

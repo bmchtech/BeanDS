@@ -1,0 +1,7 @@
+name "beands"
+description "A Nintendo DS Emulator in D"
+authors "zayd"
+copyright "Copyright © 2022, zayd"
+license "GPL 3"
+dependency "reng" version="~>0.7.2"
+dependency "commandr" version="~>0.2.0"
