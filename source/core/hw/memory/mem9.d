@@ -11,6 +11,7 @@ final class Mem9 : Mem {
 
     this() {
         mmio9 = new MMIO9();
+        new DMA9(this);
     }
 
     T read(T)(Word address) {
@@ -49,7 +50,7 @@ final class Mem9 : Mem {
             case 0x0: .. case 0x1: error_unimplemented("Attempt from ARM9 to write %x to TCM: %x", value, address); break;
             case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
             case 0x3:              shared_wram.write!T(address % SHARED_WRAM_SIZE, value); break;
-            case 0x4:              mmio9.write!T(address); break;
+            case 0x4:              mmio9.write!T(address, value); break;
             case 0x5:              error_unimplemented("Attempt from ARM9 to write %x to PRAM: %x", value, address); break;
             case 0x6:              error_unimplemented("Attempt from ARM9 to write %x to VRAM: %x", value, address); break;
             case 0x7:              error_unimplemented("Attempt from ARM9 to write %x to OAM: %x", value, address); break;

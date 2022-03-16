@@ -26,7 +26,7 @@ final class MMIO9 {
     enum DMA3CNT_L     = 0x40000DC; //  2      W   DMA 3 Word Count
     enum DMA3CNT_H     = 0x40000DE; //  2    R/W   DMA 3 Control
 
-    ubyte read(Word address) {
+    Byte read_byte(Word address) {
         switch (address) {
             case DMA0SAD     + 0: return dma9.read_DMAXSAD    (0, 0);
             case DMA0SAD     + 1: return dma9.read_DMAXSAD    (1, 0);
@@ -80,10 +80,10 @@ final class MMIO9 {
             default: error_unimplemented("MMIO 9 register %x read from. This register does not exist.", address);
         }
 
-        return 0; // not possible
+        return Byte(0); // not possible
     }
 
-    void write(Word address, Byte data) {
+    void write_byte(Word address, Byte data) {
         switch (address) {
             case DMA0SAD     + 0: dma9.write_DMAXSAD    (0, data, 0); break;
             case DMA0SAD     + 1: dma9.write_DMAXSAD    (1, data, 0); break;
@@ -135,6 +135,46 @@ final class MMIO9 {
             case DMA3CNT_H   + 1: dma9.write_DMAXCNT_H  (1, data, 3); break;
 
             default: error_unimplemented("MMIO 9 register %x written to with value %x; This register does not exist.", address, data); break;
+        }
+    }
+
+    T read(T)(Word address) {
+        static if (is(T == Word)) {
+            Word value = Word(0);
+            value[24..31] = read_byte(address + 0);
+            value[16..23] = read_byte(address + 1); 
+            value[8 ..15] = read_byte(address + 2); 
+            value[0 .. 7] = read_byte(address + 3);
+            return value;  
+        }
+
+        static if (is(T == Half)) {
+            Half value = Half(0);
+            value[8 ..15] = read_byte(address + 0); 
+            value[0 .. 7] = read_byte(address + 1);
+            return value;
+        }
+
+        static if (is(T == Byte)) {
+            return read_byte(address);
+        }
+    }
+
+    void write(T)(Word address, T value) {
+        static if (is(T == Word)) {
+            write_byte(address + 0, cast(Byte) value[24..31]);
+            write_byte(address + 1, cast(Byte) value[16..23]);
+            write_byte(address + 2, cast(Byte) value[8 ..15]);
+            write_byte(address + 3, cast(Byte) value[0 .. 7]);
+        }
+
+        static if (is(T == Half)) {
+            write_byte(address + 0, cast(Byte) value[8 ..15]);
+            write_byte(address + 1, cast(Byte) value[0 .. 7]);
+        }
+
+        static if (is(T == Byte)) {
+            write_byte(address, value);
         }
     }
 }

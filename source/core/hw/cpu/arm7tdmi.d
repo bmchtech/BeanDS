@@ -91,9 +91,6 @@ final class ARM7TDMI : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
-        import std.stdio;
-        writefln("Executing opcode %08x", opcode);
-
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {
@@ -108,6 +105,8 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void run_instruction() {
+        log_state();
+        
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();
             execute!Word(opcode);
@@ -115,6 +114,20 @@ final class ARM7TDMI : ArmCPU {
             Half opcode = fetch!Half();
             execute!Half(opcode);
         }
+    }
+
+    void log_state() {
+        import std.stdio;
+        import std.format;
+        
+        if (get_flag(Flag.T)) write("THM ");
+        else write("ARM ");
+
+        write(format("0x%08x ", instruction_set == InstructionSet.ARM ? arm_pipeline[0] : thumb_pipeline[0]));
+        
+        for (int j = 0; j < 18; j++)
+            write(format("%08x ", regs[j]));
+        writeln();
     }
 
     pragma(inline, true) Word get_reg(Reg id) {

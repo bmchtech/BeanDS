@@ -12,7 +12,7 @@ union MemoryUnit(T) {
 
     MemoryUnit!T opUnary(string s)() {
         return mixin(
-            "MemoryUnit!T(" ~ s ~ "this)"
+            "MemoryUnit!T(" ~ s ~ "this.value)"
         );
     }
 

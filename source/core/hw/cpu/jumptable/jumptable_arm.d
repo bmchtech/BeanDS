@@ -24,7 +24,7 @@ template execute_arm(T : ArmCPU) {
         Reg rm = opcode[0..3];
         Word address = cpu.get_reg(rm);
 
-        cpu.set_flag(Flag.T, cast(bool) address & 1);
+        cpu.set_flag(Flag.T, cast(bool) address[0]);
         cpu.set_reg(pc, address & ~1);
     }
 

@@ -10,7 +10,7 @@ final class DMA9 {
 
     this(Mem9 mem9) {
         this.mem9 = mem9;
-        dma9 = dma9;
+        dma9 = this;
 
         dma_channels = [
             DMAChannel(Word(0), Word(0), Half(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
