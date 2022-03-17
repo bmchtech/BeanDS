@@ -105,8 +105,8 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void run_instruction() {
-        log_state();
-        
+        // log_state();
+
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();
             execute!Word(opcode);

@@ -65,10 +65,10 @@ final class Runner {
             // i separated the ifs so fast fowarding doesn't
             // incur a mutex call from get_should_cycle_nds
             if (true) {
-                nds.cycle();
+                for (int i = 0; i < 100000; i++) nds.cycle();
             } else {
                 if (get_should_cycle_nds()) {
-                    nds.cycle();
+                    for (int i = 0; i < 100000; i++) nds.cycle();
                 }
             }
 

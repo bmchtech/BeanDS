@@ -14,15 +14,19 @@ final class GPU {
     bool vblank;
     bool hblank;
 
+    void delegate(Pixel[192][256]) present_videobuffer;
+
     this() {
         dot      = 0;
         scanline = 0;
 
         scheduler.add_event_relative_to_clock(&on_hblank_start, 256 * 4);
 
-        // frame_buffer = new Pixel[SCREEN_HEIGHT][SCREEN_WIDTH];
         enabled = true;
 
+        new PRAM();
+        new VRAM();
+        
         gpu = this;
     }
 
@@ -68,11 +72,15 @@ final class GPU {
     void on_vblank_end() {
         vblank = false;
         scanline = 0;
-        // frontend_vblank_callback(frame_buffer);
+        present_videobuffer(gpu_engine_a.videobuffer);
     }
 
     void render() {
+        gpu_engine_a.render(scanline);
+    }
 
+    void set_present_videobuffer_callback(void delegate(Pixel[192][256]) present_videobuffer) {
+        this.present_videobuffer = present_videobuffer;
     }
 
     void write_DISPSTAT(int target_byte, Byte value) {

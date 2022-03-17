@@ -1,5 +1,7 @@
 module ui.reng.device;
 
+import core.hw;
+
 import ui.device;
 import ui.reng;
 
@@ -16,12 +18,12 @@ class RengMultimediaDevice : MultiMediaDevice {
 
     override {
         // video stuffs
-        void receive_videobuffer(Pixel[256][192] buffer) {
+        void present_videobuffer(Pixel[192][256] buffer) {
             ds_video = Core.jar.resolve!DSVideo().get; 
 
-            for (int y = 0; y < 256; y++) {
-            for (int x = 0; x < 192;  x++) {
-                    ds_video.frame_buffer[y * 256 + x] = 
+            for (int y = 0; y < 192; y++) {
+            for (int x = 0; x < 256;  x++) {
+                    ds_video.videobuffer[y * 256 + x] = 
                         (buffer[x][y].r << 3 <<  0) |
                         (buffer[x][y].g << 3 <<  8) |
                         (buffer[x][y].b << 3 << 16) |

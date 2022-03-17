@@ -3,6 +3,8 @@ module core.hw.nds;
 import core.hw;
 import core.scheduler;
 
+import ui.device;
+
 import util;
 
 final class NDS {
@@ -59,6 +61,11 @@ final class NDS {
         // arm7.run_instruction();
         arm9.run_instruction();
         arm9.run_instruction();
+        scheduler.tick(2);
         scheduler.process_events();
+    }
+
+    void set_multimedia_device(MultiMediaDevice device) {
+        gpu.set_present_videobuffer_callback(&device.present_videobuffer);
     }
 }

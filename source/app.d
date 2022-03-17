@@ -14,5 +14,6 @@ void main(string[] args) {
 	nds.direct_boot();
 
 	auto reng = new RengMultimediaDevice(1);
+	nds.set_multimedia_device(reng);
 	new Runner(nds, 1, reng).run();
 }

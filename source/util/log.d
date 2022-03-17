@@ -6,7 +6,9 @@ enum LogSource {
     ARM7,
     ARM9,
     DMA7,
-    DMA9
+    DMA9,
+    ENGINE_A,
+    ENGINE_B,
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

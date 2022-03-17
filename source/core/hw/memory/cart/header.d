@@ -61,6 +61,5 @@ struct CartHeader {
 }
 
 CartHeader* get_cart_header(Byte[] rom) {
-    import std.stdio;
     return cast(CartHeader*) rom;
 }

@@ -1,16 +1,12 @@
 module ui.device;
 
-alias SetKey  = void delegate(int key, bool value);
+import core.hw;
+
+alias SetKey = void delegate(int key, bool value);
 
 struct Sample {
     short L;
     short R;
-}
-
-struct Pixel {
-    uint r;
-    uint g;
-    uint b;
 }
 
 abstract class MultiMediaDevice {
@@ -25,7 +21,7 @@ abstract class MultiMediaDevice {
         void draw();
 
         // video stuffs
-        void receive_videobuffer(Pixel[256][192] buffer);
+        void present_videobuffer(Pixel[192][256] buffer);
         void reset_fps();
 
         // audio stuffs

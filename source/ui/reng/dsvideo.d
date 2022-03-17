@@ -12,7 +12,7 @@ class DSVideo : Component, Updatable, Renderable2D {
     RenderTarget render_target;
     Texture2D rp1_texture;
 
-    uint[256 * 192] frame_buffer;
+    uint[256 * 192] videobuffer;
 
     this(int screen_scale) {
         this.screen_scale = screen_scale;
@@ -31,7 +31,7 @@ class DSVideo : Component, Updatable, Renderable2D {
     }
 
     void render() {
-        UpdateTexture(render_target.texture, cast(const void*) frame_buffer);
+        UpdateTexture(render_target.texture, cast(const void*) videobuffer);
 
         raylib.DrawTexturePro(
             render_target.texture,

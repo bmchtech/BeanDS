@@ -26,19 +26,26 @@ auto get_region(Word address) {
     return address[24..27];
 }
 
-pragma(inline, true)
-T read(T)(Byte[] memory, Word address) {
-    return (cast(T*) memory)[address >> get_shift!T];
-}
+pragma(inline, true) {
+    T read(T)(Byte[] memory, Word address) {
+        return (cast(T*) memory)[address >> get_shift!T];
+    }
 
-pragma(inline, true)
-void write(T)(Byte[] memory, Word address, T value) {
-    (cast(T*) memory)[address >> get_shift!T] = value;
-}
+    void write(T)(Byte[] memory, Word address, T value) {
+        (cast(T*) memory)[address >> get_shift!T] = value;
+    }
 
-pragma(inline, true)
-auto get_shift(T)() {
-    static if (is(T == Word)) return 2;
-    static if (is(T == Half)) return 1;
-    static if (is(T == Byte)) return 0;
+    T read(T)(Byte* memory, Word address) {
+        return (cast(T*) memory)[address >> get_shift!T];
+    }
+
+    void write(T)(Byte* memory, Word address, T value) {
+        (cast(T*) memory)[address >> get_shift!T] = value;
+    }
+
+    auto get_shift(T)() {
+        static if (is(T == Word)) return 2;
+        static if (is(T == Half)) return 1;
+        static if (is(T == Byte)) return 0;
+    }
 }

@@ -10,6 +10,7 @@ final class MMIO9 {
     //   NAME            ADDRESS       SIZE  R/W   DESCRIPTION
     enum DISPCNT       = 0x4000000; //  4    R/W   Engine A LCD Control
     enum DISPSTAT      = 0x4000004; //  4    R/W   General LCD Status
+
     enum DMA0SAD       = 0x40000B0; //  4      W   DMA 0 Source Address
     enum DMA0DAD       = 0x40000B4; //  4      W   DMA 0 Destination Address
     enum DMA0CNT_L     = 0x40000B8; //  2      W   DMA 0 Word Count
@@ -26,6 +27,8 @@ final class MMIO9 {
     enum DMA3DAD       = 0x40000D8; //  4      W   DMA 3 Destination Address
     enum DMA3CNT_L     = 0x40000DC; //  2      W   DMA 3 Word Count
     enum DMA3CNT_H     = 0x40000DE; //  2    R/W   DMA 3 Control
+
+    enum VRAMCNT       = 0x4000240; //  1x9    W   VRAM Bank Control 
 
     Byte read_byte(Word address) {
         switch (address) {
@@ -153,6 +156,17 @@ final class MMIO9 {
             case DMA3CNT_H   + 0: dma9.write_DMAXCNT_H      (0, data, 3); break;
             case DMA3CNT_H   + 1: dma9.write_DMAXCNT_H      (1, data, 3); break;
 
+            case VRAMCNT     + 0: vram.write_VRAMCNT        (0, data); break;
+            case VRAMCNT     + 1: vram.write_VRAMCNT        (1, data); break;
+            case VRAMCNT     + 2: vram.write_VRAMCNT        (2, data); break;
+            case VRAMCNT     + 3: vram.write_VRAMCNT        (3, data); break;
+            case VRAMCNT     + 4: vram.write_VRAMCNT        (4, data); break;
+            case VRAMCNT     + 5: vram.write_VRAMCNT        (5, data); break;
+            case VRAMCNT     + 6: vram.write_VRAMCNT        (6, data); break;
+            // TODO: wtf is this hole?
+            case VRAMCNT     + 8: vram.write_VRAMCNT        (8, data); break;
+            case VRAMCNT     + 9: vram.write_VRAMCNT        (9, data); break;
+
             default: log_unimplemented("MMIO 9 register %x written to with value %x; This register does not exist.", address, data); break;
         }
     }
@@ -160,17 +174,17 @@ final class MMIO9 {
     T read(T)(Word address) {
         static if (is(T == Word)) {
             Word value = Word(0);
-            value[24..31] = read_byte(address + 0);
-            value[16..23] = read_byte(address + 1); 
-            value[8 ..15] = read_byte(address + 2); 
-            value[0 .. 7] = read_byte(address + 3);
+            value[0 .. 7] = read_byte(address + 0);
+            value[8 ..15] = read_byte(address + 1); 
+            value[16..23] = read_byte(address + 2); 
+            value[24..31] = read_byte(address + 3);
             return value;  
         }
 
         static if (is(T == Half)) {
             Half value = Half(0);
-            value[8 ..15] = read_byte(address + 0); 
-            value[0 .. 7] = read_byte(address + 1);
+            value[0.. 7] = read_byte(address + 0); 
+            value[8..15] = read_byte(address + 1);
             return value;
         }
 
@@ -181,15 +195,15 @@ final class MMIO9 {
 
     void write(T)(Word address, T value) {
         static if (is(T == Word)) {
-            write_byte(address + 0, cast(Byte) value[24..31]);
-            write_byte(address + 1, cast(Byte) value[16..23]);
-            write_byte(address + 2, cast(Byte) value[8 ..15]);
-            write_byte(address + 3, cast(Byte) value[0 .. 7]);
+            write_byte(address + 0, cast(Byte) value[0 .. 7]);
+            write_byte(address + 1, cast(Byte) value[8 ..15]);
+            write_byte(address + 2, cast(Byte) value[16..23]);
+            write_byte(address + 3, cast(Byte) value[24..31]);
         }
 
         static if (is(T == Half)) {
-            write_byte(address + 0, cast(Byte) value[8 ..15]);
-            write_byte(address + 1, cast(Byte) value[0 .. 7]);
+            write_byte(address + 0, cast(Byte) value[0 .. 7]);
+            write_byte(address + 1, cast(Byte) value[8 ..15]);
         }
 
         static if (is(T == Byte)) {
