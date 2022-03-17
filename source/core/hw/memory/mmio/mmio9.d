@@ -28,6 +28,8 @@ final class MMIO9 {
     enum DMA3CNT_L     = 0x40000DC; //  2      W   DMA 3 Word Count
     enum DMA3CNT_H     = 0x40000DE; //  2    R/W   DMA 3 Control
 
+    enum KEYINPUT      = 0x4000130; //  2    R     Key Status
+
     enum VRAMCNT       = 0x4000240; //  1x9    W   VRAM Bank Control 
 
     Byte read_byte(Word address) {
@@ -89,6 +91,9 @@ final class MMIO9 {
             case DMA3CNT_L   + 1: return dma9.read_DMAXCNT_L      (1, 3);
             case DMA3CNT_H   + 0: return dma9.read_DMAXCNT_H      (0, 3);
             case DMA3CNT_H   + 1: return dma9.read_DMAXCNT_H      (1, 3);
+
+            case KEYINPUT    + 0: return input.read_KEYINPUT      (0);
+            case KEYINPUT    + 1: return input.read_KEYINPUT      (1);
 
             default: log_unimplemented("MMIO 9 register %x read from. This register does not exist.", address);
         }

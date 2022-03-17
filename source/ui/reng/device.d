@@ -70,7 +70,23 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         void handle_input() {
+            static foreach (re_key, gba_key; keys) {
+                update_key(gba_key, Input.is_key_down(re_key));
+            }
 
         }
     }
+
+    enum keys = [
+        Keys.KEY_Z     : DSKeyCode.A,
+        Keys.KEY_X     : DSKeyCode.B,
+        Keys.KEY_SPACE : DSKeyCode.SELECT,
+        Keys.KEY_ENTER : DSKeyCode.START,
+        Keys.KEY_RIGHT : DSKeyCode.RIGHT,
+        Keys.KEY_LEFT  : DSKeyCode.LEFT,
+        Keys.KEY_UP    : DSKeyCode.UP,
+        Keys.KEY_DOWN  : DSKeyCode.DOWN,
+        Keys.KEY_S     : DSKeyCode.R,
+        Keys.KEY_A     : DSKeyCode.L
+    ];
 }

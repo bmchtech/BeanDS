@@ -2,7 +2,7 @@ module ui.device;
 
 import core.hw;
 
-alias SetKey = void delegate(int key, bool value);
+alias SetKey = void delegate(DSKeyCode key, bool value);
 
 struct Sample {
     short L;
@@ -10,10 +10,10 @@ struct Sample {
 }
 
 abstract class MultiMediaDevice {
-    SetKey set_vanilla_key;
+    SetKey update_key;
 
-    final void set_callbacks(SetKey set_vanilla_key) {
-        this.set_vanilla_key = set_vanilla_key;
+    final void set_update_key_callback(SetKey update_key) {
+        this.update_key = update_key;
     }
 
     abstract {
