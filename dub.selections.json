@@ -4,11 +4,11 @@
 		"colorize": "1.0.5",
 		"commandr": "0.2.0",
 		"ddmp": "0.0.1-0.dev.3",
-		"dray": "4.0.0-r4",
+		"dray": "4.0.0-r5",
 		"fluent-asserts": "0.13.3",
 		"jar": "0.1.0",
 		"libdparse": "0.14.0",
-		"reng": "0.7.2",
+		"reng": "0.7.3",
 		"silly": "1.1.1",
 		"stdx-allocator": "2.77.5",
 		"witchcraft": "0.1.9"
