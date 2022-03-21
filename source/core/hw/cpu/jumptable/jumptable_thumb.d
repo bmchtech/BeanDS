@@ -10,17 +10,13 @@ import core.bitop;
 template execute_thumb(T : ArmCPU) {
     alias JumptableEntry = void function(T cpu, Half opcode);
 
-    static void create_conditional_branch(Half static_opcode)(T cpu, Half opcode) {
-        enum cond = static_opcode[0..3];
+    static void create_conditional_branch(int cond)(T cpu, Half opcode) {
         if (cpu.check_cond(cond)) {
             cpu.set_reg(pc, cpu.get_reg(pc) + (cast(s8)(opcode & 0xFF)) * 2);
         }
     }
 
-    static void create_add_sub_mov_cmp(Half static_opcode)(T cpu, Half opcode) {
-        enum op = static_opcode[3..4];
-        enum rd = static_opcode[0..2];
-
+    static void create_add_sub_mov_cmp(int op, Reg rd)(T cpu, Half opcode) {
         Word immediate = opcode[0..7];
         Word operand   = cpu.get_reg(rd);
 
@@ -32,9 +28,7 @@ template execute_thumb(T : ArmCPU) {
         }
     }
 
-    static void create_add_sub_immediate(Half static_opcode)(T cpu, Half opcode) {
-        enum op = static_opcode[1];
-
+    static void create_add_sub_immediate(int op)(T cpu, Half opcode) {
         Reg rd = opcode[0..2];
         Reg rn = opcode[3..5];
         Word operand   = cpu.get_reg(rn);
@@ -46,9 +40,7 @@ template execute_thumb(T : ArmCPU) {
         }
     }
 
-    static void create_add_sub(Half static_opcode)(T cpu, Half opcode) {
-        enum op = static_opcode[1];
-
+    static void create_add_sub(int op)(T cpu, Half opcode) {
         Reg rd = opcode[0..2];
         Reg rn = opcode[3..5];
         Reg rm = opcode[6..8];
@@ -88,9 +80,7 @@ template execute_thumb(T : ArmCPU) {
         }
     }
 
-    static void create_long_branch(Half static_opcode)(T cpu, Half opcode) {
-        enum is_first_instruction = !static_opcode[3];
-        
+    static void create_long_branch(bool is_first_instruction)(T cpu, Half opcode) {
         static if (is_first_instruction) {
             auto offset   = opcode[0..10];
             auto extended = cpu.sext_32(offset, 11);
@@ -111,18 +101,14 @@ template execute_thumb(T : ArmCPU) {
         cpu.set_reg(pc, address);
     }
 
-    static void create_pc_relative_load(Half static_opcode)(T cpu, Half opcode) {
-        enum reg = static_opcode[0..2];
-
+    static void create_pc_relative_load(Reg reg)(T cpu, Half opcode) {
         auto offset  = opcode[0..7] * 4;
         auto address = (cpu.get_reg(pc) + offset) & ~3;
 
         cpu.ldr(reg, address);
     }
 
-    static void create_stm(Half static_opcode)(T cpu, Half opcode) {
-        enum base = static_opcode[0..2];
-        
+    static void create_stm(Reg base)(T cpu, Half opcode) {
         Word start_address = cpu.get_reg(base);
         auto register_list = opcode[0..7];
         AccessType access_type = AccessType.NONSEQUENTIAL;
@@ -151,9 +137,7 @@ template execute_thumb(T : ArmCPU) {
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
     }
 
-    static void create_ldm(Half static_opcode)(T cpu, Half opcode) {
-        enum base = static_opcode[0..2];
-        
+    static void create_ldm(Reg base)(T cpu, Half opcode) {
         Word start_address = cpu.get_reg(base);
         auto register_list = opcode[0..7];
         AccessType access_type = AccessType.NONSEQUENTIAL;
@@ -182,10 +166,7 @@ template execute_thumb(T : ArmCPU) {
         cpu.run_idle_cycle();
     }
 
-    static void create_load_store_immediate_offset(Half static_opcode)(T cpu, Half opcode) {
-        enum is_load = static_opcode[3];
-        enum is_byte = static_opcode[4];
-
+    static void create_load_store_immediate_offset(bool is_load, bool is_byte)(T cpu, Half opcode) {
         Reg rd      = opcode[0..2];
         Reg rn      = opcode[3..5];
         Word offset = opcode[6..10];
@@ -197,9 +178,7 @@ template execute_thumb(T : ArmCPU) {
         static if (!is_load && !is_byte) cpu.str (rd, base + offset * 4);
     }
 
-    static void create_load_store_register_offset(Half static_opcode)(T cpu, Half opcode) {
-        enum op = static_opcode[1..3];
-
+    static void create_load_store_register_offset(int op)(T cpu, Half opcode) {
         Reg rd = opcode[0..2];
         Reg rn = opcode[3..5];
         Reg rm = opcode[6..8];
@@ -219,8 +198,7 @@ template execute_thumb(T : ArmCPU) {
         cpu_func(cpu, rd, address);
     }
 
-    static void create_alu_high_registers(Half static_opcode)(T cpu, Half opcode) {
-        enum op = static_opcode[0..1];
+    static void create_alu_high_registers(int op)(T cpu, Half opcode) {
 
         Reg rm = opcode[3..6];
         Reg rd = opcode[0..2] | (opcode[7] << 3);
@@ -234,10 +212,7 @@ template execute_thumb(T : ArmCPU) {
         }
     }
 
-    static void create_add_sp_pc_relative(Half static_opcode)(T cpu, Half opcode) {
-        enum rd    = static_opcode[0..2];
-        enum is_sp = static_opcode[3];
-
+    static void create_add_sp_pc_relative(Reg rd, bool is_sp)(T cpu, Half opcode) {
         Word immediate = opcode[0..7] << 2;
         static if ( is_sp) Word base = cpu.get_reg(sp);
         static if (!is_sp) Word base = cpu.get_reg(pc) & ~3;
@@ -253,9 +228,7 @@ template execute_thumb(T : ArmCPU) {
         else                cpu.set_reg(sp, cpu.get_reg(sp) + immediate);
     }
 
-    static void create_logical_shift(Half static_opcode)(T cpu, Half opcode) {
-        enum is_lsr = static_opcode[3];
-
+    static void create_logical_shift(bool is_lsr)(T cpu, Half opcode) {
         Reg rd     = opcode[0..2];
         Reg rm     = opcode[3..5];
         auto shift = opcode[6..10];
@@ -294,19 +267,14 @@ template execute_thumb(T : ArmCPU) {
         cpu.set_reg(pc, cpu.get_reg(pc) + offset);
     }
 
-    static void create_sp_relative_load_store(Half static_opcode)(T cpu, Half opcode) {
-        enum rd      = static_opcode[0..2];
-        enum is_load = static_opcode[3];
-
+    static void create_sp_relative_load_store(Reg rd, bool is_load)(T cpu, Half opcode) {
         Word offset  = opcode[0..7] * 4;
         Word address = cpu.get_reg(sp) + offset;
         static if (is_load) cpu.ldr(rd, address);
         else                cpu.str(rd, address);
     }
 
-    static void create_half_access(Half static_opcode)(T cpu, Half opcode) {
-        enum is_load = static_opcode[3];
-
+    static void create_half_access(bool is_load)(T cpu, Half opcode) {
         Reg  rd      = opcode[0..2];
         Reg  rn      = opcode[3..5];
         Word offset  = opcode[6..10] * 2;
@@ -315,9 +283,7 @@ template execute_thumb(T : ArmCPU) {
         else                cpu.strh(rd, address);
     }
 
-    static void create_pop(Half static_opcode)(T cpu, Half opcode) {
-        enum lr_included = static_opcode[0];
-
+    static void create_pop(bool lr_included)(T cpu, Half opcode) {
         auto register_list = opcode[0..7];
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
@@ -343,9 +309,7 @@ template execute_thumb(T : ArmCPU) {
         cpu.set_reg(sp, current_address);
     }
 
-    static void create_push(Half static_opcode)(T cpu, Half opcode) {
-        enum lr_included = static_opcode[0];
-
+    static void create_push(bool lr_included)(T cpu, Half opcode) {
         auto register_list = opcode[0..7];
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
@@ -395,14 +359,18 @@ template execute_thumb(T : ArmCPU) {
             } else
 
             if ((entry & 0b1110_0000) == 0b0010_0000) {
-                jumptable[entry] = &create_add_sub_mov_cmp!static_opcode;
+                enum op = static_opcode[3..4];
+                enum rd = static_opcode[0..2];
+                jumptable[entry] = &create_add_sub_mov_cmp!(op, rd);
             } else
 
             if ((entry & 0b1111_1100) == 0b0001_1000) {
-                jumptable[entry] = &create_add_sub!static_opcode;
+                enum op = static_opcode[1];
+                jumptable[entry] = &create_add_sub!op;
             } else
 
             if ((entry & 0b1111_0000) == 0b1101_0000) {
+                enum cond = static_opcode[0..3];
                 jumptable[entry] = &create_conditional_branch!static_opcode;
             } else
 
@@ -411,11 +379,13 @@ template execute_thumb(T : ArmCPU) {
             } else
 
             if ((entry & 0b1111_1000) == 0b0100_1000) {
-                jumptable[entry] = &create_pc_relative_load!static_opcode;
+                enum reg = static_opcode[0..2];
+                jumptable[entry] = &create_pc_relative_load!reg;
             } else
 
             if ((entry & 0b1111_0000) == 0b1111_0000) {
-                jumptable[entry] = &create_long_branch!static_opcode;
+                enum is_first_instruction = !static_opcode[3];
+                jumptable[entry] = &create_long_branch!is_first_instruction;
             } else
 
             if ((entry & 0b1111_1100) == 0b0100_0000) {
@@ -423,31 +393,40 @@ template execute_thumb(T : ArmCPU) {
             } else
 
             if ((entry & 0b1111_1000) == 0b1100_0000) {
-                jumptable[entry] = &create_stm!static_opcode;
+                enum base = static_opcode[0..2];
+                jumptable[entry] = &create_stm!base;
             } else
 
             if ((entry & 0b1111_1000) == 0b1100_1000) {
-                jumptable[entry] = &create_ldm!static_opcode;
+                enum base = static_opcode[0..2];
+                jumptable[entry] = &create_ldm!base;
             } else
 
             if ((entry & 0b1111_1100) == 0b0001_1100) {
-                jumptable[entry] = &create_add_sub_immediate!static_opcode;
+                enum op = static_opcode[1];
+                jumptable[entry] = &create_add_sub_immediate!op;
             } else
 
             if ((entry & 0b1110_0000) == 0b0110_0000) {
-                jumptable[entry] = &create_load_store_immediate_offset!static_opcode;
+                enum is_load = static_opcode[3];
+                enum is_byte = static_opcode[4];
+                jumptable[entry] = &create_load_store_immediate_offset!(is_load, is_byte);
             } else
 
             if ((entry & 0b1111_1100) == 0b0100_0100) {
-                jumptable[entry] = &create_alu_high_registers!static_opcode;
+                enum op = static_opcode[0..1];
+                jumptable[entry] = &create_alu_high_registers!op;
             } else
 
             if ((entry & 0b1111_0000) == 0b1010_0000) {
-                jumptable[entry] = &create_add_sp_pc_relative!static_opcode;
+                enum rd    = static_opcode[0..2];
+                enum is_sp = static_opcode[3];
+                jumptable[entry] = &create_add_sp_pc_relative!(rd, is_sp);
             } else
 
             if ((entry & 0b1111_0000) == 0b0000_0000) {
-                jumptable[entry] = &create_logical_shift!static_opcode;
+                enum is_lsr = static_opcode[3];
+                jumptable[entry] = &create_logical_shift!is_lsr;
             } else
 
             if ((entry & 0b1111_0000) == 0b001_0000) {
@@ -463,23 +442,29 @@ template execute_thumb(T : ArmCPU) {
             } else
 
             if ((entry & 0b1111_0000) == 0b0101_0000) {
-                jumptable[entry] = &create_load_store_register_offset!static_opcode;
+                enum op = static_opcode[1..3];
+                jumptable[entry] = &create_load_store_register_offset!op;
             } else
 
             if ((entry & 0b1111_0000) == 0b1001_0000) {
-                jumptable[entry] = &create_sp_relative_load_store!static_opcode;
+                enum rd      = static_opcode[0..2];
+                enum is_load = static_opcode[3];
+                jumptable[entry] = &create_sp_relative_load_store!(rd, is_load);
             } else
 
             if ((entry & 0b1111_0000) == 0b1000_0000) {
-                jumptable[entry] = &create_half_access!static_opcode;
+                enum is_load = static_opcode[3];
+                jumptable[entry] = &create_half_access!is_load;
             } else
 
             if ((entry & 0b1111_1110) == 0b1011_1100) {
-                jumptable[entry] = &create_pop!static_opcode;
+                enum lr_included = static_opcode[0];
+                jumptable[entry] = &create_pop!lr_included;
             } else
 
             if ((entry & 0b1111_1110) == 0b1011_0100) {
-                jumptable[entry] = &create_push!static_opcode;
+                enum lr_included = static_opcode[0];
+                jumptable[entry] = &create_push!lr_included;
             } else
 
             if ((entry & 0b1111_1000) == 0b1000_0000) {

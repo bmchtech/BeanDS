@@ -12,15 +12,13 @@ template execute_arm(T : ArmCPU) {
 
     static void create_nop(T cpu, Word opcode) {}
 
-    static void create_branch(Word static_opcode)(T cpu, Word opcode) {
-        enum branch_with_link = static_opcode[24];
-        
+    static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
         static if (branch_with_link) cpu.set_reg(lr, cpu.get_reg(pc) - 4);
         s32 offset = cpu.sext_32(opcode[0..23] * 4, 24);
         cpu.set_reg(pc, cpu.get_reg(pc) + offset);
     }
 
-    static void create_branch_exchange(Word static_opcode)(T cpu, Word opcode) {
+    static void create_branch_exchange(T cpu, Word opcode) {
         Reg rm = opcode[0..3];
         Word address = cpu.get_reg(rm);
 
@@ -28,18 +26,13 @@ template execute_arm(T : ArmCPU) {
         cpu.set_reg(pc, address & ~1);
     }
 
-    static void create_mrs(Word static_opcode)(T cpu, Word opcode) {
-        enum transfer_spsr = static_opcode[22];
-
+    static void create_mrs(bool transfer_spsr)(T cpu, Word opcode) {
         Reg rd = opcode[12..15];
         static if (transfer_spsr) cpu.set_reg(rd, cpu.get_spsr());
         else                      cpu.set_reg(rd, cpu.get_cpsr());
     }
 
-    static void create_msr(Word static_opcode)(T cpu, Word opcode) {
-        enum is_immediate  = static_opcode[25];
-        enum transfer_spsr = static_opcode[22];
-
+    static void create_msr(bool is_immediate, bool transfer_spsr)(T cpu, Word opcode) {
         static if (is_immediate) {
             auto immediate = opcode[0..7];
             auto shift     = opcode[8..11] * 2;
@@ -72,12 +65,7 @@ template execute_arm(T : ArmCPU) {
         }
     }
 
-    static void create_multiply(Word static_opcode)(T cpu, Word opcode) {
-        enum multiply_long = static_opcode[23];
-        enum signed        = static_opcode[22];
-        enum accumulate    = static_opcode[21];
-        enum update_flags  = static_opcode[20];
-
+    static void create_multiply(bool multiply_long, bool signed, bool accumulate, bool update_flags)(T cpu, Word opcode) {
         Reg rd = opcode[16..19];
         Reg rn = opcode[12..15];
         Reg rs = opcode[ 8..11];
@@ -137,9 +125,7 @@ template execute_arm(T : ArmCPU) {
         }
     }
 
-    static void create_data_processing(Word static_opcode)(T cpu, Word opcode) {
-        enum is_immediate = static_opcode[25];
-
+    static void create_data_processing(bool is_immediate, int shift_type, bool register_shift, bool update_flags, int operation)(T cpu, Word opcode) {
         Reg rn = opcode[16..19];
         Reg rd = opcode[12..15];
         Reg rs = opcode[0..  4];
@@ -156,8 +142,6 @@ template execute_arm(T : ArmCPU) {
             Word operand2      = immediate.rotate_right(shift);
             bool shifter_carry = shift == 0 ? cpu.get_flag(Flag.C) : operand2[31];
         } else {
-            enum shift_type = static_opcode[5..6];
-            enum register_shift = static_opcode[4];
             static if (register_shift) {
                 cpu.run_idle_cycle();
                 pc_additional_shift_amount = 4;
@@ -174,10 +158,8 @@ template execute_arm(T : ArmCPU) {
         }
 
         bool is_pc = rd == pc;
-        enum update_flags = static_opcode[20];
 
         Word operand1 = get_reg__shift(rn);
-        enum operation = static_opcode[21..24];
 
         static if (operation == 0 || operation == 1 || operation == 8 || operation == 9 || operation >= 12) {
             if (update_flags && !is_pc) cpu.set_flag(Flag.C, shifter_carry); 
@@ -206,15 +188,7 @@ template execute_arm(T : ArmCPU) {
         static if (operation == 15) { cpu.mvn(rd,           operand2,       update_flags && !is_pc); }
     }
 
-    static void create_half_data_transfer(Word static_opcode)(T cpu, Word opcode) {
-        enum pre                = static_opcode[24];
-        enum up                 = static_opcode[23];
-        enum is_immediate       = static_opcode[22];
-        enum writeback          = static_opcode[21] || !pre; // post-indexing implies writeback
-        enum load               = static_opcode[20];
-        enum signed             = static_opcode[6];
-        enum half               = static_opcode[5];
-
+    static void create_half_data_transfer(bool pre, bool up, bool is_immediate, bool writeback, bool load, bool signed, bool half)(T cpu, Word opcode) {
         Reg rd = opcode[12..15];
         Reg rn = opcode[16..19];
 
@@ -245,15 +219,7 @@ template execute_arm(T : ArmCPU) {
         static if (!load && writeback) cpu.set_reg(rn, writeback_value);
     }
 
-    static void create_single_data_transfer(Word static_opcode)(T cpu, Word opcode) {
-        enum is_register_offset = static_opcode [25];
-        enum shift_type         = static_opcode[5..6];
-        enum pre                = static_opcode [24];
-        enum up                 = static_opcode [23];
-        enum byte_access        = static_opcode [22];
-        enum writeback          = static_opcode [21] || !pre; // post-indexing implies writeback
-        enum load               = static_opcode [20];
-
+    static void create_single_data_transfer(bool is_register_offset, int shift_type, bool pre, bool up, bool byte_access, bool writeback, bool load)(T cpu, Word opcode) {
         Reg rd = opcode[12..15];
         Reg rn = opcode[16..19];
 
@@ -281,9 +247,7 @@ template execute_arm(T : ArmCPU) {
         static if (!load && writeback) cpu.set_reg(rn, writeback_value);
     }
 
-    static void create_swap(Word static_opcode)(T cpu, Word opcode) {
-        enum byte_swap = static_opcode[22];
-        
+    static void create_swap(bool byte_swap)(T cpu, Word opcode) {
         Reg rm = opcode[0.. 3];
         Reg rd = opcode[12..15];
         Reg rn = opcode[16..19];
@@ -301,13 +265,7 @@ template execute_arm(T : ArmCPU) {
         cpu.set_reg(rd, value);
     }
 
-    static void create_ldm_stm(Word static_opcode)(T cpu, Word opcode) {
-        enum pre       = static_opcode[24];
-        enum up        = static_opcode[23];
-        enum s         = static_opcode[22];
-        enum writeback = static_opcode[21];
-        enum load      = static_opcode[20];
-
+    static void create_ldm_stm(bool pre, bool up, bool s, bool writeback, bool load)(T cpu, Word opcode) {
         Reg rn = opcode[16..19];
 
         auto rlist = opcode[0..15];
@@ -402,69 +360,101 @@ template execute_arm(T : ArmCPU) {
         static if (writeback && !load) cpu.set_reg(rn, writeback_address);
     }
 
-    static void create_swi(Word static_opcode)(T cpu, Word opcode) {
+    static void create_swi(T cpu, Word opcode) {
         cpu.swi();
     }
 
-    static JumptableEntry[4096] create_jumptable()() {
+    static JumptableEntry[4096] jumptable = (() {
         JumptableEntry[4096] jumptable;
 
         static foreach (entry; 0 .. 4096) {{
             enum Word static_opcode = cast(Word) (entry.bits(0, 3) << 4) | (entry.bits(4, 11) << 20);
 
             if ((entry & 0b1111_0000_0000) == 0b1111_0000_0000) {
-                jumptable[entry] = &create_swi!static_opcode;
+                jumptable[entry] = &create_swi;
             } else
 
             if ((entry & 0b1111_1011_1111) == 0b0001_0000_1001) {
-                jumptable[entry] = &create_swap!static_opcode;
+                enum byte_swap = static_opcode[22];
+                jumptable[entry] = &create_swap!byte_swap;
             } else
 
             if ((entry & 0b1100_0000_0000) == 0b0100_0000_0000) {
-                jumptable[entry] = &create_single_data_transfer!static_opcode;
+                enum is_register_offset = static_opcode [25];
+                enum shift_type         = static_opcode [5..6];
+                enum pre                = static_opcode [24];
+                enum up                 = static_opcode [23];
+                enum byte_access        = static_opcode [22];
+                enum writeback          = static_opcode [21] || !pre; // post-indexing implies writeback
+                enum load               = static_opcode [20];
+                jumptable[entry] = &create_single_data_transfer!(is_register_offset, shift_type, pre, up, byte_access, writeback, load);
             } else
 
             if (((entry & 0b1111_1100_1111) == 0b0000_0000_1001) ||
                 ((entry & 0b1111_1000_1111) == 0b0000_1000_1001)) {
-                jumptable[entry] = &create_multiply!static_opcode;
+                enum multiply_long = static_opcode[23];
+                enum signed        = static_opcode[22];
+                enum accumulate    = static_opcode[21];
+                enum update_flags  = static_opcode[20];
+                jumptable[entry] = &create_multiply!(multiply_long, signed, accumulate, update_flags);
             } else
 
-            if ((entry & 0b1110_0000_1001) == 0b0000_0000_1001) {
-                jumptable[entry] = &create_half_data_transfer!static_opcode;
+            if ((entry & 0b1110_0000_1001) == 0b0000_0000_1001) {        
+                enum pre           = static_opcode[24];
+                enum up            = static_opcode[23];
+                enum is_immediate  = static_opcode[22];
+                enum writeback     = static_opcode[21] || !pre; // post-indexing implies writeback
+                enum load          = static_opcode[20];
+                enum signed        = static_opcode[6];
+                enum half          = static_opcode[5];
+                jumptable[entry] = &create_half_data_transfer!(pre, up, is_immediate, writeback, load, signed, half);
             } else
 
             if ((entry & 0b1110_0000_0000) == 0b1010_0000_0000) {
-                jumptable[entry] = &create_branch!static_opcode;
+                enum branch_with_link = static_opcode[24];
+                jumptable[entry] = &create_branch!branch_with_link;
             } else
 
             if ((entry & 0b1111_1011_1111) == 0b0001_0000_0000) {
-                jumptable[entry] = &create_mrs!static_opcode;
+                enum transfer_spsr = static_opcode[22];
+                jumptable[entry] = &create_mrs!transfer_spsr;
             } else
 
             if (((entry & 0b1111_1011_0000) == 0b0011_0010_0000) ||
                 ((entry & 0b1111_1011_1111) == 0b0001_0010_0000)) {
-                jumptable[entry] = &create_msr!static_opcode;
+                enum is_immediate  = static_opcode[25];
+                enum transfer_spsr = static_opcode[22];
+                jumptable[entry] = &create_msr!(is_immediate, transfer_spsr);
             } else
 
             if ((entry & 0b1111_1111_1111) == 0b0001_0010_0001) {
-                jumptable[entry] = &create_branch_exchange!static_opcode;
+                jumptable[entry] = &create_branch_exchange;
             } else
 
             if ((entry & 0b1110_0000_0000) == 0b1000_0000_0000) {
-                jumptable[entry] = &create_ldm_stm!static_opcode;
+                enum pre       = static_opcode[24];
+                enum up        = static_opcode[23];
+                enum s         = static_opcode[22];
+                enum writeback = static_opcode[21];
+                enum load      = static_opcode[20];
+                jumptable[entry] = &create_ldm_stm!(pre, up, s, writeback, load);
             } else
 
             if (((entry & 0b1110_0000_0000) == 0b0010_0000_0000) ||
                 ((entry & 0b1110_0000_0001) == 0b0000_0000_0000) ||
                 ((entry & 0b1110_0000_1001) == 0b0000_0000_0001)) {
-                jumptable[entry] = &create_data_processing!static_opcode;
+                enum is_immediate   = static_opcode[25];
+                enum shift_type     = static_opcode[5..6];
+                enum register_shift = static_opcode[4];
+                enum update_flags   = static_opcode[20];
+                enum operation      = static_opcode[21..24];
+
+                jumptable[entry] = &create_data_processing!(is_immediate, shift_type, register_shift, update_flags, operation);
             } else
             
             jumptable[entry] = &create_nop;
         }}
 
         return jumptable;
-    }
-
-    static JumptableEntry[4096] jumptable = create_jumptable();
+    })();
 }
