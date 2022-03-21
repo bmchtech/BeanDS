@@ -360,11 +360,23 @@ template execute_arm(T : ArmCPU) {
         static if (writeback && !load) cpu.set_reg(rn, writeback_address);
     }
 
+    static void create_clz(T cpu, Word opcode) {
+        Reg rm = opcode[0 .. 3];
+        Reg rd = opcode[12..15];
+
+        Word operand = cpu.get_reg(rm);
+        Word result = (operand == 0) ? 32 : (31 - bsr(operand));
+
+        cpu.set_reg(rd, result);
+    }
+
     static void create_swi(T cpu, Word opcode) {
         cpu.swi();
     }
 
     static JumptableEntry[4096] jumptable = (() {
+        enum ARMv5TE = is(T == ARM946E_S);
+
         JumptableEntry[4096] jumptable;
 
         static foreach (entry; 0 .. 4096) {{
@@ -438,6 +450,10 @@ template execute_arm(T : ArmCPU) {
                 enum writeback = static_opcode[21];
                 enum load      = static_opcode[20];
                 jumptable[entry] = &create_ldm_stm!(pre, up, s, writeback, load);
+            } else
+
+            if (ARMv5TE && (entry & 0b1111_1111_1111) == 0b0001_0110_0001) {
+                jumptable[entry] = &create_clz;
             } else
 
             if (((entry & 0b1110_0000_0000) == 0b0010_0000_0000) ||

@@ -29,7 +29,7 @@ final class KeyInput {
     Half keyinput;
     
     void update_key(DSKeyCode key, bool pressed) {
-        keyinput[key] = pressed;
+        keyinput[key] = !pressed;
     }
 
     Byte read_KEYINPUT(int target_byte) {
