@@ -59,7 +59,7 @@ final class Mem9 : Mem {
             case 0x6:              vram.write!T(address, value); break;
             case 0x7:              error_unimplemented("Attempt from ARM9 to write %x to OAM: %x", value, address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM9 to write %x to GBA Slot ROM: %x", value, address); break;
-            case 0xA: .. case 0xA: error_unimplemented("Attempt from ARM9 to write %x to GBA Slot RAM: %x", value, address); break;
+            case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to write %x to GBA Slot RAM: %x", value, address); break;
         
             default: error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address); break;
         }
