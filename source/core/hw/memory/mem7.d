@@ -21,7 +21,7 @@ final class Mem7 : Mem {
             case 0x4:              error_unimplemented("Attempt from ARM7 to read from ARM7 IO: %x", address); break;
             case 0x6:              error_unimplemented("Attempt from ARM7 to read from VRAM: %x", address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM7 to read from GBA Slot ROM: %x", address); break;
-            case 0xA: .. case 0xA: error_unimplemented("Attempt from ARM7 to read from GBA Slot RAM: %x", address); break;
+            case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to read from GBA Slot RAM: %x", address); break;
         
             default: error_unimplemented("Attempt from ARM7 to read from an invalid region of memory: %x", address); break;
         }
@@ -44,7 +44,7 @@ final class Mem7 : Mem {
             case 0x4:              error_unimplemented("Attempt from ARM7 to write %x to ARM7 IO: %x", value, address); break;
             case 0x6:              error_unimplemented("Attempt from ARM7 to write %x to VRAM: %x", value, address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM7 to write %x to GBA Slot ROM: %x", value, address); break;
-            case 0xA: .. case 0xA: error_unimplemented("Attempt from ARM7 to write %x to GBA Slot RAM: %x", value, address); break;
+            case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to write %x to GBA Slot RAM: %x", value, address); break;
         
             default: error_unimplemented("Attempt from ARM7 to write %x to an invalid region of memory: %x", value, address); break;
         }
