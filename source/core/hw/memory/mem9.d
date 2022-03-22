@@ -34,7 +34,7 @@ final class Mem9 : Mem {
             case 0x6:              return vram.read!T(address);
             case 0x7:              error_unimplemented("Attempt from ARM9 to read from OAM: %x", address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM9 to read from GBA Slot ROM: %x", address); break;
-            case 0xA: .. case 0xA: error_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
+            case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
         
             default: error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address); break;
         }
