@@ -371,7 +371,7 @@ template execute_thumb(T : ArmCPU) {
 
             if ((entry & 0b1111_0000) == 0b1101_0000) {
                 enum cond = static_opcode[0..3];
-                jumptable[entry] = &create_conditional_branch!static_opcode;
+                jumptable[entry] = &create_conditional_branch!cond;
             } else
 
             if ((entry & 0b1111_1111) == 0b0100_0111) {
