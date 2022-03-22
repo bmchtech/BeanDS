@@ -13,3 +13,4 @@ beands-test-*
 *.o
 *.obj
 *.lst
+roms/
