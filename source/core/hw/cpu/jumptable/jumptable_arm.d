@@ -8,6 +8,8 @@ import core.hw.memory;
 import util;
 
 template execute_arm(T : ArmCPU) {
+    enum ARMv5TE = is(T == ARM946E_S);
+
     alias JumptableEntry = void function(T cpu, Word opcode);
 
     static void create_nop(T cpu, Word opcode) {}
@@ -125,6 +127,27 @@ template execute_arm(T : ArmCPU) {
         }
     }
 
+    static void create_multiply_xy(bool x, bool y)(T cpu, Word opcode) {
+        Reg rm = opcode[0 .. 4];
+        Reg rs = opcode[8 ..11];
+        Reg rn = opcode[12..15];
+        Reg rd = opcode[16..19];
+
+        static if (x) s32 operand1 = cpu.sext_32(cpu.get_reg(rm)[16..31], 16);
+        else          s32 operand1 = cpu.sext_32(cpu.get_reg(rm)[0 ..15], 16);
+        static if (y) s32 operand2 = cpu.sext_32(cpu.get_reg(rs)[16..31], 16);
+        else          s32 operand2 = cpu.sext_32(cpu.get_reg(rs)[0 ..15], 16);
+
+        s64 result = operand1 * operand2;
+        result += cpu.get_reg(rn);
+
+        if (result > 0x7FFF_FFFF || result < -0x8000_0000) {
+            cpu.set_flag(Flag.Q, true);
+        }
+
+        cpu.set_reg(rd, Word(result));
+    }
+
     static void create_data_processing(bool is_immediate, int shift_type, bool register_shift, bool update_flags, int operation)(T cpu, Word opcode) {
         Reg rn = opcode[16..19];
         Reg rd = opcode[12..15];
@@ -213,7 +236,28 @@ template execute_arm(T : ArmCPU) {
                 cpu.ldrh(rd, address);
             }
         } else {
-            cpu.strh(rd, address);
+            static if (ARMv5TE && signed) {
+                // arm is starting to have a worse opcode encoding.
+                // in v5te theyre trying to be backwards compatible with 
+                // v4t. so they shoehorn opcodes in the weirdest of places
+                // in v4t, decoding an addressing mode 3 instruction is 
+                // super simple: theres 3 bits. load. signed. half. if 
+                // load is false, the opcode is strh. else, if signed is 
+                // false, the opcode is ldrh. else, depending on half, the 
+                // opcode is either ldrsh or ldrsb.
+                // but now, with v5te, they needed to shoehorn the load 
+                // double word opcode somewhere. so where did they put it? 
+                // here. they decided that if load is false and signed is 
+                // true, THEN ITS A LOAD DOUBLE WORD OPCODE. LOAD DOUBLE 
+                // WORD IS NOT EVEN SIGNED LET ALONE A STORE AAAAAAAAAAAAA
+                // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+                // i love arm
+                // "better than no comments i suppose" - Mesi
+                cpu.ldrd(rd, address);
+            } else {
+                cpu.strh(rd, address);
+            }
         }
 
         static if (!load && writeback) cpu.set_reg(rn, writeback_value);
@@ -370,13 +414,45 @@ template execute_arm(T : ArmCPU) {
         cpu.set_reg(rd, result);
     }
 
+    static void create_saturating_arithmetic(bool multiply, bool add)(T cpu, Word opcode) {
+        Reg rm = opcode[0 .. 3];
+        Reg rd = opcode[12..15];
+        Reg rn = opcode[16..19];
+
+        bool saturated = false;
+
+        s64 operand1 = cpu.get_reg(rm);
+        s64 operand2 = cpu.get_reg(rn);
+
+        static if (multiply) operand2 *= 2;
+        if (operand2 > 0x7FFF_FFFF) {
+            operand2  = 0x7FFF_FFFF;
+            saturated = true;
+        }
+
+        static if (add) {
+            u64 result = operand1 + operand2;
+            if (result > 0x7FFF_FFFF) {
+                result = 0x7FFF_FFFF;
+                saturated = true;
+            }
+        } else {
+            u64 result = operand1 - operand2;
+            if (result < -0x8000_0000) {
+                result = -0x8000_0000;
+                saturated = true;
+            }
+        }
+
+        cpu.set_reg(rd, cast(Word) result);
+        cpu.set_flag(Flag.Q, saturated);
+    }
+
     static void create_swi(T cpu, Word opcode) {
         cpu.swi();
     }
 
     static JumptableEntry[4096] jumptable = (() {
-        enum ARMv5TE = is(T == ARM946E_S);
-
         JumptableEntry[4096] jumptable;
 
         static foreach (entry; 0 .. 4096) {{
@@ -389,6 +465,12 @@ template execute_arm(T : ArmCPU) {
             if ((entry & 0b1111_1011_1111) == 0b0001_0000_1001) {
                 enum byte_swap = static_opcode[22];
                 jumptable[entry] = &create_swap!byte_swap;
+            } else
+
+            if (ARMv5TE && (entry & 0b1111_1111_1001) == 0b0001_0000_1000) {
+                enum y = static_opcode[6];
+                enum x = static_opcode[5];
+                jumptable[entry] = &create_multiply_xy!(x, y);
             } else
 
             if ((entry & 0b1100_0000_0000) == 0b0100_0000_0000) {
@@ -450,6 +532,13 @@ template execute_arm(T : ArmCPU) {
                 enum writeback = static_opcode[21];
                 enum load      = static_opcode[20];
                 jumptable[entry] = &create_ldm_stm!(pre, up, s, writeback, load);
+            } else
+
+            if (ARMv5TE && (entry & 0b1111_1001_1111) == 0b0001_0000_0101) {
+                enum multiply = static_opcode[22];
+                enum add      = static_opcode[21];
+                
+                jumptable[entry] = &create_saturating_arithmetic!(multiply, !add);
             } else
 
             if (ARMv5TE && (entry & 0b1111_1111_1111) == 0b0001_0110_0001) {

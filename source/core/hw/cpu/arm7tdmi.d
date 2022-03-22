@@ -363,8 +363,7 @@ final class ARM7TDMI : ArmCPU {
 
     void set_flag(Flag flag, bool value) {
         Word cpsr = get_cpsr();
-        cpsr &= ~(1     << flag);
-        cpsr |=  (value << flag);
+        cpsr[flag] = value;
         set_cpsr(cpsr);
 
         if (flag == Flag.T) {

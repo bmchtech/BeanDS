@@ -58,6 +58,8 @@ final class Runner {
         frontend.draw();
     }
 
+    int x = 0;
+
     void run() {
         start_timestamp = 0;
 
@@ -65,11 +67,18 @@ final class Runner {
             // i separated the ifs so fast fowarding doesn't
             // incur a mutex call from get_should_cycle_nds
             if (true) {
-                for (int i = 0; i < 100000; i++) nds.cycle();
+                for (int i = 0; i < 275000; i++) nds.cycle();
             } else {
                 if (get_should_cycle_nds()) {
-                    for (int i = 0; i < 100000; i++) nds.cycle();
+                    for (int i = 0; i < 275000; i++) nds.cycle();
                 }
+            }
+
+            x++;
+            if (x == 60) {
+                import std.stdio;
+                writefln("frame");
+                x = 0;
             }
 
             tick();

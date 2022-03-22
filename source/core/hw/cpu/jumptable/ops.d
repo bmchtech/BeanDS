@@ -252,6 +252,13 @@ void ldrsb(T : ArmCPU)(T cpu, Reg rd, Word address) {
     cpu.run_idle_cycle();
 }
 
+void ldrd(T : ArmCPU)(T cpu, Reg rd, Word address) {
+    if (rd & 1) error_arm9("LDRD with an odd numbered RD was attempted.");
+
+    cpu.ldr(rd,     address);
+    cpu.ldr(rd + 1, address + 4);
+}
+
 void ldrsh(T : ArmCPU)(T cpu, Reg rd, Word address) {
     if (address & 1) ldrsb(cpu, rd, address);
     else {

@@ -32,8 +32,8 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.format.write : formattedWrite;
     import std.stdio;
 
-    writef("[%s] : ", pad_string_right!(to!string(log_source), logsource_padding));
-    writefln(fmt, args);
+    // writef("[%s] : ", pad_string_right!(to!string(log_source), logsource_padding));
+    // writefln(fmt, args);
 
     if (fatal) assert(0);
 }

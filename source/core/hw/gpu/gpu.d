@@ -20,7 +20,7 @@ final class GPU {
         dot      = 0;
         scanline = 0;
 
-        scheduler.add_event_relative_to_clock(&on_hblank_start, 256 * 4);
+        scheduler.add_event_relative_to_clock(&on_hblank_start, 256 * 6);
 
         enabled = true;
 
@@ -41,7 +41,7 @@ final class GPU {
             render();
         }
 
-        scheduler.add_event_relative_to_self(&on_hblank_end, 68 * 4);
+        scheduler.add_event_relative_to_self(&on_hblank_end, 99 * 6);
         scheduler.add_event_relative_to_self(&set_hblank_flag, 46);
     }
 
@@ -56,7 +56,7 @@ final class GPU {
         //     interrupt_cpu(Interrupt.LCD_VCOUNTER_MATCH);
         // }
 
-        scheduler.add_event_relative_to_self(&on_hblank_start, 240 * 4);
+        scheduler.add_event_relative_to_self(&on_hblank_start, 256 * 6);
     }
 
     void set_hblank_flag() {

@@ -363,13 +363,22 @@ final class ARM946E_S : ArmCPU {
 
     void set_flag(Flag flag, bool value) {
         Word cpsr = get_cpsr();
-        cpsr &= ~(1     << flag);
-        cpsr |=  (value << flag);
+
+        if (sticky_flag(flag)) {
+            cpsr[flag] |= value;
+        } else {
+            cpsr[flag] = value;
+        }
+
         set_cpsr(cpsr);
 
         if (flag == Flag.T) {
             instruction_set = value ? InstructionSet.THUMB : InstructionSet.ARM;
         }
+    }
+
+    bool sticky_flag(Flag flag) {
+        return flag == Flag.Q;
     }
 
     bool get_flag(Flag flag) {

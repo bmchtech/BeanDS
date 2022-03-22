@@ -65,6 +65,14 @@ union MemoryUnit(T) {
         this.value |=  (value << index);
     }
 
+    void opIndexOpAssign(string s)(bool value, size_t index) {
+        bool old_value = this.value.bit(index) & 1;
+        mixin("bool new_value = old_value " ~ s ~ " value;");
+
+        this.value &= ~(1         << index);
+        this.value |=  (new_value << index);
+    }
+
     void opAssign(S)(S value) {
         this.value = cast(T) value;
     }
