@@ -2,7 +2,7 @@ module core.hw.cpu.armcpu;
 
 import std.meta;
 
-import core.hw.memory;
+import core;
 
 import util;
 
@@ -55,6 +55,8 @@ interface ArmCPU {
     bool           has_spsr();
     
     void           raise_exception(CpuException exception)();
+
+    static @property Architecture architecture();
 }
 
 // CPU modes will be described as the following:

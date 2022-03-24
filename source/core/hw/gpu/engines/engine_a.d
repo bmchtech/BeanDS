@@ -16,7 +16,6 @@ final class GPUEngineA {
     int display_mode;
     int vram_block;
     void write_DISPCNT(int target_byte, Byte value) {
-        log_engine_a("DISPCNT: %x", value);
         final switch (target_byte) {
             case 0:
                 bg_mode = value[0..2];

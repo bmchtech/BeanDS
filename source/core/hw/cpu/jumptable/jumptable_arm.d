@@ -8,8 +8,6 @@ import core.hw.memory;
 import util;
 
 template execute_arm(T : ArmCPU) {
-    enum ARMv5TE = is(T == ARM946E_S);
-
     alias JumptableEntry = void function(T cpu, Word opcode);
 
     static void create_nop(T cpu, Word opcode) {}
@@ -236,7 +234,7 @@ template execute_arm(T : ArmCPU) {
                 cpu.ldrh(rd, address);
             }
         } else {
-            static if (ARMv5TE && signed) {
+            static if (v5TE!T && signed) {
                 // arm is starting to have a worse opcode encoding.
                 // in v5te theyre trying to be backwards compatible with 
                 // v4t. so they shoehorn opcodes in the weirdest of places
@@ -467,7 +465,7 @@ template execute_arm(T : ArmCPU) {
                 jumptable[entry] = &create_swap!byte_swap;
             } else
 
-            if (ARMv5TE && (entry & 0b1111_1111_1001) == 0b0001_0000_1000) {
+            if (v5TE!T && (entry & 0b1111_1111_1001) == 0b0001_0000_1000) {
                 enum y = static_opcode[6];
                 enum x = static_opcode[5];
                 jumptable[entry] = &create_multiply_xy!(x, y);
@@ -534,14 +532,14 @@ template execute_arm(T : ArmCPU) {
                 jumptable[entry] = &create_ldm_stm!(pre, up, s, writeback, load);
             } else
 
-            if (ARMv5TE && (entry & 0b1111_1001_1111) == 0b0001_0000_0101) {
+            if (v5TE!T && (entry & 0b1111_1001_1111) == 0b0001_0000_0101) {
                 enum multiply = static_opcode[22];
                 enum add      = static_opcode[21];
                 
                 jumptable[entry] = &create_saturating_arithmetic!(multiply, !add);
             } else
 
-            if (ARMv5TE && (entry & 0b1111_1111_1111) == 0b0001_0110_0001) {
+            if (v5TE!T && (entry & 0b1111_1111_1111) == 0b0001_0110_0001) {
                 jumptable[entry] = &create_clz;
             } else
 

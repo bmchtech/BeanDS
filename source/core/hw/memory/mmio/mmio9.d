@@ -94,6 +94,7 @@ final class MMIO9 {
 
             case KEYINPUT    + 0: return input.read_KEYINPUT      (0);
             case KEYINPUT    + 1: return input.read_KEYINPUT      (1);
+            case 0x4000014: error_unimplemented("sussy");
 
             default: log_unimplemented("MMIO 9 register %x read from. This register does not exist.", address);
         }

@@ -1,10 +1,10 @@
 module core.hw.cpu.arm946e_s;
 
-import core.hw.cpu;
-import core.hw.memory;
+import core;
 
 import util;
 
+__gshared ARM946E_S arm9;
 final class ARM946E_S : ArmCPU {
     Word[18 * 7] register_file;
     Word[18]     regs;
@@ -23,12 +23,17 @@ final class ARM946E_S : ArmCPU {
 
     AccessType pipeline_access_type;
 
+    // TODO: this stuffs is for debugging. should it rly go in
+    //       this cpu??? idk lol
+    CpuTrace cpu_trace;
+
     this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
+        cpu_trace = new CpuTrace(this, 100);
+        arm9 = this;
         
         reset();
-        // skip_bios();
     }
 
     void reset() {
@@ -43,21 +48,9 @@ final class ARM946E_S : ArmCPU {
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
     }
 
-    void skip_bios() {
-        set_mode!MODE_SYSTEM;
-        register_file[MODE_USER.OFFSET       + sp] = 0x03007f00;
-        register_file[MODE_IRQ.OFFSET        + sp] = 0x03007fa0;
-        register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x03007fe0;
-
-        set_flag(Flag.T, false);
-
-        for (int i = 0; i < 7; i++) {
-            register_file[MODES[i].OFFSET + 16] |= MODES[i].CPSR_ENCODING;
-        }    
-            
-        regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
-        
-        set_reg(pc, Word(0x0800_0000));
+    @property
+    static Architecture architecture() {
+        return Architecture.v5TE;
     }
 
     pragma(inline, true) T fetch(T)() {
@@ -100,12 +93,13 @@ final class ARM946E_S : ArmCPU {
         }
 
         static if (is(T == Half)) {
+            if (opcode == 0) error_unimplemented("fuck");
             execute_thumb!ARM946E_S.jumptable[opcode >> 8](this, opcode);
         }
     }
 
     void run_instruction() {
-        // log_state();
+        cpu_trace.capture();
 
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();

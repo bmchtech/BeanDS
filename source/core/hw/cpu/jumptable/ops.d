@@ -260,8 +260,13 @@ void ldrd(T : ArmCPU)(T cpu, Reg rd, Word address) {
 }
 
 void ldrsh(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    if (address & 1) ldrsb(cpu, rd, address);
-    else {
+    if (address & 1) {
+        static if (v5TE!T) {
+            ldrsh(cpu, rd, address & ~1);
+        } else {
+            ldrsb(cpu, rd, address);
+        }
+    } else {
         cpu.set_reg(rd, cast(Word) cpu.sext_32(cpu.read_half(address, AccessType.NONSEQUENTIAL), 16));
         cpu.run_idle_cycle();
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);

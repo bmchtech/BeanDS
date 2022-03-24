@@ -49,8 +49,6 @@ final class VRAM {
 
     void write(T)(Word address, T value) {
         auto region = get_region(address);
-
-        log_engine_a("wrote %x to %x %d", value, address, region);
         
         switch (region) {
             case 0: .. case 1: vram_engine_a_bg .write!T(address % VRAM_ENGINE_A_BG_SIZE , value); break;
@@ -60,8 +58,6 @@ final class VRAM {
 
             default: vram_lcdc.write!T(address[0..16] % LCDC_SIZE, value);
         }
-
-        log_engine_a("now its %x", vram_a.read!T(address % LCDC_SIZE));
     }
 
     auto get_region(Word address) {

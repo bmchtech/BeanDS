@@ -5,5 +5,6 @@ public {
     import util.file;
     import util.likely;
     import util.log;
+    import util.ringbuffer;
     import util.types;
 }

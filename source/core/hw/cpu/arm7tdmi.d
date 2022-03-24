@@ -5,6 +5,7 @@ import core.hw.memory;
 
 import util;
 
+__gshared ARM7TDMI arm7;
 final class ARM7TDMI : ArmCPU {
     Word[18 * 7] register_file;
     Word[18]     regs;
@@ -27,8 +28,8 @@ final class ARM7TDMI : ArmCPU {
         this.memory = memory;
         current_mode = MODE_USER;
         
+        arm7 = this;
         reset();
-        // skip_bios();
     }
 
     void reset() {
@@ -43,21 +44,9 @@ final class ARM7TDMI : ArmCPU {
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
     }
 
-    void skip_bios() {
-        set_mode!MODE_SYSTEM;
-        register_file[MODE_USER.OFFSET       + sp] = 0x03007f00;
-        register_file[MODE_IRQ.OFFSET        + sp] = 0x03007fa0;
-        register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x03007fe0;
-
-        set_flag(Flag.T, false);
-
-        for (int i = 0; i < 7; i++) {
-            register_file[MODES[i].OFFSET + 16] |= MODES[i].CPSR_ENCODING;
-        }    
-            
-        regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
-        
-        set_reg(pc, Word(0x0800_0000));
+    @property
+    static Architecture architecture() {
+        return Architecture.v4T;
     }
 
     pragma(inline, true) T fetch(T)() {

@@ -32,10 +32,14 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.format.write : formattedWrite;
     import std.stdio;
 
-    // writef("[%s] : ", pad_string_right!(to!string(log_source), logsource_padding));
-    // writefln(fmt, args);
+    writef("[%s] : ", pad_string_right!(to!string(log_source), logsource_padding));
+    writefln(fmt, args);
 
-    if (fatal) assert(0);
+    if (fatal) {
+        import core;
+        arm9.cpu_trace.print_trace();
+        assert(0);
+    }
 }
 
 static string pad_string_right(string s, ulong pad)() {
