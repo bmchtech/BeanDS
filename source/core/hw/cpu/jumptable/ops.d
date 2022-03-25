@@ -303,8 +303,10 @@ void swi(T : ArmCPU)(T cpu) {
 
 s32 sext_32(T)(ArmCPU cpu, T value, u32 size) {
     auto negative = value[size - 1];
-    if (negative) value |= (((1 << (32 - size)) - 1) << size);
-    return value;
+    s32 result = value;
+
+    if (negative) result |= (((1 << (32 - size)) - 1) << size);
+    return result;
 }
 
 s64 sext_64(ArmCPU cpu, u64 value, u64 size) {
