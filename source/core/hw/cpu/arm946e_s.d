@@ -93,7 +93,6 @@ final class ARM946E_S : ArmCPU {
         }
 
         static if (is(T == Half)) {
-            if (opcode == 0) error_unimplemented("fuck");
             execute_thumb!ARM946E_S.jumptable[opcode >> 8](this, opcode);
         }
     }

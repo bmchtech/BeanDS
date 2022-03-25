@@ -321,11 +321,13 @@ template execute_arm(T : ArmCPU) {
             static if (pre == up) address += 4;
             static if (!up)       address -= 64;
             
-            static if (load) {
-                cpu.set_reg(pc, cpu.read_word(address & ~3, AccessType.NONSEQUENTIAL));
-                cpu.run_idle_cycle();
-            } else {
-                cpu.write_word(address & ~3, cpu.get_reg(pc) + 4, AccessType.NONSEQUENTIAL);
+            if (v4T!T) {
+                static if (load) {
+                    cpu.set_reg(pc, cpu.read_word(address & ~3, AccessType.NONSEQUENTIAL));
+                    cpu.run_idle_cycle();
+                } else {
+                    cpu.write_word(address & ~3, cpu.get_reg(pc) + 4, AccessType.NONSEQUENTIAL);
+                }
             }
 
             static if (up) cpu.set_reg(rn, cpu.get_reg(rn) + 64);

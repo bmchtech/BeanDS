@@ -115,7 +115,7 @@ template execute_thumb(T : ArmCPU) {
 
         if (register_list == 0) {
             cpu.write_word(start_address, cpu.get_reg(pc) + 2, access_type);
-            cpu.set_reg(base, start_address + 0x40);
+            if (v4T!T) cpu.set_reg(base, start_address + 0x40);
             return;
         }
 
@@ -143,7 +143,7 @@ template execute_thumb(T : ArmCPU) {
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
         if (register_list == 0) {
-            cpu.set_reg(pc, cpu.read_word(start_address, access_type));
+            if (v4T!T) cpu.set_reg(pc, cpu.read_word(start_address, access_type));
             cpu.set_reg(base, start_address + 0x40);
             return;
         }
@@ -288,6 +288,13 @@ template execute_thumb(T : ArmCPU) {
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
         Word current_address = cpu.get_reg(sp);
+
+        if (register_list == 0) {
+            if (v4T!T) cpu.set_reg(pc, cpu.read_word(current_address, access_type));
+            cpu.set_reg(sp, current_address + 0x40);
+            return;
+        }
+
         for (int i = 0; i < 8; i++) {
             if (register_list[i]) {
                 cpu.set_reg(i, cpu.read_word(current_address & ~3, access_type));
@@ -314,6 +321,12 @@ template execute_thumb(T : ArmCPU) {
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
         Word current_address = cpu.get_reg(sp);
+
+        if (register_list == 0) {
+            cpu.write_word(current_address, cpu.get_reg(pc) + 2, access_type);
+            if (v4T!T) cpu.set_reg(sp, current_address + 0x40);
+            return;
+        }
 
         static if (lr_included) {
             current_address -= 4;
