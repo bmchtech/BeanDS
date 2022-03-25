@@ -76,8 +76,6 @@ final class Runner {
 
             x++;
             if (x == 60) {
-                import std.stdio;
-                writefln("frame");
                 x = 0;
             }
 

@@ -356,7 +356,9 @@ template execute_arm(T : ArmCPU) {
         for (int i = 0; i < 16; i++) {
             if (rlist & mask) {
                 static if (s) {
+                    import std.stdio;
                     static if (load) {
+                        writefln("setting reg %x to %x",i,cpu.read_word(address, access_type));
                         if (pc_included) cpu.set_reg(i, cpu.read_word(address, access_type));
                         else             cpu.set_reg(i, cpu.read_word(address, access_type), MODE_USER);
                     } else {
@@ -400,7 +402,22 @@ template execute_arm(T : ArmCPU) {
             cpu.update_mode();
         }
 
-        static if (writeback &&  load) if (!register_in_rlist) cpu.set_reg(rn, writeback_address);
+        static if (writeback && load) {
+            static if (v5TE!T){
+                if (register_in_rlist) {
+                    if (rlist == 1 << rn || rlist >> (rn + 1) > 0) {
+                        cpu.set_reg(rn, writeback_address);
+                    }
+                } else {
+                    cpu.set_reg(rn, writeback_address);
+                }
+            }
+
+            static if (v4T!T) {
+                if (!register_in_rlist) cpu.set_reg(rn, writeback_address);
+            }
+        }
+
         static if (writeback && !load) cpu.set_reg(rn, writeback_address);
     }
 

@@ -134,6 +134,8 @@ template execute_thumb(T : ArmCPU) {
             }
         }
 
+        if (v5TE!T) cpu.set_reg(base, writeback_value);
+
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
     }
 
@@ -159,8 +161,14 @@ template execute_thumb(T : ArmCPU) {
         }
 
         bool base_in_register_list = register_list[base];
-        if (!base_in_register_list) {
+        if (v4T!T && !base_in_register_list) {
             cpu.set_reg(base, current_address);
+        }
+
+        if (v5TE!T && base_in_register_list) {
+            if (register_list >= 1 << base) {
+                cpu.set_reg(base, current_address);
+            }
         }
         
         cpu.run_idle_cycle();

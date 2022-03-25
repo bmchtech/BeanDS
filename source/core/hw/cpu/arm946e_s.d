@@ -132,11 +132,23 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) Word get_reg(Reg id, CpuMode mode) {
-        return get_reg__raw(id, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
+
+        if (!is_banked && current_mode.REGISTER_UNIQUENESS.bit(id) & 1) {
+            return get_reg(id);
+        } else {
+            return get_reg__raw(id, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        }
     }
 
     pragma(inline, true) void set_reg(Reg id, Word value, CpuMode mode) {
-        return set_reg__raw(id, value, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
+
+        if (!is_banked && current_mode.REGISTER_UNIQUENESS.bit(id) & 1) {
+            set_reg(id, value);
+        } else {
+            set_reg__raw(id, value, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        }
     }
 
     pragma(inline, true) Word get_reg__raw(Reg id, Word[18]* regs) {
