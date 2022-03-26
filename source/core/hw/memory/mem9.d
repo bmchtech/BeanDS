@@ -14,7 +14,7 @@ final class Mem9 : Mem {
     MMIO9 mmio9;
 
     this() {
-        mmio9 = new MMIO9();
+        new MMIO9();
         new DMA9(this);
     }
 

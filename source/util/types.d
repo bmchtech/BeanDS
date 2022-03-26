@@ -2,8 +2,11 @@ module util.types;
 
 import util;
 
-union MemoryUnit(T) {
-    T value;
+struct MemoryUnit(T) {
+    union {
+        T value;
+    }
+    
     alias value this;
 
     this(S)(S value) {

@@ -15,6 +15,8 @@ final class NDS {
     Mem9      mem9;
 
     this() {
+        new IPC();
+        
         mem7 = new Mem7();
         mem9 = new Mem9();
         arm7 = new ARM7TDMI(mem7);
@@ -60,10 +62,10 @@ final class NDS {
     }
 
     void cycle() {
-        // arm7.run_instruction();
+        arm7.run_instruction();
         arm9.run_instruction();
         arm9.run_instruction();
-        scheduler.tick(2);
+        scheduler.tick(4);
         scheduler.process_events();
     }
 

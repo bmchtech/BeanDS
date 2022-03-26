@@ -358,7 +358,6 @@ template execute_arm(T : ArmCPU) {
                 static if (s) {
                     import std.stdio;
                     static if (load) {
-                        writefln("setting reg %x to %x",i,cpu.read_word(address, access_type));
                         if (pc_included) cpu.set_reg(i, cpu.read_word(address, access_type));
                         else             cpu.set_reg(i, cpu.read_word(address, access_type), MODE_USER);
                     } else {

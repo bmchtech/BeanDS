@@ -4,6 +4,7 @@ import core.hw;
 
 import util;
 
+__gshared MMIO9 mmio9;
 final class MMIO9 {
 
     // IO Registers
@@ -30,7 +31,16 @@ final class MMIO9 {
 
     enum KEYINPUT      = 0x4000130; //  2    R     Key Status
 
+    enum IPCSYNC       = 0x4000180; //  2    R/W   IPC Synchronize Register
+    enum IPCFIFOCNT    = 0x4000184; //  2    R/W   IPC Fifo Control Register
+    enum IPCFIFOSEND   = 0x4000188; //  4      W   IPC Send Fifo 
+    enum IPCFIFORECV   = 0x4100000; //  4    R     IPC Receive Fifo 
+
     enum VRAMCNT       = 0x4000240; //  1x9    W   VRAM Bank Control 
+
+    this() {
+        mmio9 = this;
+    }
 
     Byte read_byte(Word address) {
         switch (address) {
@@ -92,6 +102,19 @@ final class MMIO9 {
             case DMA3CNT_H   + 0: return dma9.read_DMAXCNT_H      (0, 3);
             case DMA3CNT_H   + 1: return dma9.read_DMAXCNT_H      (1, 3);
 
+            case IPCSYNC     + 0: return ipc.read_IPCSYNC         (0, IPCSource.ARM9);
+            case IPCSYNC     + 1: return ipc.read_IPCSYNC         (1, IPCSource.ARM9);
+            case IPCSYNC     + 2: return ipc.read_IPCSYNC         (2, IPCSource.ARM9);
+            case IPCSYNC     + 3: return ipc.read_IPCSYNC         (3, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 0: return ipc.read_IPCFIFOCNT      (0, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 1: return ipc.read_IPCFIFOCNT      (1, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 2: return ipc.read_IPCFIFOCNT      (2, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 3: return ipc.read_IPCFIFOCNT      (3, IPCSource.ARM9);
+            // case IPCFIFORECV + 0: return ipc.read_IPCFIFORECV     (0, IPCSource.ARM9);
+            // case IPCFIFORECV + 1: return ipc.read_IPCFIFORECV     (1, IPCSource.ARM9);
+            // case IPCFIFORECV + 2: return ipc.read_IPCFIFORECV     (2, IPCSource.ARM9);
+            // case IPCFIFORECV + 3: return ipc.read_IPCFIFORECV     (3, IPCSource.ARM9);
+
             case KEYINPUT    + 0: return input.read_KEYINPUT      (0);
             case KEYINPUT    + 1: return input.read_KEYINPUT      (1);
             case 0x4000014: error_unimplemented("sussy");
@@ -104,74 +127,87 @@ final class MMIO9 {
 
     void write_byte(Word address, Byte data) {
         switch (address) {
-            case DISPCNT     + 0: gpu_engine_a.write_DISPCNT(0, data);    break;
-            case DISPCNT     + 1: gpu_engine_a.write_DISPCNT(1, data);    break;
-            case DISPCNT     + 2: gpu_engine_a.write_DISPCNT(2, data);    break;
-            case DISPCNT     + 3: gpu_engine_a.write_DISPCNT(3, data);    break;
-            case DISPSTAT    + 0: gpu.write_DISPSTAT        (0, data);    break;
-            case DISPSTAT    + 1: gpu.write_DISPSTAT        (1, data);    break;
-            case DISPSTAT    + 2: gpu.write_DISPSTAT        (2, data);    break;
-            case DISPSTAT    + 3: gpu.write_DISPSTAT        (3, data);    break;
+            case DISPCNT     + 0: gpu_engine_a.write_DISPCNT (0, data);    break;
+            case DISPCNT     + 1: gpu_engine_a.write_DISPCNT (1, data);    break;
+            case DISPCNT     + 2: gpu_engine_a.write_DISPCNT (2, data);    break;
+            case DISPCNT     + 3: gpu_engine_a.write_DISPCNT (3, data);    break;
+            case DISPSTAT    + 0: gpu.write_DISPSTAT         (0, data);    break;
+            case DISPSTAT    + 1: gpu.write_DISPSTAT         (1, data);    break;
+            case DISPSTAT    + 2: gpu.write_DISPSTAT         (2, data);    break;
+            case DISPSTAT    + 3: gpu.write_DISPSTAT         (3, data);    break;
 
-            case DMA0SAD     + 0: dma9.write_DMAXSAD        (0, data, 0); break;
-            case DMA0SAD     + 1: dma9.write_DMAXSAD        (1, data, 0); break;
-            case DMA0SAD     + 2: dma9.write_DMAXSAD        (2, data, 0); break;
-            case DMA0SAD     + 3: dma9.write_DMAXSAD        (3, data, 0); break;
-            case DMA0DAD     + 0: dma9.write_DMAXDAD        (0, data, 0); break;
-            case DMA0DAD     + 1: dma9.write_DMAXDAD        (1, data, 0); break;
-            case DMA0DAD     + 2: dma9.write_DMAXDAD        (2, data, 0); break;
-            case DMA0DAD     + 3: dma9.write_DMAXDAD        (3, data, 0); break;
-            case DMA0CNT_L   + 0: dma9.write_DMAXCNT_L      (0, data, 0); break;
-            case DMA0CNT_L   + 1: dma9.write_DMAXCNT_L      (1, data, 0); break;
-            case DMA0CNT_H   + 0: dma9.write_DMAXCNT_H      (0, data, 0); break;
-            case DMA0CNT_H   + 1: dma9.write_DMAXCNT_H      (1, data, 0); break;
-            case DMA1SAD     + 0: dma9.write_DMAXSAD        (0, data, 1); break;
-            case DMA1SAD     + 1: dma9.write_DMAXSAD        (1, data, 1); break;
-            case DMA1SAD     + 2: dma9.write_DMAXSAD        (2, data, 1); break;
-            case DMA1SAD     + 3: dma9.write_DMAXSAD        (3, data, 1); break;
-            case DMA1DAD     + 0: dma9.write_DMAXDAD        (0, data, 1); break;
-            case DMA1DAD     + 1: dma9.write_DMAXDAD        (1, data, 1); break;
-            case DMA1DAD     + 2: dma9.write_DMAXDAD        (2, data, 1); break;
-            case DMA1DAD     + 3: dma9.write_DMAXDAD        (3, data, 1); break;
-            case DMA1CNT_L   + 0: dma9.write_DMAXCNT_L      (0, data, 1); break;
-            case DMA1CNT_L   + 1: dma9.write_DMAXCNT_L      (1, data, 1); break;
-            case DMA1CNT_H   + 0: dma9.write_DMAXCNT_H      (0, data, 1); break;
-            case DMA1CNT_H   + 1: dma9.write_DMAXCNT_H      (1, data, 1); break;
-            case DMA2SAD     + 0: dma9.write_DMAXSAD        (0, data, 2); break;
-            case DMA2SAD     + 1: dma9.write_DMAXSAD        (1, data, 2); break;
-            case DMA2SAD     + 2: dma9.write_DMAXSAD        (2, data, 2); break;
-            case DMA2SAD     + 3: dma9.write_DMAXSAD        (3, data, 2); break;
-            case DMA2DAD     + 0: dma9.write_DMAXDAD        (0, data, 2); break;
-            case DMA2DAD     + 1: dma9.write_DMAXDAD        (1, data, 2); break;
-            case DMA2DAD     + 2: dma9.write_DMAXDAD        (2, data, 2); break;
-            case DMA2DAD     + 3: dma9.write_DMAXDAD        (3, data, 2); break;
-            case DMA2CNT_L   + 0: dma9.write_DMAXCNT_L      (0, data, 2); break;
-            case DMA2CNT_L   + 1: dma9.write_DMAXCNT_L      (1, data, 2); break;
-            case DMA2CNT_H   + 0: dma9.write_DMAXCNT_H      (0, data, 2); break;
-            case DMA2CNT_H   + 1: dma9.write_DMAXCNT_H      (1, data, 2); break;
-            case DMA3SAD     + 0: dma9.write_DMAXSAD        (0, data, 3); break;
-            case DMA3SAD     + 1: dma9.write_DMAXSAD        (1, data, 3); break;
-            case DMA3SAD     + 2: dma9.write_DMAXSAD        (2, data, 3); break;
-            case DMA3SAD     + 3: dma9.write_DMAXSAD        (3, data, 3); break;
-            case DMA3DAD     + 0: dma9.write_DMAXDAD        (0, data, 3); break;
-            case DMA3DAD     + 1: dma9.write_DMAXDAD        (1, data, 3); break;
-            case DMA3DAD     + 2: dma9.write_DMAXDAD        (2, data, 3); break;
-            case DMA3DAD     + 3: dma9.write_DMAXDAD        (3, data, 3); break;
-            case DMA3CNT_L   + 0: dma9.write_DMAXCNT_L      (0, data, 3); break;
-            case DMA3CNT_L   + 1: dma9.write_DMAXCNT_L      (1, data, 3); break;
-            case DMA3CNT_H   + 0: dma9.write_DMAXCNT_H      (0, data, 3); break;
-            case DMA3CNT_H   + 1: dma9.write_DMAXCNT_H      (1, data, 3); break;
+            case DMA0SAD     + 0: dma9.write_DMAXSAD         (0, data, 0); break;
+            case DMA0SAD     + 1: dma9.write_DMAXSAD         (1, data, 0); break;
+            case DMA0SAD     + 2: dma9.write_DMAXSAD         (2, data, 0); break;
+            case DMA0SAD     + 3: dma9.write_DMAXSAD         (3, data, 0); break;
+            case DMA0DAD     + 0: dma9.write_DMAXDAD         (0, data, 0); break;
+            case DMA0DAD     + 1: dma9.write_DMAXDAD         (1, data, 0); break;
+            case DMA0DAD     + 2: dma9.write_DMAXDAD         (2, data, 0); break;
+            case DMA0DAD     + 3: dma9.write_DMAXDAD         (3, data, 0); break;
+            case DMA0CNT_L   + 0: dma9.write_DMAXCNT_L       (0, data, 0); break;
+            case DMA0CNT_L   + 1: dma9.write_DMAXCNT_L       (1, data, 0); break;
+            case DMA0CNT_H   + 0: dma9.write_DMAXCNT_H       (0, data, 0); break;
+            case DMA0CNT_H   + 1: dma9.write_DMAXCNT_H       (1, data, 0); break;
+            case DMA1SAD     + 0: dma9.write_DMAXSAD         (0, data, 1); break;
+            case DMA1SAD     + 1: dma9.write_DMAXSAD         (1, data, 1); break;
+            case DMA1SAD     + 2: dma9.write_DMAXSAD         (2, data, 1); break;
+            case DMA1SAD     + 3: dma9.write_DMAXSAD         (3, data, 1); break;
+            case DMA1DAD     + 0: dma9.write_DMAXDAD         (0, data, 1); break;
+            case DMA1DAD     + 1: dma9.write_DMAXDAD         (1, data, 1); break;
+            case DMA1DAD     + 2: dma9.write_DMAXDAD         (2, data, 1); break;
+            case DMA1DAD     + 3: dma9.write_DMAXDAD         (3, data, 1); break;
+            case DMA1CNT_L   + 0: dma9.write_DMAXCNT_L       (0, data, 1); break;
+            case DMA1CNT_L   + 1: dma9.write_DMAXCNT_L       (1, data, 1); break;
+            case DMA1CNT_H   + 0: dma9.write_DMAXCNT_H       (0, data, 1); break;
+            case DMA1CNT_H   + 1: dma9.write_DMAXCNT_H       (1, data, 1); break;
+            case DMA2SAD     + 0: dma9.write_DMAXSAD         (0, data, 2); break;
+            case DMA2SAD     + 1: dma9.write_DMAXSAD         (1, data, 2); break;
+            case DMA2SAD     + 2: dma9.write_DMAXSAD         (2, data, 2); break;
+            case DMA2SAD     + 3: dma9.write_DMAXSAD         (3, data, 2); break;
+            case DMA2DAD     + 0: dma9.write_DMAXDAD         (0, data, 2); break;
+            case DMA2DAD     + 1: dma9.write_DMAXDAD         (1, data, 2); break;
+            case DMA2DAD     + 2: dma9.write_DMAXDAD         (2, data, 2); break;
+            case DMA2DAD     + 3: dma9.write_DMAXDAD         (3, data, 2); break;
+            case DMA2CNT_L   + 0: dma9.write_DMAXCNT_L       (0, data, 2); break;
+            case DMA2CNT_L   + 1: dma9.write_DMAXCNT_L       (1, data, 2); break;
+            case DMA2CNT_H   + 0: dma9.write_DMAXCNT_H       (0, data, 2); break;
+            case DMA2CNT_H   + 1: dma9.write_DMAXCNT_H       (1, data, 2); break;
+            case DMA3SAD     + 0: dma9.write_DMAXSAD         (0, data, 3); break;
+            case DMA3SAD     + 1: dma9.write_DMAXSAD         (1, data, 3); break;
+            case DMA3SAD     + 2: dma9.write_DMAXSAD         (2, data, 3); break;
+            case DMA3SAD     + 3: dma9.write_DMAXSAD         (3, data, 3); break;
+            case DMA3DAD     + 0: dma9.write_DMAXDAD         (0, data, 3); break;
+            case DMA3DAD     + 1: dma9.write_DMAXDAD         (1, data, 3); break;
+            case DMA3DAD     + 2: dma9.write_DMAXDAD         (2, data, 3); break;
+            case DMA3DAD     + 3: dma9.write_DMAXDAD         (3, data, 3); break;
+            case DMA3CNT_L   + 0: dma9.write_DMAXCNT_L       (0, data, 3); break;
+            case DMA3CNT_L   + 1: dma9.write_DMAXCNT_L       (1, data, 3); break;
+            case DMA3CNT_H   + 0: dma9.write_DMAXCNT_H       (0, data, 3); break;
+            case DMA3CNT_H   + 1: dma9.write_DMAXCNT_H       (1, data, 3); break;
 
-            case VRAMCNT     + 0: vram.write_VRAMCNT        (0, data); break;
-            case VRAMCNT     + 1: vram.write_VRAMCNT        (1, data); break;
-            case VRAMCNT     + 2: vram.write_VRAMCNT        (2, data); break;
-            case VRAMCNT     + 3: vram.write_VRAMCNT        (3, data); break;
-            case VRAMCNT     + 4: vram.write_VRAMCNT        (4, data); break;
-            case VRAMCNT     + 5: vram.write_VRAMCNT        (5, data); break;
-            case VRAMCNT     + 6: vram.write_VRAMCNT        (6, data); break;
+            case IPCSYNC     + 0: ipc.write_IPCSYNC          (0, data, IPCSource.ARM9); break;
+            case IPCSYNC     + 1: ipc.write_IPCSYNC          (1, data, IPCSource.ARM9); break;
+            case IPCSYNC     + 2: ipc.write_IPCSYNC          (2, data, IPCSource.ARM9); break;
+            case IPCSYNC     + 3: ipc.write_IPCSYNC          (3, data, IPCSource.ARM9); break;
+            // case IPCFIFOCNT  + 0: ipc.write_IPCFIFOCNT       (0, data, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 1: ipc.write_IPCFIFOCNT       (1, data, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 2: ipc.write_IPCFIFOCNT       (2, data, IPCSource.ARM9);
+            // case IPCFIFOCNT  + 3: ipc.write_IPCFIFOCNT       (3, data, IPCSource.ARM9);
+            // case IPCFIFOSEND + 0: ipc.write_IPCFIFOSEND      (0, data, IPCSource.ARM9);
+            // case IPCFIFOSEND + 1: ipc.write_IPCFIFOSEND      (1, data, IPCSource.ARM9);
+            // case IPCFIFOSEND + 2: ipc.write_IPCFIFOSEND      (2, data, IPCSource.ARM9);
+            // case IPCFIFOSEND + 3: ipc.write_IPCFIFOSEND      (3, data, IPCSource.ARM9);
+
+            case VRAMCNT     + 0: vram.write_VRAMCNT         (0, data); break;
+            case VRAMCNT     + 1: vram.write_VRAMCNT         (1, data); break;
+            case VRAMCNT     + 2: vram.write_VRAMCNT         (2, data); break;
+            case VRAMCNT     + 3: vram.write_VRAMCNT         (3, data); break;
+            case VRAMCNT     + 4: vram.write_VRAMCNT         (4, data); break;
+            case VRAMCNT     + 5: vram.write_VRAMCNT         (5, data); break;
+            case VRAMCNT     + 6: vram.write_VRAMCNT         (6, data); break;
             // TODO: wtf is this hole?
-            case VRAMCNT     + 8: vram.write_VRAMCNT        (8, data); break;
-            case VRAMCNT     + 9: vram.write_VRAMCNT        (9, data); break;
+            case VRAMCNT     + 8: vram.write_VRAMCNT         (8, data); break;
+            case VRAMCNT     + 9: vram.write_VRAMCNT         (9, data); break;
 
             default: log_unimplemented("MMIO 9 register %x written to with value %x; This register does not exist.", address, data); break;
         }
