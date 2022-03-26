@@ -89,9 +89,9 @@ void check_memory_unit(T)() {
     );
 }
 
-alias Word = MemoryUnit!uint;
-alias Half = MemoryUnit!ushort;
-alias Byte = MemoryUnit!ubyte;
+alias Word  = MemoryUnit!uint;
+alias Half  = MemoryUnit!ushort;
+alias Byte  = MemoryUnit!ubyte;
 
 alias u64 = ulong;
 alias u32 = uint;

@@ -16,6 +16,7 @@ final class NDS {
 
     this() {
         new IPC();
+        new SqrtController();
         
         mem7 = new Mem7();
         mem9 = new Mem9();
