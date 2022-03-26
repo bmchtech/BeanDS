@@ -53,6 +53,8 @@ public class SqrtController {
     }
 
     Word calculate_result() {
+        import std.math;
+        
         real operand = mode ? cast(u64) param_hi << 32 | cast(u64) param_lo : param_lo;
         real result = operand.sqrt().floor();
         while (result * result > operand) operand--;

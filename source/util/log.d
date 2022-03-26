@@ -9,6 +9,7 @@ enum LogSource {
     DMA9,
     ENGINE_A,
     ENGINE_B,
+    DIVISION,
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

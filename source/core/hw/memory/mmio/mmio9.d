@@ -38,6 +38,12 @@ final class MMIO9 {
 
     enum VRAMCNT       = 0x4000240; //  1x9    W   VRAM Bank Control
 
+    enum DIVCNT        = 0x4000280; //  2    R/W   Division Control
+    enum DIV_NUMER     = 0x4000290; //  8    R/W   64bit Division Numerator
+    enum DIV_DENOM     = 0x4000298; //  8    R/W   64bit Division Denominator
+    enum DIV_RESULT    = 0x40002A0; //  8    R     64bit Division Quotient
+    enum DIVREM_RESULT = 0x40002A8; //  8    R     64bit Division Remainder
+
     enum SQRTCNT       = 0x40002B0; //  2    R/W   Square Root Control
     enum SQRT_RESULT   = 0x40002B4; //  8    R     Square Root Result
     enum SQRT_PARAM    = 0x40002B8; //  8    R/W   Square Root Param
@@ -121,6 +127,41 @@ final class MMIO9 {
             // case IPCFIFORECV + 1: return ipc.read_IPCFIFORECV     (1, IPCSource.ARM9);
             // case IPCFIFORECV + 2: return ipc.read_IPCFIFORECV     (2, IPCSource.ARM9);
             // case IPCFIFORECV + 3: return ipc.read_IPCFIFORECV     (3, IPCSource.ARM9);
+
+            case DIVCNT        + 0: return div_controller.read_DIVCNT        (0);
+            case DIVCNT        + 1: return div_controller.read_DIVCNT        (1);
+            case DIV_NUMER     + 0: return div_controller.read_DIV_NUMER     (0);
+            case DIV_NUMER     + 1: return div_controller.read_DIV_NUMER     (1);
+            case DIV_NUMER     + 2: return div_controller.read_DIV_NUMER     (2);
+            case DIV_NUMER     + 3: return div_controller.read_DIV_NUMER     (3);
+            case DIV_NUMER     + 4: return div_controller.read_DIV_NUMER     (4);
+            case DIV_NUMER     + 5: return div_controller.read_DIV_NUMER     (5);
+            case DIV_NUMER     + 6: return div_controller.read_DIV_NUMER     (6);
+            case DIV_NUMER     + 7: return div_controller.read_DIV_NUMER     (7);
+            case DIV_DENOM     + 0: return div_controller.read_DIV_DENOM     (0);
+            case DIV_DENOM     + 1: return div_controller.read_DIV_DENOM     (1);
+            case DIV_DENOM     + 2: return div_controller.read_DIV_DENOM     (2);
+            case DIV_DENOM     + 3: return div_controller.read_DIV_DENOM     (3);
+            case DIV_DENOM     + 4: return div_controller.read_DIV_DENOM     (4);
+            case DIV_DENOM     + 5: return div_controller.read_DIV_DENOM     (5);
+            case DIV_DENOM     + 6: return div_controller.read_DIV_DENOM     (6);
+            case DIV_DENOM     + 7: return div_controller.read_DIV_DENOM     (7);
+            case DIV_RESULT    + 0: return div_controller.read_DIV_RESULT    (0);
+            case DIV_RESULT    + 1: return div_controller.read_DIV_RESULT    (1);
+            case DIV_RESULT    + 2: return div_controller.read_DIV_RESULT    (2);
+            case DIV_RESULT    + 3: return div_controller.read_DIV_RESULT    (3);
+            case DIV_RESULT    + 4: return div_controller.read_DIV_RESULT    (4);
+            case DIV_RESULT    + 5: return div_controller.read_DIV_RESULT    (5);
+            case DIV_RESULT    + 6: return div_controller.read_DIV_RESULT    (6);
+            case DIV_RESULT    + 7: return div_controller.read_DIV_RESULT    (7);
+            case DIVREM_RESULT + 0: return div_controller.read_DIVREM_RESULT (0);
+            case DIVREM_RESULT + 1: return div_controller.read_DIVREM_RESULT (1);
+            case DIVREM_RESULT + 2: return div_controller.read_DIVREM_RESULT (2);
+            case DIVREM_RESULT + 3: return div_controller.read_DIVREM_RESULT (3);
+            case DIVREM_RESULT + 4: return div_controller.read_DIVREM_RESULT (4);
+            case DIVREM_RESULT + 5: return div_controller.read_DIVREM_RESULT (5);
+            case DIVREM_RESULT + 6: return div_controller.read_DIVREM_RESULT (6);
+            case DIVREM_RESULT + 7: return div_controller.read_DIVREM_RESULT (7);
 
             case SQRTCNT     + 0: return sqrt_controller.read_SQRTCNT     (0);
             case SQRTCNT     + 1: return sqrt_controller.read_SQRTCNT     (1);
@@ -225,6 +266,25 @@ final class MMIO9 {
             case VRAMCNT     + 8: vram.write_VRAMCNT (8, data); break;
             case VRAMCNT     + 9: vram.write_VRAMCNT (9, data); break;
             
+            case DIVCNT        + 0: div_controller.write_DIVCNT    (0, data); break;
+            case DIVCNT        + 1: div_controller.write_DIVCNT    (1, data); break;
+            case DIV_NUMER     + 0: div_controller.write_DIV_NUMER (0, data); break;
+            case DIV_NUMER     + 1: div_controller.write_DIV_NUMER (1, data); break;
+            case DIV_NUMER     + 2: div_controller.write_DIV_NUMER (2, data); break;
+            case DIV_NUMER     + 3: div_controller.write_DIV_NUMER (3, data); break;
+            case DIV_NUMER     + 4: div_controller.write_DIV_NUMER (4, data); break;
+            case DIV_NUMER     + 5: div_controller.write_DIV_NUMER (5, data); break;
+            case DIV_NUMER     + 6: div_controller.write_DIV_NUMER (6, data); break;
+            case DIV_NUMER     + 7: div_controller.write_DIV_NUMER (7, data); break;
+            case DIV_DENOM     + 0: div_controller.write_DIV_DENOM (0, data); break;
+            case DIV_DENOM     + 1: div_controller.write_DIV_DENOM (1, data); break;
+            case DIV_DENOM     + 2: div_controller.write_DIV_DENOM (2, data); break;
+            case DIV_DENOM     + 3: div_controller.write_DIV_DENOM (3, data); break;
+            case DIV_DENOM     + 4: div_controller.write_DIV_DENOM (4, data); break;
+            case DIV_DENOM     + 5: div_controller.write_DIV_DENOM (5, data); break;
+            case DIV_DENOM     + 6: div_controller.write_DIV_DENOM (6, data); break;
+            case DIV_DENOM     + 7: div_controller.write_DIV_DENOM (7, data); break;
+
             case SQRTCNT    + 0: sqrt_controller.write_SQRTCNT    (0, data); break;
             case SQRTCNT    + 1: sqrt_controller.write_SQRTCNT    (1, data); break;
             case SQRTCNT    + 2: sqrt_controller.write_SQRTCNT    (2, data); break;

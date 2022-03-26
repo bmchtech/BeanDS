@@ -83,7 +83,7 @@ template execute_thumb(T : ArmCPU) {
     static void create_long_branch(bool is_first_instruction)(T cpu, Half opcode) {
         static if (is_first_instruction) {
             Word offset   = opcode[0..10];
-            auto extended = cpu.sext_32(offset, 11);
+            auto extended = sext_32(offset, 11);
             cpu.set_reg(lr, cpu.get_reg(pc) + (extended << 12));
         } else {
             auto next_pc = cpu.get_reg(pc) - 2;
@@ -271,7 +271,7 @@ template execute_thumb(T : ArmCPU) {
     }
 
     static void create_unconditional_branch(T cpu, Half opcode) {
-        auto offset = cpu.sext_32(Word(opcode[0..10] * 2), 12);
+        auto offset = sext_32(Word(opcode[0..10] * 2), 12);
         cpu.set_reg(pc, cpu.get_reg(pc) + offset);
     }
 

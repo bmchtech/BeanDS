@@ -14,7 +14,7 @@ template execute_arm(T : ArmCPU) {
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
         static if (branch_with_link) cpu.set_reg(lr, cpu.get_reg(pc) - 4);
-        s32 offset = cpu.sext_32(opcode[0..23] * 4, 24);
+        s32 offset = sext_32(opcode[0..23] * 4, 24);
         cpu.set_reg(pc, cpu.get_reg(pc) + offset);
     }
 
@@ -73,8 +73,8 @@ template execute_arm(T : ArmCPU) {
 
         static if (multiply_long) {
             static if (signed) {
-                s64 operand1 = cpu.sext_64(cpu.get_reg(rm), 32);
-                s64 operand2 = cpu.sext_64(cpu.get_reg(rs), 32);
+                s64 operand1 = sext_64(cpu.get_reg(rm), 32);
+                s64 operand2 = sext_64(cpu.get_reg(rs), 32);
             } else {
                 u64 operand1 = cpu.get_reg(rm);
                 u64 operand2 = cpu.get_reg(rs);
@@ -131,10 +131,10 @@ template execute_arm(T : ArmCPU) {
         Reg rn = opcode[12..15];
         Reg rd = opcode[16..19];
 
-        static if (x) s32 operand1 = cpu.sext_32(cpu.get_reg(rm)[16..31], 16);
-        else          s32 operand1 = cpu.sext_32(cpu.get_reg(rm)[0 ..15], 16);
-        static if (y) s32 operand2 = cpu.sext_32(cpu.get_reg(rs)[16..31], 16);
-        else          s32 operand2 = cpu.sext_32(cpu.get_reg(rs)[0 ..15], 16);
+        static if (x) s32 operand1 = sext_32(cpu.get_reg(rm)[16..31], 16);
+        else          s32 operand1 = sext_32(cpu.get_reg(rm)[0 ..15], 16);
+        static if (y) s32 operand2 = sext_32(cpu.get_reg(rs)[16..31], 16);
+        else          s32 operand2 = sext_32(cpu.get_reg(rs)[0 ..15], 16);
 
         s64 result = operand1 * operand2;
         result += cpu.get_reg(rn);

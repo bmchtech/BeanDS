@@ -155,7 +155,7 @@ void asr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
         result = operand;
         carry  = cpu.get_flag(Flag.C);
     } else if (shift < 32) {
-        result = cpu.sext_32(operand >> shift, 32 - shift);
+        result = sext_32(operand >> shift, 32 - shift);
         carry  = operand[shift - 1];
     } else { // shift >= 32
         result = operand[31] ? ~0 : 0;
@@ -248,7 +248,7 @@ void ldrb(T : ArmCPU)(T cpu, Reg rd, Word address) {
 }
 
 void ldrsb(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    cpu.set_reg(rd, cast(Word) cpu.sext_32(cpu.read_byte(address, AccessType.NONSEQUENTIAL), 8));
+    cpu.set_reg(rd, cast(Word) sext_32(cpu.read_byte(address, AccessType.NONSEQUENTIAL), 8));
     cpu.run_idle_cycle();
 }
 
@@ -267,7 +267,7 @@ void ldrsh(T : ArmCPU)(T cpu, Reg rd, Word address) {
             ldrsb(cpu, rd, address);
         }
     } else {
-        cpu.set_reg(rd, cast(Word) cpu.sext_32(cpu.read_half(address, AccessType.NONSEQUENTIAL), 16));
+        cpu.set_reg(rd, cast(Word) sext_32(cpu.read_half(address, AccessType.NONSEQUENTIAL), 16));
         cpu.run_idle_cycle();
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
     }
@@ -299,20 +299,6 @@ void strb(T : ArmCPU)(T cpu, Reg rd, Word address) {
 
 void swi(T : ArmCPU)(T cpu) {
     cpu.raise_exception!(CpuException.SoftwareInterrupt);
-}
-
-s32 sext_32(T)(ArmCPU cpu, T value, u32 size) {
-    auto negative = value[size - 1];
-    s32 result = value;
-
-    if (negative) result |= (((1 << (32 - size)) - 1) << size);
-    return result;
-}
-
-s64 sext_64(ArmCPU cpu, u64 value, u64 size) {
-    auto negative = (value >> (size - 1)) & 1;
-    if (negative) value |= (((1UL << (64UL - size)) - 1UL) << size);
-    return value;
 }
 
 Word read_word_and_rotate(ArmCPU cpu, Word address, AccessType access_type) {

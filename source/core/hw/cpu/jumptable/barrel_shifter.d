@@ -55,7 +55,7 @@ BarrelShifter barrel_shift(int shift_type, bool is_immediate, T : ArmCPU)(T cpu,
             result = operand;
             carry  = cpu.get_flag(Flag.C);
         } else if (shift < 32) {
-            result = cpu.sext_32(operand >> shift, 32 - shift);
+            result = sext_32(operand >> shift, 32 - shift);
             carry  = operand[shift - 1];
         } else {
             result = operand[31] ? 0xFFFFFFFF : 0x00000000;
