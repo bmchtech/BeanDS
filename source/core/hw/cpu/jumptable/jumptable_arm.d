@@ -435,11 +435,14 @@ template execute_arm(T : ArmCPU) {
                     }
                 } else {
                     static if (load) {
-                        if (i == pc) cpu.set_reg(i, cpu.read_word(address, access_type));
-                        else         cpu.set_reg(i, cpu.read_word(address, access_type));
+                        if (i == pc) {
+                            Word value = cpu.read_word(address, access_type);
+                            static if (v5TE!T) cpu.set_flag(Flag.T, value[0]);
+                            cpu.set_reg(i, value);
+                        } else cpu.set_reg(i, cpu.read_word(address, access_type));
                     } else {
                         if (i == pc) cpu.write_word(address, cpu.get_reg(pc) + 4, access_type);
-                        else         cpu.write_word(address, cpu.get_reg(i),      access_type);
+                        else         cpu.write_word(address, cpu.get_reg(i), access_type);
                     }
                 }
 

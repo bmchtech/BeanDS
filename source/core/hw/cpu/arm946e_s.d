@@ -105,6 +105,8 @@ final class ARM946E_S : ArmCPU {
         }
         cpu_trace.capture();
 
+        if (regs[pc] == 0x2007878) num_log += 200;
+
         if (num_log > 0) {
             log_state();
             num_log--;

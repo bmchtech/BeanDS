@@ -232,7 +232,10 @@ void set_flags_NZ(T : ArmCPU)(T cpu, Word result) {
 }
 
 void ldr(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    cpu.set_reg(rd, cpu.read_word_and_rotate(address, AccessType.NONSEQUENTIAL));
+    Word value = cpu.read_word_and_rotate(address, AccessType.NONSEQUENTIAL);
+    if (v5TE!T && rd == pc) cpu.set_flag(Flag.T, value[0]);
+
+    cpu.set_reg(rd, value);
     cpu.run_idle_cycle();
 }
 

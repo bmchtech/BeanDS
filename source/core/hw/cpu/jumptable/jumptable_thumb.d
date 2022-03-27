@@ -316,7 +316,7 @@ template execute_thumb(T : ArmCPU) {
 
         Word current_address = cpu.get_reg(sp);
 
-        if (register_list == 0) {
+        if (register_list == 0 && !lr_included) {
             if (v4T!T) cpu.set_reg(pc, cpu.read_word(current_address, access_type));
             cpu.set_reg(sp, current_address + 0x40);
             return;
@@ -335,7 +335,9 @@ template execute_thumb(T : ArmCPU) {
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
 
         static if (lr_included) {
-            cpu.set_reg(pc, cpu.read_word(current_address & ~3, access_type));
+            Word value = cpu.read_word(current_address & ~3, access_type);
+            static if (v5TE!T) { cpu.set_flag(Flag.T, value[0]); import std.stdio; writefln("%x", value); }
+            cpu.set_reg(pc, value);
 
             current_address += 4;
         }
