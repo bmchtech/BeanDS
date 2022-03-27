@@ -82,8 +82,11 @@ template execute_thumb(T : ArmCPU) {
 
     static void create_branch_exchange_with_link(T cpu, Half opcode) {
         Word offset = opcode[0..10] * 2;
-        cpu.set_reg(pc, cpu.get_reg(lr) + offset);
-        cpu.set_reg(lr, (cpu.get_reg(pc) - 2) | 1);
+        auto next_pc = cpu.get_reg(pc) - 2;
+
+        cpu.set_flag(Flag.T, false);
+        cpu.set_reg(pc, (cpu.get_reg(lr) + offset) & ~3);
+        cpu.set_reg(lr, next_pc | 1);
     }
 
     static void create_branch_with_link(bool is_first_instruction)(T cpu, Half opcode) {
@@ -100,11 +103,21 @@ template execute_thumb(T : ArmCPU) {
     }
 
     static void create_branch_exchange(T cpu, Half opcode) {
-        Reg rm = opcode[3..6];
+        if (opcode[7]) {
+            Reg rm = opcode[3..5];
+            Word address = cpu.get_reg(rm);
+            auto next_pc = cpu.get_reg(pc) - 2;
 
-        Word address = cpu.get_reg(rm);
-        cpu.set_flag(Flag.T, cast(bool) (address & 1));
-        cpu.set_reg(pc, address);
+            cpu.set_flag(Flag.T, address[0]);
+            cpu.set_reg(lr, next_pc | 1);
+            cpu.set_reg(pc, address);
+        } else {
+            Reg rm = opcode[3..6];
+
+            Word address = cpu.get_reg(rm);
+            cpu.set_flag(Flag.T, cast(bool) (address & 1));
+            cpu.set_reg(pc, address);
+        }
     }
 
     static void create_pc_relative_load(Reg reg)(T cpu, Half opcode) {

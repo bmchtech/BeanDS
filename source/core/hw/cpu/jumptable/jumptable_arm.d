@@ -13,9 +13,28 @@ template execute_arm(T : ArmCPU) {
     static void create_nop(T cpu, Word opcode) {}
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
-        static if (branch_with_link) cpu.set_reg(lr, cpu.get_reg(pc) - 4);
-        s32 offset = sext_32(opcode[0..23] * 4, 24);
-        cpu.set_reg(pc, cpu.get_reg(pc) + offset);
+        if (opcode[28..31] == 0xF) {
+            s32 offset = sext_32(opcode[0..23], 24) * 4 + branch_with_link * 2;
+            Word address = cpu.get_reg(pc) + offset;
+
+            cpu.set_flag(Flag.T, true);
+            cpu.set_reg(lr, cpu.get_reg(pc) - 4);
+            cpu.set_reg(pc, address);
+        } else {
+            static if (branch_with_link) cpu.set_reg(lr, cpu.get_reg(pc) - 4);
+            s32 offset = sext_32(opcode[0..23], 24) * 4;
+            cpu.set_reg(pc, cpu.get_reg(pc) + offset);
+        }
+    }
+
+    static void create_branch_exchange_with_link(T cpu, Word opcode) {
+        Reg rm = opcode[0..3];
+        Word address = cpu.get_reg(rm);
+        auto next_pc = cpu.get_reg(pc) - 4;
+
+        cpu.set_flag(Flag.T, address[0]);
+        cpu.set_reg(lr, next_pc);
+        cpu.set_reg(pc, address);
     }
 
     static void create_branch_exchange(T cpu, Word opcode) {
@@ -473,6 +492,10 @@ template execute_arm(T : ArmCPU) {
 
         static foreach (entry; 0 .. 4096) {{
             enum Word static_opcode = cast(Word) (entry.bits(0, 3) << 4) | (entry.bits(4, 11) << 20);
+
+            if ((entry & 0b1111_1111_1111) == 0b0001_0010_0011) {
+                jumptable[entry] = &create_branch_exchange_with_link;
+            } else
 
             if ((entry & 0b1111_0000_0000) == 0b1111_0000_0000) {
                 jumptable[entry] = &create_swi;

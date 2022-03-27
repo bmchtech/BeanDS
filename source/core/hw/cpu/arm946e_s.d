@@ -27,6 +27,8 @@ final class ARM946E_S : ArmCPU {
     //       this cpu??? idk lol
     CpuTrace cpu_trace;
 
+    ulong num_log;
+
     this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
@@ -98,13 +100,19 @@ final class ARM946E_S : ArmCPU {
     }
 
     void run_instruction() {
-        if (!(cast(bool) get_cpsr()[7])  && interrupt9.irq_pending()) {
+        if (!(cast(bool) get_cpsr()[7]) && interrupt9.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
         cpu_trace.capture();
 
+        if (num_log > 0) {
+            log_state();
+            num_log--;
+        }
+
         if (instruction_set == InstructionSet.ARM) {
-            Word opcode = fetch!Word();
+            Word opcode = fetch!Word();                
+            if (opcode == 0) error_arm9("The ARM9 is probably executing data");
             execute!Word(opcode);
         } else {
             Half opcode = fetch!Half();
@@ -115,6 +123,8 @@ final class ARM946E_S : ArmCPU {
     void log_state() {
         import std.stdio;
         import std.format;
+
+        writef("[%04d] ", num_log);
         
         if (get_flag(Flag.T)) write("THM ");
         else write("ARM ");
@@ -282,7 +292,7 @@ final class ARM946E_S : ArmCPU {
             case 0xC: return (!get_flag(Flag.Z) && (get_flag(Flag.N) == get_flag(Flag.V)));
             case 0xD: return ( get_flag(Flag.Z) || (get_flag(Flag.N) != get_flag(Flag.V)));
             case 0xE: return true;
-            case 0xF: error_arm7("ARM7 opcode has a conition of 0xF"); return false;
+            case 0xF: return true;
 
             default: assert(0);
         }
