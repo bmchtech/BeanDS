@@ -144,7 +144,7 @@ template execute_arm(T : ArmCPU) {
         }
     }
 
-    static void create_multiply_xy(bool multiply_long, bool accumulate, bool x, bool y)(T cpu, Word opcode) {
+    static void create_multiply_xy(int operation, bool x, bool y)(T cpu, Word opcode) {
         Reg rm = opcode[0 .. 4];
         Reg rs = opcode[8 ..11];
         Reg rn = opcode[12..15];
@@ -155,17 +155,8 @@ template execute_arm(T : ArmCPU) {
         static if (y) s32 operand2 = sext_32(cpu.get_reg(rs)[16..31], 16);
         else          s32 operand2 = sext_32(cpu.get_reg(rs)[0 ..15], 16);
 
-        log_arm9("input: %x %x", operand1, operand2);
-
-        static if (accumulate) {
-            static if (multiply_long) {
-                s64 add_operand_1 = operand1 * operand2;
-                s64 add_operand_2 = (cast(u64) cpu.get_reg(rn)) | ((cast(u64) cpu.get_reg(rd)) << 32);
-                s64 result = add_operand_1 + add_operand_2;
-
-                cpu.set_reg(rn, Word(result & 0xFFFF_FFFF));
-                cpu.set_reg(rd, Word(result >> 32));
-            } else {
+        final switch (operation) {
+            case 0: {
                 s32 add_operand_1 = operand1 * operand2;
                 s32 add_operand_2 = cpu.get_reg(rn);
                 s32 result = add_operand_1 + add_operand_2;
@@ -177,10 +168,44 @@ template execute_arm(T : ArmCPU) {
                 }
 
                 cpu.set_reg(rd, Word(result));
+                break;
             }
-        } else {
-            s32 result = operand1 * operand2;
-            cpu.set_reg(rd, Word(result));
+            
+            case 1: {
+                s64 operand1_w = sext_64(cpu.get_reg(rm), 32);
+                s64 operand2_w = sext_64(operand2, 32);
+        log_arm9("input: %x %x %x", operation, operand1_w, operand2_w);
+                s32 add_operand_1 = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
+                s32 add_operand_2 = cpu.get_reg(rn);
+                s32 result = add_operand_1 + add_operand_2;
+                log_arm9("%x %x %x %x %x", operand1_w * operand2_w, (operand1_w * operand2_w).bits(16, 47), add_operand_1, add_operand_2, result);
+
+                if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
+                    cpu.set_flag(Flag.Q, true);
+                } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
+                    cpu.set_flag(Flag.Q, true);
+                }
+
+                cpu.set_reg(rd, Word(result));
+                break;
+            }
+
+            case 2: {
+                s64 add_operand_1 = operand1 * operand2;
+                s64 add_operand_2 = (cast(u64) cpu.get_reg(rn)) | ((cast(u64) cpu.get_reg(rd)) << 32);
+                s64 result = add_operand_1 + add_operand_2;
+
+                cpu.set_reg(rn, Word(result & 0xFFFF_FFFF));
+                cpu.set_reg(rd, Word(result >> 32));
+                break;
+            }
+
+            case 3: {
+                s32 result = operand1 * operand2;
+                cpu.set_reg(rd, Word(result));
+                break;
+            }
+
         }
     }
 
@@ -531,21 +556,20 @@ template execute_arm(T : ArmCPU) {
             } else
 
             if (v5TE!T && (entry & 0b1111_1001_1001) == 0b0001_0000_1000) {
-                enum x             =  static_opcode[5];
-                enum y             =  static_opcode[6];
-                enum accumulate    = !static_opcode[21];
-                enum multiply_long =  static_opcode[22];
-                jumptable[entry] = &create_multiply_xy!(multiply_long, accumulate, x, y);
+                enum x         = static_opcode[5];
+                enum y         = static_opcode[6];
+                enum operation = static_opcode[21..22];
+                jumptable[entry] = &create_multiply_xy!(operation, x, y);
             } else
 
             if ((entry & 0b1100_0000_0000) == 0b0100_0000_0000) {
-                enum is_register_offset = static_opcode [25];
-                enum shift_type         = static_opcode [5..6];
-                enum pre                = static_opcode [24];
-                enum up                 = static_opcode [23];
-                enum byte_access        = static_opcode [22];
-                enum writeback          = static_opcode [21] || !pre; // post-indexing implies writeback
-                enum load               = static_opcode [20];
+                enum is_register_offset = static_opcode[25];
+                enum shift_type         = static_opcode[5..6];
+                enum pre                = static_opcode[24];
+                enum up                 = static_opcode[23];
+                enum byte_access        = static_opcode[22];
+                enum writeback          = static_opcode[21] || !pre; // post-indexing implies writeback
+                enum load               = static_opcode[20];
                 jumptable[entry] = &create_single_data_transfer!(is_register_offset, shift_type, pre, up, byte_access, writeback, load);
             } else
 
