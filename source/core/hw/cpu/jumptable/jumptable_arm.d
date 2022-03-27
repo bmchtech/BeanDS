@@ -456,27 +456,28 @@ template execute_arm(T : ArmCPU) {
 
         bool saturated = false;
 
-        s64 operand1 = cpu.get_reg(rm);
-        s64 operand2 = cpu.get_reg(rn);
+        s32 operand1 = cpu.get_reg(rm);
+        s32 operand2 = cpu.get_reg(rn);
 
-        static if (multiply) operand2 *= 2;
-        if (operand2 > 0x7FFF_FFFF) {
-            operand2  = 0x7FFF_FFFF;
-            saturated = true;
+        static if (multiply) {
+            operand2 *= 2;
+            if (operand2 > 0x7FFF_FFFF) {
+                operand2  = 0x7FFF_FFFF;
+                saturated = true;
+            }
         }
 
-        static if (add) {
-            u64 result = operand1 + operand2;
-            if (result > 0x7FFF_FFFF) {
-                result = 0x7FFF_FFFF;
-                saturated = true;
-            }
-        } else {
-            u64 result = operand1 - operand2;
-            if (result < -0x8000_0000) {
-                result = -0x8000_0000;
-                saturated = true;
-            }
+        static if (!add) {
+            operand2 = -operand2;
+        }
+
+        s32 result = operand1 + operand2;
+        if (operand1 >= 0 && operand2 >= 0 && result <= 0) {
+            result = 0x7FFF_FFFF;
+            saturated = true;
+        } else if (operand1 < 0 && operand2 < 0 && result > 0) {
+            result = 0x8000_0000;
+            saturated = true;
         }
 
         cpu.set_reg(rd, cast(Word) result);
