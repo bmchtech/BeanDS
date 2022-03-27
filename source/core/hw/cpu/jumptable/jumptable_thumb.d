@@ -80,7 +80,13 @@ template execute_thumb(T : ArmCPU) {
         }
     }
 
-    static void create_long_branch(bool is_first_instruction)(T cpu, Half opcode) {
+    static void create_branch_exchange_with_link(T cpu, Half opcode) {
+        Word offset = opcode[0..10] * 2;
+        cpu.set_reg(pc, cpu.get_reg(lr) + offset);
+        cpu.set_reg(lr, (cpu.get_reg(pc) - 2) | 1);
+    }
+
+    static void create_branch_with_link(bool is_first_instruction)(T cpu, Half opcode) {
         static if (is_first_instruction) {
             Word offset   = opcode[0..10];
             auto extended = sext_32(offset, 11);
@@ -406,7 +412,11 @@ template execute_thumb(T : ArmCPU) {
 
             if ((entry & 0b1111_0000) == 0b1111_0000) {
                 enum is_first_instruction = !static_opcode[3];
-                jumptable[entry] = &create_long_branch!is_first_instruction;
+                jumptable[entry] = &create_branch_with_link!is_first_instruction;
+            } else
+
+            if ((entry & 0b1111_1000) == 0b1110_1000) {
+                jumptable[entry] = &create_branch_exchange_with_link;
             } else
 
             if ((entry & 0b1111_1100) == 0b0100_0000) {

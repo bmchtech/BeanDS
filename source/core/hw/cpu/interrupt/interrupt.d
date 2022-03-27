@@ -41,7 +41,6 @@ final class InterruptManager {
     }
 
     void raise_interrupt(Interrupt code) {
-        log_interrupt("sussy interrupt raised: %d", code);
         status[code] = 1;
     }
 

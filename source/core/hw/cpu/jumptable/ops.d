@@ -54,7 +54,6 @@ void sbc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback
     if (set_flags) {
         cpu.set_flags_NZ(result);
 
-import std.stdio;
         cpu.set_flag(Flag.C, operand2_carry <= operand1);
         cpu.set_flag(Flag.V, ((operand2 >> 31) ^ (operand1 >> 31)) && ((operand2 >> 31) == (result >> 31)));
     }
