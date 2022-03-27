@@ -144,7 +144,7 @@ template execute_arm(T : ArmCPU) {
         }
     }
 
-    static void create_multiply_xy(bool multiply_long, bool x, bool y)(T cpu, Word opcode) {
+    static void create_multiply_xy(bool multiply_long, bool accumulate, bool x, bool y)(T cpu, Word opcode) {
         Reg rm = opcode[0 .. 4];
         Reg rs = opcode[8 ..11];
         Reg rn = opcode[12..15];
@@ -157,31 +157,30 @@ template execute_arm(T : ArmCPU) {
 
         log_arm9("input: %x %x", operand1, operand2);
 
+        static if (accumulate) {
+            static if (multiply_long) {
+                s64 add_operand_1 = operand1 * operand2;
+                s64 add_operand_2 = (cast(u64) cpu.get_reg(rn)) | ((cast(u64) cpu.get_reg(rd)) << 32);
+                s64 result = add_operand_1 + add_operand_2;
 
-        static if (multiply_long) {
-            s64 add_operand_1 = operand1 * operand2;
-            s64 add_operand_2 = (cast(u64) cpu.get_reg(rn)) | ((cast(u64) cpu.get_reg(rd)) << 32);
-            s64 result = add_operand_1 + add_operand_2;
-        } else {
-            s32 add_operand_1 = operand1 * operand2;
-            s32 add_operand_2 = cpu.get_reg(rn);
-            s32 result = add_operand_1 + add_operand_2;
-        }
+                cpu.set_reg(rn, Word(result & 0xFFFF_FFFF));
+                cpu.set_reg(rd, Word(result >> 32));
+            } else {
+                s32 add_operand_1 = operand1 * operand2;
+                s32 add_operand_2 = cpu.get_reg(rn);
+                s32 result = add_operand_1 + add_operand_2;
 
-        static if (!multiply_long) {
-            if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
-                cpu.set_flag(Flag.Q, true);
-            } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
-                cpu.set_flag(Flag.Q, true);
+                if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
+                    cpu.set_flag(Flag.Q, true);
+                } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
+                    cpu.set_flag(Flag.Q, true);
+                }
+
+                cpu.set_reg(rd, Word(result));
             }
-
+        } else {
+            s32 result = operand1 * operand2;
             cpu.set_reg(rd, Word(result));
-        }
-
-        static if (multiply_long) {
-            log_arm9("%x %x %x", result, Word(result & 0xFFFF_FFFF), Word(result >> 32));
-            cpu.set_reg(rn, Word(result & 0xFFFF_FFFF));
-            cpu.set_reg(rd, Word(result >> 32));
         }
     }
 
@@ -531,11 +530,12 @@ template execute_arm(T : ArmCPU) {
                 jumptable[entry] = &create_swap!byte_swap;
             } else
 
-            if (v5TE!T && (entry & 0b1111_1011_1001) == 0b0001_0000_1000) {
-                enum x             = static_opcode[5];
-                enum y             = static_opcode[6];
-                enum multiply_long = static_opcode[22];
-                jumptable[entry] = &create_multiply_xy!(multiply_long, x, y);
+            if (v5TE!T && (entry & 0b1111_1001_1001) == 0b0001_0000_1000) {
+                enum x             =  static_opcode[5];
+                enum y             =  static_opcode[6];
+                enum accumulate    = !static_opcode[21];
+                enum multiply_long =  static_opcode[22];
+                jumptable[entry] = &create_multiply_xy!(multiply_long, accumulate, x, y);
             } else
 
             if ((entry & 0b1100_0000_0000) == 0b0100_0000_0000) {
