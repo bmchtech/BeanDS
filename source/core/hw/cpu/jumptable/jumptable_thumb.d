@@ -103,7 +103,7 @@ template execute_thumb(T : ArmCPU) {
     }
 
     static void create_branch_exchange(T cpu, Half opcode) {
-        if (opcode[7]) {
+        if (v5TE!T && opcode[7]) {
             Reg rm = opcode[3..5];
             Word address = cpu.get_reg(rm);
             auto next_pc = cpu.get_reg(pc) - 2;
@@ -428,7 +428,7 @@ template execute_thumb(T : ArmCPU) {
                 jumptable[entry] = &create_branch_with_link!is_first_instruction;
             } else
 
-            if ((entry & 0b1111_1000) == 0b1110_1000) {
+            if (v5TE!T && (entry & 0b1111_1000) == 0b1110_1000) {
                 jumptable[entry] = &create_branch_exchange_with_link;
             } else
 

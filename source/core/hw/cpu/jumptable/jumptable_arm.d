@@ -13,7 +13,7 @@ template execute_arm(T : ArmCPU) {
     static void create_nop(T cpu, Word opcode) {}
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
-        if (opcode[28..31] == 0xF) {
+        if (opcode[28..31] == 0xF && v5TE!T) {
             s32 offset = sext_32(opcode[0..23], 24) * 4 + branch_with_link * 2;
             Word address = cpu.get_reg(pc) + offset;
 
@@ -493,7 +493,7 @@ template execute_arm(T : ArmCPU) {
         static foreach (entry; 0 .. 4096) {{
             enum Word static_opcode = cast(Word) (entry.bits(0, 3) << 4) | (entry.bits(4, 11) << 20);
 
-            if ((entry & 0b1111_1111_1111) == 0b0001_0010_0011) {
+            if (v5TE!T && (entry & 0b1111_1111_1111) == 0b0001_0010_0011) {
                 jumptable[entry] = &create_branch_exchange_with_link;
             } else
 
