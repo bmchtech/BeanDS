@@ -155,10 +155,13 @@ template execute_arm(T : ArmCPU) {
         static if (y) s32 operand2 = sext_32(cpu.get_reg(rs)[16..31], 16);
         else          s32 operand2 = sext_32(cpu.get_reg(rs)[0 ..15], 16);
 
-        s64 result = operand1 * operand2;
-        result += cpu.get_reg(rn);
+        s32 add_operand_1 = operand1 * operand2;
+        s32 add_operand_2 = cpu.get_reg(rn);
+        s32 result = add_operand_1 + add_operand_2;
 
-        if (result > 0x7FFF_FFFF || result < -0x8000_0000) {
+        if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
+            cpu.set_flag(Flag.Q, true);
+        } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
             cpu.set_flag(Flag.Q, true);
         }
 
