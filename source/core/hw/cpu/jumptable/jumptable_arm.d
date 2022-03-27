@@ -174,19 +174,25 @@ template execute_arm(T : ArmCPU) {
             case 1: {
                 s64 operand1_w = sext_64(cpu.get_reg(rm), 32);
                 s64 operand2_w = sext_64(operand2, 32);
-        log_arm9("input: %x %x %x", operation, operand1_w, operand2_w);
-                s32 add_operand_1 = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
-                s32 add_operand_2 = cpu.get_reg(rn);
-                s32 result = add_operand_1 + add_operand_2;
-                log_arm9("%x %x %x %x %x", operand1_w * operand2_w, (operand1_w * operand2_w).bits(16, 47), add_operand_1, add_operand_2, result);
 
-                if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
-                    cpu.set_flag(Flag.Q, true);
-                } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
-                    cpu.set_flag(Flag.Q, true);
+                static if (x) {
+                    s32 result = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
+                    cpu.set_reg(rd, Word(result));
+                } else {
+                    s32 add_operand_1 = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
+                    
+                    s32 add_operand_2 = cpu.get_reg(rn);
+                    s32 result = add_operand_1 + add_operand_2;
+
+                    if (add_operand_1 >= 0 && add_operand_2 >= 0 && result <= 0) {
+                        cpu.set_flag(Flag.Q, true);
+                    } else if (add_operand_1 < 0 && add_operand_2 < 0 && result > 0) {
+                        cpu.set_flag(Flag.Q, true);
+                    }
+
+                    cpu.set_reg(rd, Word(result));
                 }
-
-                cpu.set_reg(rd, Word(result));
+                
                 break;
             }
 
