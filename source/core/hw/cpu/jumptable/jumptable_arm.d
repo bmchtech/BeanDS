@@ -460,10 +460,14 @@ template execute_arm(T : ArmCPU) {
         s32 operand2 = cpu.get_reg(rn);
 
         static if (multiply) {
-            operand2 *= 2;
-            if (operand2 > 0x7FFF_FFFF) {
+            if (operand2 >= 0 && operand2 > 0x3FFF_FFFF) {
                 operand2  = 0x7FFF_FFFF;
                 saturated = true;
+            } else if (operand2 < 0 && operand2 < 0xC000_0000) {
+                operand2  = 0x8000_0000;
+                saturated = true;
+            } else {
+                operand2 *= 2;
             }
         }
 
