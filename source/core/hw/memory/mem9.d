@@ -26,7 +26,7 @@ final class Mem9 : Mem {
 
         auto region = get_region(address);
 
-        if (address[28..31]) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
+        if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
 
         switch (region) {
             case 0x0: .. case 0x1: return tcm.read!T(address % TCM_SIZE);
@@ -38,7 +38,7 @@ final class Mem9 : Mem {
             case 0x7:              error_unimplemented("Attempt from ARM9 to read from OAM: %x", address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM9 to read from GBA Slot ROM: %x", address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
-            case 0xF:              return bios.read!T(address);
+            case 0xF:              return bios.read!T(address[0..15]);
         
             default: error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address); break;
         }
@@ -52,7 +52,7 @@ final class Mem9 : Mem {
 
         auto region = get_region(address);
 
-        if (address[28..31]) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);
+        if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);
 
         switch (region) {
             case 0x0: .. case 0x1: tcm.write!T(address % TCM_SIZE, value); break;

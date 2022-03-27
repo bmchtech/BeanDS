@@ -94,6 +94,10 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void run_instruction() {
+        if (!(cast(bool) get_cpsr()[7]) && interrupt7.irq_pending()) {
+            raise_exception!(CpuException.IRQ);
+        }
+
         // log_state();
 
         if (instruction_set == InstructionSet.ARM) {
@@ -208,18 +212,10 @@ final class ARM7TDMI : ArmCPU {
             mask >>= 1;
         }
 
-        // bool had_interrupts_disabled = (get_cpsr() >> 7) & 1;
-
         set_cpsr((get_cpsr() & 0xFFFFFFE0) | new_mode.CPSR_ENCODING);
         
         instruction_set = get_flag(Flag.T) ? InstructionSet.THUMB : InstructionSet.ARM;
         current_mode = new_mode;
-
-        // TODO: old ugliness from when this cpu was used on the gba - when interrupts get
-        //       implemented, think of something better
-        // if (had_interrupts_disabled && (get_cpsr() >> 7) && memory.mmio.read(0x4000202)) {
-        //     raise_exception!(CpuException.IRQ);
-        // }
     }
 
     Word get_cpsr() {
@@ -285,6 +281,8 @@ final class ARM7TDMI : ArmCPU {
             (exception == CpuException.FIQ && cpsr[6])) {
             return;
         }
+        
+        log_interrupt("interrupt acknowledged by arm7");
 
         enum mode = get_mode_from_exception!(exception);
 
@@ -293,9 +291,7 @@ final class ARM7TDMI : ArmCPU {
             register_file[mode.OFFSET + 14] += 4; // in an IRQ, the linkage register must point to the next instruction + 4
         }
 
-        // register_file[mode.OFFSET + 17] = cpsr;
         register_file[mode.OFFSET + 17] = cpsr;
-        // writefln("setting SPSR to %x", register_file[mode.OFFSET + 17]);
         set_mode!(mode);
         cpsr = get_cpsr();
 

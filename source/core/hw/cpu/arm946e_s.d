@@ -98,6 +98,9 @@ final class ARM946E_S : ArmCPU {
     }
 
     void run_instruction() {
+        if (!(cast(bool) get_cpsr()[7])  && interrupt9.irq_pending()) {
+            raise_exception!(CpuException.IRQ);
+        }
         cpu_trace.capture();
 
         if (instruction_set == InstructionSet.ARM) {
@@ -224,18 +227,10 @@ final class ARM946E_S : ArmCPU {
             mask >>= 1;
         }
 
-        // bool had_interrupts_disabled = (get_cpsr() >> 7) & 1;
-
         set_cpsr((get_cpsr() & 0xFFFFFFE0) | new_mode.CPSR_ENCODING);
         
         instruction_set = get_flag(Flag.T) ? InstructionSet.THUMB : InstructionSet.ARM;
         current_mode = new_mode;
-
-        // TODO: old ugliness from when this cpu was used on the gba - when interrupts get
-        //       implemented, think of something better
-        // if (had_interrupts_disabled && (get_cpsr() >> 7) && memory.mmio.read(0x4000202)) {
-        //     raise_exception!(CpuException.IRQ);
-        // }
     }
 
     Word get_cpsr() {
@@ -301,6 +296,8 @@ final class ARM946E_S : ArmCPU {
             (exception == CpuException.FIQ && cpsr[6])) {
             return;
         }
+        
+        log_interrupt("interrupt acknowledged by arm9");
 
         enum mode = get_mode_from_exception!(exception);
 

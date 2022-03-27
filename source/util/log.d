@@ -1,5 +1,7 @@
 module util.log;
 
+import core.scheduler;
+
 enum LogSource {
     MEM7,
     MEM9,
@@ -12,6 +14,7 @@ enum LogSource {
     ENGINE_A,
     ENGINE_B,
     DIVISION,
+    INTERRUPT,
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();
@@ -35,7 +38,8 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.format.write : formattedWrite;
     import std.stdio;
 
-    writef("[%s] : ", pad_string_right!(to!string(log_source), logsource_padding));
+    ulong timestamp = scheduler.get_current_time_relative_to_cpu();
+    writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
     writefln(fmt, args);
 
     if (fatal) {

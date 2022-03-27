@@ -34,6 +34,17 @@ final class MMIO7 {
             // case IPCFIFORECV + 2: return ipc.read_IPCFIFORECV (2, IPCSource.ARM7);
             // case IPCFIFORECV + 3: return ipc.read_IPCFIFORECV (3, IPCSource.ARM7);
 
+            case IME + 0: return interrupt7.read_IME (0); 
+            case IME + 1: return interrupt7.read_IME (1);
+            case IE  + 0: return interrupt7.read_IE  (0);
+            case IE  + 1: return interrupt7.read_IE  (1);
+            case IE  + 2: return interrupt7.read_IE  (2);
+            case IE  + 3: return interrupt7.read_IE  (3);
+            case IF  + 0: return interrupt7.read_IF  (0);
+            case IF  + 1: return interrupt7.read_IF  (1);
+            case IF  + 2: return interrupt7.read_IF  (2);
+            case IF  + 3: return interrupt7.read_IF  (3);
+
             default: log_unimplemented("MMIO 7 register %x read from. This register does not exist.", address);
         }
 
@@ -54,6 +65,17 @@ final class MMIO7 {
             // case IPCFIFOSEND + 1: ipc.write_IPCFIFOSEND (1, data, IPCSource.ARM7); break;
             // case IPCFIFOSEND + 2: ipc.write_IPCFIFOSEND (2, data, IPCSource.ARM7); break;
             // case IPCFIFOSEND + 3: ipc.write_IPCFIFOSEND (3, data, IPCSource.ARM7); break;
+
+            case IME + 0: interrupt7.write_IME (0, data); break;
+            case IME + 1: interrupt7.write_IME (1, data); break;
+            case IE  + 0: interrupt7.write_IE  (0, data); break;
+            case IE  + 1: interrupt7.write_IE  (1, data); break;
+            case IE  + 2: interrupt7.write_IE  (2, data); break;
+            case IE  + 3: interrupt7.write_IE  (3, data); break;
+            case IF  + 0: interrupt7.write_IF  (0, data); break;
+            case IF  + 1: interrupt7.write_IF  (1, data); break;
+            case IF  + 2: interrupt7.write_IF  (2, data); break;
+            case IF  + 3: interrupt7.write_IF  (3, data); break;
 
             default: log_unimplemented("MMIO 7 register %x written to with value %x; This register does not exist.", address, data); break;
         }

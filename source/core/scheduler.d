@@ -10,7 +10,6 @@ struct Event {
 alias EventID = ulong;
 
 __gshared Scheduler scheduler;
-
 final class Scheduler {
     enum TOTAL_NUMBER_OF_EVENTS = 0x100;
 

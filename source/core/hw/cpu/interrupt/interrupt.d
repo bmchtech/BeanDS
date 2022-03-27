@@ -41,6 +41,7 @@ final class InterruptManager {
     }
 
     void raise_interrupt(Interrupt code) {
+        log_interrupt("sussy interrupt raised: %d", code);
         status[code] = 1;
     }
 
@@ -50,7 +51,7 @@ final class InterruptManager {
     }
 
     void write_IF(int target_byte, Byte data) {
-        status.set_byte(target_byte, data & status.get_byte(target_byte));
+        status.set_byte(target_byte, data & ~status.get_byte(target_byte));
     }
 
     void write_IE(int target_byte, Byte data) {
