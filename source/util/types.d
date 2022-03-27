@@ -79,6 +79,15 @@ struct MemoryUnit(T) {
     void opAssign(S)(S value) {
         this.value = cast(T) value;
     }
+
+    Byte get_byte(int i) {
+        return Byte(value.bits(i * 8, (i + 1) * 8 - 1));
+    }
+
+    void set_byte(S)(int i, S b) {
+        this.value &= ~(     0xFF  << 8 * i);
+        this.value |=  ((b & 0xFF) << 8 * i);
+    }
 }
 
 void check_memory_unit(T)() {

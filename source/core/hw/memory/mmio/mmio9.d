@@ -36,6 +36,10 @@ final class MMIO9 {
     enum IPCFIFOSEND   = 0x4000188; //  4      W   IPC Send Fifo 
     enum IPCFIFORECV   = 0x4100000; //  4    R     IPC Receive Fifo 
 
+    enum IME           = 0x4000208; //  2    R/W   Interrupt Master Enable
+    enum IE            = 0x4000210; //  4    R/W   Interrupt Enable
+    enum IF            = 0x4000214; //  4    R/W   Interrupt Request Flags
+     
     enum VRAMCNT       = 0x4000240; //  1x9    W   VRAM Bank Control
 
     enum DIVCNT        = 0x4000280; //  2    R/W   Division Control

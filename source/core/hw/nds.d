@@ -15,6 +15,7 @@ final class NDS {
     Mem9      mem9;
 
     this() {
+        InterruptManager.reset();
         new IPC();
         new SqrtController();
         new DivController();
@@ -41,10 +42,18 @@ final class NDS {
         cart = new Cart(rom);
     }
 
+    void load_bios7(Byte[] bios) {
+        mem7.load_bios(bios);
+    }
+
+    void load_bios9(Byte[] bios) {
+        mem9.load_bios(bios);
+    }
+
     void direct_boot() {
         if (cart.cart_header.arm7_rom_offset + cart.cart_header.arm7_size > cart.rom_size ||
             cart.cart_header.arm9_rom_offset + cart.cart_header.arm9_size > cart.rom_size) {
-            error_memory("Malformed ROM - could not direct boot, cart.rom_size is too small. Are you sure the ROM is not corrupted?");
+            error_nds("Malformed ROM - could not direct boot, cart.rom_size is too small. Are you sure the ROM is not corrupted?");
         } 
 
         mem7.memcpy(

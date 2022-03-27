@@ -36,44 +36,32 @@ public class DivController {
         bool hi    = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
-        if (hi) {
-            return Byte(numerator_hi[offset * 8 .. (offset + 1) * 8 - 1]);
-        } else {
-            return Byte(numerator_lo[offset * 8 .. (offset + 1) * 8 - 1]);
-        }
+        if (hi) return numerator_hi.get_byte(offset);
+        else    return numerator_lo.get_byte(offset);
     }
 
     void write_DIV_NUMER(int target_byte, Byte data) {
         bool hi = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
-        if (hi) {
-            numerator_hi[offset * 8 .. (offset + 1) * 8 - 1] = data;
-        } else {
-            numerator_lo[offset * 8 .. (offset + 1) * 8 - 1] = data;
-        }
+        if (hi) numerator_hi.set_byte(offset, data);
+        else    numerator_lo.set_byte(offset, data);
     }
 
     Byte read_DIV_DENOM(int target_byte) {
         bool hi = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
-        if (hi) {
-            return Byte(denominator_hi[offset * 8 .. (offset + 1) * 8 - 1]);
-        } else {
-            return Byte(denominator_lo[offset * 8 .. (offset + 1) * 8 - 1]);
-        }
+        if (hi) return denominator_hi.get_byte(offset);
+        else    return denominator_lo.get_byte(offset);
     }
 
     void write_DIV_DENOM(int target_byte, Byte data) {
         bool hi = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
-        if (hi) {
-            denominator_hi[offset * 8 .. (offset + 1) * 8 - 1] = data;
-        } else {
-            denominator_lo[offset * 8 .. (offset + 1) * 8 - 1] = data;
-        }
+        if (hi) denominator_hi.set_byte(offset, data);
+        else    denominator_lo.set_byte(offset, data);
     }
 
     Byte read_DIV_RESULT(int target_byte) {

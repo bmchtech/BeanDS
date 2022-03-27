@@ -7,6 +7,9 @@ final class Mem9 : Mem {
     enum MAIN_MEMORY_SIZE = 1 << 22;
     Byte[MAIN_MEMORY_SIZE] main_memory = new Byte[MAIN_MEMORY_SIZE];
 
+    enum BIOS_SIZE = 3072;
+    Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
+
     // very crappy implementation of tcm but i just want to get armwrestler booting
     enum TCM_SIZE = 1 << 15;
     Byte[TCM_SIZE] tcm = new Byte[TCM_SIZE];
@@ -35,6 +38,7 @@ final class Mem9 : Mem {
             case 0x7:              error_unimplemented("Attempt from ARM9 to read from OAM: %x", address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM9 to read from GBA Slot ROM: %x", address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
+            case 0xF:              return bios.read!T(address);
         
             default: error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address); break;
         }
@@ -60,9 +64,14 @@ final class Mem9 : Mem {
             case 0x7:              error_unimplemented("Attempt from ARM9 to write %x to OAM: %x", value, address); break;
             case 0x8: .. case 0x9: log_unimplemented("Attempt from ARM9 to write %x to GBA Slot ROM: %x", value, address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to write %x to GBA Slot RAM: %x", value, address); break;
+            case 0xF:              error_mem9("Attempt to write %x to BIOS: %x", value, address); break;
         
             default: error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address); break;
         }
+    }
+
+    void load_bios(Byte[] bios) {
+        this.bios[0..BIOS_SIZE] = bios[0..BIOS_SIZE];
     }
 
     override {

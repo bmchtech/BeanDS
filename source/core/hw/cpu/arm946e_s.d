@@ -332,13 +332,13 @@ final class ARM946E_S : ArmCPU {
 
     static uint get_address_from_exception(CpuException exception)() {
         final switch (exception) {
-            case CpuException.Reset:             return 0x0000_0000;
-            case CpuException.Undefined:         return 0x0000_0004;
-            case CpuException.SoftwareInterrupt: return 0x0000_0008;
-            case CpuException.PrefetchAbort:     return 0x0000_000C;
-            case CpuException.DataAbort:         return 0x0000_0010;
-            case CpuException.IRQ:               return 0x0000_0018;
-            case CpuException.FIQ:               return 0x0000_001C;
+            case CpuException.Reset:             return 0xFFFF_0000;
+            case CpuException.Undefined:         return 0xFFFF_0004;
+            case CpuException.SoftwareInterrupt: return 0xFFFF_0008;
+            case CpuException.PrefetchAbort:     return 0xFFFF_000C;
+            case CpuException.DataAbort:         return 0xFFFF_0010;
+            case CpuException.IRQ:               return 0xFFFF_0018;
+            case CpuException.FIQ:               return 0xFFFF_001C;
         }
     }
 

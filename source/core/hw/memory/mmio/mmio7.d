@@ -11,6 +11,10 @@ final class MMIO7 {
     enum IPCFIFOSEND   = 0x4000188; //  4      W   IPC Send Fifo 
     enum IPCFIFORECV   = 0x4100000; //  4    R     IPC Receive Fifo 
 
+    enum IME           = 0x4000208; //  2    R/W   Interrupt Master Enable
+    enum IE            = 0x4000210; //  4    R/W   Interrupt Enable
+    enum IF            = 0x4000214; //  4    R/W   Interrupt Request Flags
+
     this() {
         mmio7 = this;
     }

@@ -22,29 +22,19 @@ public class SqrtController {
     }
 
     Byte read_SQRT_PARAM(int target_byte) {
-        final switch (target_byte) {
-            case 0: return Byte(param_lo[0 .. 7]);
-            case 1: return Byte(param_lo[8 ..15]);
-            case 2: return Byte(param_lo[16..23]);
-            case 3: return Byte(param_lo[24..31]);
-            case 4: return Byte(param_hi[0 .. 7]);
-            case 5: return Byte(param_hi[8 ..15]);
-            case 6: return Byte(param_hi[16..23]);
-            case 7: return Byte(param_hi[24..31]);
-        }
+        bool hi = target_byte.bit(2);
+        int offset = target_byte.bits(0, 1);
+        
+        if (hi) return param_hi.get_byte(offset);
+        else    return param_lo.get_byte(offset);
     }
 
     void write_SQRT_PARAM(int target_byte, Byte data) {
-        final switch (target_byte) {
-            case 0: param_lo[0 .. 7] = data; break;
-            case 1: param_lo[8 ..15] = data; break;
-            case 2: param_lo[16..23] = data; break;
-            case 3: param_lo[24..31] = data; break;
-            case 4: param_hi[0 .. 7] = data; break;
-            case 5: param_hi[8 ..15] = data; break;
-            case 6: param_hi[16..23] = data; break;
-            case 7: param_hi[24..31] = data; break;
-        }
+        bool hi = target_byte.bit(2);
+        int offset = target_byte.bits(0, 1);
+        
+        if (hi) param_hi.set_byte(offset, data);
+        else    param_lo.set_byte(offset, data);
     }
 
     Byte read_SQRT_RESULT(int target_byte) {

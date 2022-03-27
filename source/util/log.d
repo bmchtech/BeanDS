@@ -1,12 +1,14 @@
 module util.log;
 
 enum LogSource {
-    MEMORY,
+    MEM7,
+    MEM9,
     UNIMPLEMENTED,
     ARM7,
     ARM9,
     DMA7,
     DMA9,
+    NDS,
     ENGINE_A,
     ENGINE_B,
     DIVISION,
