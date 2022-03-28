@@ -541,15 +541,24 @@ template execute_arm(T : ArmCPU) {
         cpu.set_flag(Flag.Q, saturated);
     }
 
-    static void create_coprocessor(T cpu, Word opcode) {
-        Word result = cp15.read(
-            opcode[21..23],
-            opcode[16..19],
-            opcode[0 .. 3]
-        );
-
+    static void create_coprocessor(bool read)(T cpu, Word opcode) {
         Reg rd = opcode[12..15];
-        cpu.set_reg(rd, result);
+
+        static if (read) {
+            Word result = cp15.read(
+                opcode[21..23],
+                opcode[16..19],
+                opcode[0 .. 3]
+            );
+            cpu.set_reg(rd, result);
+        } else {
+            cp15.write(
+                opcode[21..23],
+                opcode[16..19],
+                opcode[0 .. 3],
+                cpu.get_reg(rd)
+            );
+        }
     }
 
     static void create_swi(T cpu, Word opcode) {
@@ -667,7 +676,8 @@ template execute_arm(T : ArmCPU) {
             } else
 
             if ((entry & 0b1111_0000_0000) == 0b1110_0000_0000) {
-                jumptable[entry] = &create_coprocessor;
+                enum read = static_opcode[20];
+                jumptable[entry] = &create_coprocessor!read;
             } else
             
             jumptable[entry] = &create_nop;

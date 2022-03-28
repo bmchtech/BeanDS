@@ -1,6 +1,7 @@
 module core.hw.memory.mem9;
 
-import core.hw;
+import core;
+
 import util;
 
 final class Mem9 : Mem {
@@ -10,26 +11,30 @@ final class Mem9 : Mem {
     enum BIOS_SIZE = 3072;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    // very crappy implementation of tcm but i just want to get armwrestler booting
-    enum TCM_SIZE = 1 << 15;
-    Byte[TCM_SIZE] tcm = new Byte[TCM_SIZE];
-
     MMIO9 mmio9;
 
     this() {
         new MMIO9();
         new DMA9(this);
+
+        TCM.reset();
+    }
+
+    void skip_firmware() {
+        tcm.skip_firmware();
     }
 
     T read(T)(Word address) {
         check_memory_unit!T;
+
+        if (tcm.in_itcm(address)) return tcm.read_itcm!T(address & 0xFF_FFFF);
+        if (tcm.in_dtcm(address)) return tcm.read_dtcm!T(address & 0xFF_FFFF);
 
         auto region = get_region(address);
 
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
 
         switch (region) {
-            case 0x0: .. case 0x1: return tcm.read!T(address % TCM_SIZE);
             case 0x2:              return main_memory.read!T(address % MAIN_MEMORY_SIZE);
             case 0x3:              return shared_wram.read!T(address % SHARED_WRAM_SIZE);
             case 0x4:              return mmio9.read!T(address);
@@ -50,12 +55,14 @@ final class Mem9 : Mem {
     void write(T)(Word address, T value) {
         check_memory_unit!T;
 
+        if (tcm.in_itcm(address)) { tcm.write_itcm!T(address & 0xFF_FFFF, value); return; }
+        if (tcm.in_dtcm(address)) { tcm.write_dtcm!T(address & 0xFF_FFFF, value); return; }
+
         auto region = get_region(address);
 
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);
 
         switch (region) {
-            case 0x0: .. case 0x1: tcm.write!T(address % TCM_SIZE, value); break;
             case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
             case 0x3:              shared_wram.write!T(address % SHARED_WRAM_SIZE, value); break;
             case 0x4:              mmio9.write!T(address, value); break;

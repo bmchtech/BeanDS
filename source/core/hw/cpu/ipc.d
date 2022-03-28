@@ -11,10 +11,66 @@ enum IPCSource {
 
 __gshared IPC ipc;
 final class IPC {
-    Byte arm7_data = 0;
-    Byte arm9_data = 0;
-    bool arm7_irq_enable = false;
-    bool arm9_irq_enable = false;
+    struct Fifo {
+        bool empty   = true;
+        bool full    = false;
+        bool enabled = true;
+
+        int index = 0;
+        Word[16] data;
+    
+        Word pop() {
+            full = false;
+
+            if (enabled) {
+                index--;
+                if (index == 0) empty = true;
+            }
+
+            return data[index];
+        }
+
+        void push(Word value) {
+            empty = false;
+
+            if (enabled) {
+                data[index] = value;
+
+                index++;
+                if (index == 16) full = true;
+            }
+        }
+
+        void clear() {
+            index = 0;
+        }
+    }
+
+    struct State {
+        Fifo fifo;
+        Byte sync_data;
+        bool sync_irq_enable;
+        bool fifo_empty_irq_enable;
+        bool fifo_full_irq_enable;
+        bool fifo_error;
+    }
+
+    State* ipc7;
+    State* ipc9;
+
+    State* get_remote_state(IPCSource ipc_source) {
+        final switch (ipc_source) {
+            case IPCSource.ARM7: return ipc9;
+            case IPCSource.ARM9: return ipc7;
+        }
+    }
+
+    State* get_local_state(IPCSource ipc_source) {
+        final switch (ipc_source) {
+            case IPCSource.ARM7: return ipc7;
+            case IPCSource.ARM9: return ipc9;
+        }
+    }
     
     this() {
         ipc = this;
@@ -22,10 +78,10 @@ final class IPC {
 
     Byte read_IPCSYNC(int target_byte, IPCSource ipc_source) {
         final switch (target_byte) {
-            case 0: return get_input_data (ipc_source);
-            case 1: return get_output_data(ipc_source);
+            case 0: return get_local_state (ipc_source).sync_data;
+            case 1: return get_remote_state(ipc_source).sync_data;
             case 2: return Byte(0);
-            case 3: return Byte(0);
+            case 3: return get_local_state (ipc_source).sync_irq_enable;
         }
     }
 
@@ -33,13 +89,74 @@ final class IPC {
         final switch (target_byte) {
             case 0: return;
             case 1: 
-                set_input_data(ipc_source, data[0..3]);
-                set_irq_enable(ipc_source, data[6] & 1);
+                get_remote_state(ipc_source).sync_data       = data[0..3];
+                get_local_state (ipc_source).sync_irq_enable = data[6] & 1;
                 if (data[5]) request_interrupt_from_source(ipc_source);
-                break;
+                return;
             case 2: return;
             case 3: return;
         }
+    }
+
+    Byte read_IPCFIFOCNT(int target_byte, IPCSource ipc_source) {
+        return Byte(0);
+    }
+
+    void write_IPCFIFOCNT(int target_byte, Byte data, IPCSource ipc_source) {
+        final switch (target_byte) {
+            case 0:
+                get_remote_state(ipc_source).fifo_empty_irq_enable = data[2];
+                if (data[3]) get_remote_state(ipc_source).clear();
+                return;
+            case 1:
+                get_local_state(ipc_source).fifo_full_irq_enable =  data[2];
+                get_local_state(ipc_source).fifo_error          &= ~data[6];
+                get_local_state(ipc_source).fifo.enabled         =  data[7];
+                return;
+        }
+    }
+
+    Byte read_IPCFIFOSEND(int target_byte, IPCSource ipc_source) {
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                result[0] = get_remote_state(ipc_source).empty;
+                result[1] = get_remote_state(ipc_source).full;
+                result[2] = get_remote_state(ipc_source).fifo_empty_irq_enable;
+                break;
+
+            case 1:
+                result[0] = get_local_state(ipc_source).empty;
+                result[1] = get_local_state(ipc_source).full;
+                result[2] = get_local_state(ipc_source).fifo_full_irq_enable;
+                result[6] = get_local_state(ipc_source).fifo_error;
+                result[7] = get_local_state(ipc_source).enabled;
+                break;
+        }
+
+        return result;
+    }
+
+    void write_IPCFIFOSEND(T)(int target_byte, T data, IPCSource ipc_source) {
+        if (get_remote_state(ipc_source).full) {
+            get_local_state(ipc_source).error = true;
+        } else {
+            get_remote_state(ipc_source).push(data);
+        }
+    }
+
+    Byte read_IPCFIFORECV(int target_byte, IPCSource ipc_source) {
+        if (get_local_state(ipc_source).empty) {
+            get_local_state(ipc_source).error = true;
+            return get_local_state(ipc_source).pop();
+        } else {
+            return get_local_state(ipc_source).pop();
+        }
+    }
+
+    void write_IPCFIFORECV(int target_byte, Byte data, IPCSource ipc_source) {
+        
     }
 
     Byte get_input_data(IPCSource ipc_source) {

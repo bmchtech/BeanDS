@@ -1,6 +1,7 @@
 module core.hw.memory.mem7;
 
 import core.hw.memory;
+
 import util;
 
 final class Mem7 : Mem {

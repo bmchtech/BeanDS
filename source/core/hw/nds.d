@@ -70,6 +70,8 @@ final class NDS {
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
+    
+        mem9.skip_firmware();
     }
 
     void cycle() {
