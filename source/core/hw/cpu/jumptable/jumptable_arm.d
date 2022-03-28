@@ -541,6 +541,17 @@ template execute_arm(T : ArmCPU) {
         cpu.set_flag(Flag.Q, saturated);
     }
 
+    static void create_coprocessor(T cpu, Word opcode) {
+        Word result = cp15.read(
+            opcode[21..23],
+            opcode[16..19],
+            opcode[0 .. 3]
+        );
+
+        Reg rd = opcode[12..15];
+        cpu.set_reg(rd, result);
+    }
+
     static void create_swi(T cpu, Word opcode) {
         cpu.swi();
     }
@@ -653,6 +664,10 @@ template execute_arm(T : ArmCPU) {
                 enum operation      = static_opcode[21..24];
 
                 jumptable[entry] = &create_data_processing!(is_immediate, shift_type, register_shift, update_flags, operation);
+            } else
+
+            if ((entry & 0b1111_0000_0000) == 0b1110_0000_0000) {
+                jumptable[entry] = &create_coprocessor;
             } else
             
             jumptable[entry] = &create_nop;

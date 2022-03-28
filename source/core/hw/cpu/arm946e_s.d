@@ -48,6 +48,8 @@ final class ARM946E_S : ArmCPU {
         }    
 
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
+    
+        Cp15.reset();
     }
 
     @property
