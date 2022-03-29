@@ -12,7 +12,7 @@ final class Mem7 : Mem {
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
     this() {
-        new MMIO7();
+        MMIO7.reset();
     }
 
     T read(T)(Word address) {

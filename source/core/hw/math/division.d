@@ -2,7 +2,7 @@ module core.hw.math.division;
 
 import util;
 
-__gshared DivController div_controller;
+__gshared DivController math_div;
 public class DivController {
     int mode;
 
@@ -16,7 +16,7 @@ public class DivController {
     u64 divrem_result;
 
     this() {
-        div_controller = this;
+        math_div = this;
     }
 
     Byte read_DIVCNT(int target_byte) {

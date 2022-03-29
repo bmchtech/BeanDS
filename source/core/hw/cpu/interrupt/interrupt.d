@@ -41,16 +41,19 @@ final class InterruptManager {
     }
 
     void raise_interrupt(Interrupt code) {
+        log_interrupt("interrupt raised: %x", code);
         status[code] = 1;
     }
 
     bool irq_pending() {
         // TODO: is this old remnants from the GBA? check if this logic still holds.
+        if (master_enable && ((enable & status) != 0)) 
+        log_interrupt("%x %x %x", master_enable, enable, status);
         return master_enable && ((enable & status) != 0);
     }
 
     void write_IF(int target_byte, Byte data) {
-        status.set_byte(target_byte, data & ~status.get_byte(target_byte));
+        status.set_byte(target_byte, ~data & status.get_byte(target_byte));
     }
 
     void write_IE(int target_byte, Byte data) {

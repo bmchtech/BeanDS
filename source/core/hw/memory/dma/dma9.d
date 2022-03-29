@@ -41,7 +41,7 @@ final class DMA9 {
             dma_channels[current_channel].transferring_words ? "words" : "halfwords",
             dma_channels[current_channel].source_buf,
             dma_channels[current_channel].dest_buf,
-            read_DMAXCNT_H(0, current_channel) | (read_DMAXCNT_H(1, current_channel) << 8)
+            read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
         );
 
         auto source_increment = 0;
@@ -211,7 +211,7 @@ final class DMA9 {
         DMAStartTiming dma_start_timing;
     }
 
-    void write_DMAXSAD(int target_byte, Byte data, int x) {
+    void write_DMAxSAD(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0: dma_channels[x].source[0 .. 7] = data; break;
             case 1: dma_channels[x].source[8 ..15] = data; break;
@@ -220,7 +220,7 @@ final class DMA9 {
         }
     }
 
-    void write_DMAXDAD(int target_byte, Byte data, int x) {
+    void write_DMAxDAD(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0: dma_channels[x].dest[0 .. 7] = data; break;
             case 1: dma_channels[x].dest[8 ..15] = data; break;
@@ -229,14 +229,14 @@ final class DMA9 {
         }
     }
 
-    void write_DMAXCNT_L(int target_byte, Byte data, int x) {
+    void write_DMAxCNT_L(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0b0: dma_channels[x].num_units[0 .. 7] = data; break;
             case 0b1: dma_channels[x].num_units[8 ..15] = data; break;
         }
     }
 
-    void write_DMAXCNT_H(int target_byte, Byte data, int x) {
+    void write_DMAxCNT_H(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0:
                 dma_channels[x].num_units[16..20]   = data;
@@ -260,7 +260,7 @@ final class DMA9 {
         }
     }
 
-    Byte read_DMAXSAD(int target_byte, int x) {
+    Byte read_DMAxSAD(int target_byte, int x) {
         final switch (target_byte) {
             case 0: return cast(Byte) dma_channels[x].source[0.. 7];
             case 1: return cast(Byte) dma_channels[x].source[8.. 15];
@@ -269,7 +269,7 @@ final class DMA9 {
         }
     }
 
-    Byte read_DMAXDAD(int target_byte, int x) {
+    Byte read_DMAxDAD(int target_byte, int x) {
         final switch (target_byte) {
             case 0: return cast(Byte) dma_channels[x].dest[0 ..7];
             case 1: return cast(Byte) dma_channels[x].dest[8 ..15];
@@ -278,14 +278,14 @@ final class DMA9 {
         }
     }
 
-    Byte read_DMAXCNT_L(int target_byte, int x) {
+    Byte read_DMAxCNT_L(int target_byte, int x) {
         final switch (target_byte) {
             case 0: return cast(Byte) dma_channels[x].num_units[0..7];
             case 1: return cast(Byte) dma_channels[x].num_units[8..15];
         }
     }
 
-    Byte read_DMAXCNT_H(int target_byte, int x) {
+    Byte read_DMAxCNT_H(int target_byte, int x) {
         final switch (target_byte) {
             case 0:
                 return cast(Byte) ((dma_channels[x].dest_addr_control            << 5) |

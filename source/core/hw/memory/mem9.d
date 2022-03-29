@@ -11,12 +11,10 @@ final class Mem9 : Mem {
     enum BIOS_SIZE = 3072;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    MMIO9 mmio9;
-
     this() {
-        new MMIO9();
         new DMA9(this);
 
+        MMIO9.reset();
         TCM.reset();
     }
 

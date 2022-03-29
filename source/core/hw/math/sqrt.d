@@ -2,14 +2,14 @@ module core.hw.math.sqrt;
 
 import util;
 
-__gshared SqrtController sqrt_controller;
+__gshared SqrtController math_sqrt;
 public class SqrtController {
     bool mode;
     Word param_lo;
     Word param_hi;
 
     this() {
-        sqrt_controller = this;
+        math_sqrt = this;
     }
 
     Byte read_SQRTCNT(int target_byte) {

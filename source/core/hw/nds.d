@@ -16,7 +16,7 @@ final class NDS {
 
     this() {
         InterruptManager.reset();
-        new IPC();
+        IPC.reset();
         new SqrtController();
         new DivController();
         
