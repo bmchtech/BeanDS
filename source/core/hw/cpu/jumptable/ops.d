@@ -1,7 +1,7 @@
-module core.hw.cpu.jumptable.ops;
+module emu.hw.cpu.jumptable.ops;
 
-import core.hw.cpu;
-import core.hw.memory;
+import emu.hw.cpu;
+import emu.hw.memory;
 
 import util;
 

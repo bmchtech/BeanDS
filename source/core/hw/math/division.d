@@ -1,4 +1,4 @@
-module core.hw.math.division;
+module emu.hw.math.division;
 
 import util;
 

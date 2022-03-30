@@ -1,9 +1,9 @@
-module core.hw.gpu;
+module emu.hw.gpu;
 
 public {
-    import core.hw.gpu.engines;
-    import core.hw.gpu.gpu;
-    import core.hw.gpu.pixel;
-    import core.hw.gpu.pram;
-    import core.hw.gpu.vram;
+    import emu.hw.gpu.engines;
+    import emu.hw.gpu.gpu;
+    import emu.hw.gpu.pixel;
+    import emu.hw.gpu.pram;
+    import emu.hw.gpu.vram;
 }

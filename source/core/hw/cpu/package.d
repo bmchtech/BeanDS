@@ -1,12 +1,12 @@
-module core.hw.cpu;
+module emu.hw.cpu;
 
 public {
-    import core.hw.cpu.architecture;
-    import core.hw.cpu.arm7tdmi;
-    import core.hw.cpu.arm946e_s;
-    import core.hw.cpu.armcpu;
-    import core.hw.cpu.cp;
-    import core.hw.cpu.interrupt;
-    import core.hw.cpu.ipc;
-    import core.hw.cpu.jumptable;
+    import emu.hw.cpu.architecture;
+    import emu.hw.cpu.arm7tdmi;
+    import emu.hw.cpu.arm946e_s;
+    import emu.hw.cpu.armcpu;
+    import emu.hw.cpu.cp;
+    import emu.hw.cpu.interrupt;
+    import emu.hw.cpu.ipc;
+    import emu.hw.cpu.jumptable;
 }

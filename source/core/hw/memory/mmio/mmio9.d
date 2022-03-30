@@ -1,6 +1,6 @@
-module core.hw.memory.mmio.mmio9;
+module emu.hw.memory.mmio.mmio9;
 
-import core.hw;
+import emu.hw;
 
 import util;
 

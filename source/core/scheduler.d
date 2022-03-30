@@ -1,4 +1,4 @@
-module core.scheduler;
+module emu.scheduler;
 
 struct Event {
     void delegate() callback;

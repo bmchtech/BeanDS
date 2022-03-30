@@ -1,6 +1,6 @@
-module core.hw.memory.mem7;
+module emu.hw.memory.mem7;
 
-import core.hw.memory;
+import emu.hw.memory;
 
 import util;
 

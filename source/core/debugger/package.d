@@ -1,5 +1,5 @@
-module core.debugger;
+module emu.debugger;
 
 public {
-    import core.debugger.cputrace;
+    import emu.debugger.cputrace;
 }

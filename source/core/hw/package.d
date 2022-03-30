@@ -1,10 +1,10 @@
-module core.hw;
+module emu.hw;
 
 public {
-    import core.hw.cpu;
-    import core.hw.gpu;
-    import core.hw.input;
-    import core.hw.math;
-    import core.hw.memory;
-    import core.hw.nds;
+    import emu.hw.cpu;
+    import emu.hw.gpu;
+    import emu.hw.input;
+    import emu.hw.math;
+    import emu.hw.memory;
+    import emu.hw.nds;
 }

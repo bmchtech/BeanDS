@@ -1,7 +1,7 @@
-module core.hw.cpu.jumptable.barrel_shifter;
+module emu.hw.cpu.jumptable.barrel_shifter;
 
-import core.hw.cpu;
-import core.hw.cpu.jumptable;
+import emu.hw.cpu;
+import emu.hw.cpu.jumptable;
 import util;
 
 struct BarrelShifter {

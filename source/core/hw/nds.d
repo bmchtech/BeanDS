@@ -1,7 +1,7 @@
-module core.hw.nds;
+module emu.hw.nds;
 
-import core.hw;
-import core.scheduler;
+import emu.hw;
+import emu.scheduler;
 
 import ui.device;
 
@@ -19,16 +19,16 @@ final class NDS {
         IPC.reset();
         new SqrtController();
         new DivController();
-        
-        mem7 = new Mem7();
-        mem9 = new Mem9();
-        arm7 = new ARM7TDMI(mem7);
-        arm9 = new ARM946E_S(mem9);
 
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
         //       or make nothing.
         new Scheduler();
+        
+        mem7 = new Mem7();
+        mem9 = new Mem9();
+        arm7 = new ARM7TDMI(mem7);
+        arm9 = new ARM946E_S(mem9);
 
         // TODO: maybe this doesnt belong in nds.d... i need to learn more
         //       about the two GBA engines to find out

@@ -1,4 +1,4 @@
-module core.hw.memory.shared_memory;
+module emu.hw.memory.shared_memory;
 
 import util;
 

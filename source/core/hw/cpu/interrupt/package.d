@@ -1,5 +1,5 @@
-module core.hw.cpu.interrupt;
+module emu.hw.cpu.interrupt;
 
 public {
-    import core.hw.cpu.interrupt.interrupt;
+    import emu.hw.cpu.interrupt.interrupt;
 }

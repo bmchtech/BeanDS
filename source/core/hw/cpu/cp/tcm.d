@@ -1,6 +1,6 @@
-module core.hw.cpu.cp.tcm;
+module emu.hw.cpu.cp.tcm;
 
-import core;
+import emu;
 
 import util;
 
@@ -16,7 +16,7 @@ final class TCM {
     Word itcm_region_base;
     bool itcm_enabled;
     bool itcm_load_mode;
-    
+
     Word dtcm_virtual_size;
     Word dtcm_region_base;
     bool dtcm_enabled;
@@ -25,7 +25,7 @@ final class TCM {
     void skip_firmware() {
         itcm_virtual_size = 0;
         itcm_region_base  = 0;
-        dtcm_region_base  = 0;
+        dtcm_region_base  = 0x27C0000;
         dtcm_enabled      = true;
         itcm_enabled      = true;
     }

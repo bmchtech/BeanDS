@@ -1,4 +1,4 @@
-module core.hw.input.key_input;
+module emu.hw.input.key_input;
 
 import util;
 

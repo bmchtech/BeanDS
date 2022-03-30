@@ -1,5 +1,5 @@
-module core.hw.memory.dma;
+module emu.hw.memory.dma;
 
 public {
-    import core.hw.memory.dma.dma9;
+    import emu.hw.memory.dma.dma9;
 }

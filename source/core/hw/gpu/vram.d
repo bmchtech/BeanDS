@@ -1,6 +1,6 @@
-module core.hw.gpu.vram;
+module emu.hw.gpu.vram;
 
-import core.hw;
+import emu.hw;
 
 import util;
 

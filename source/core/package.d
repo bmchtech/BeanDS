@@ -1,7 +1,7 @@
-module core;
+module emu;
 
 public {
-    import core.debugger;
-    import core.hw;
-    import core.scheduler;
+    import emu.debugger;
+    import emu.hw;
+    import emu.scheduler;
 }

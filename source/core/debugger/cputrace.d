@@ -1,6 +1,6 @@
-module core.debugger.cputrace;
+module emu.debugger.cputrace;
 
-import core.hw.cpu;
+import emu.hw.cpu;
 
 import util;
 

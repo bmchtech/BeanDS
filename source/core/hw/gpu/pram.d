@@ -1,6 +1,6 @@
-module core.hw.gpu.pram;
+module emu.hw.gpu.pram;
 
-import core.hw;
+import emu.hw;
 
 import util;
 

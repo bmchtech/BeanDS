@@ -3,7 +3,7 @@ module ui.reng.runner;
 import ui.device;
 import ui.reng;
 
-import core.hw;
+import emu.hw;
 
 import core.sync.mutex;
 

@@ -1,4 +1,4 @@
-module core.hw.memory.mem;
+module emu.hw.memory.mem;
 
 import util;
 

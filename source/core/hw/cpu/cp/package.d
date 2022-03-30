@@ -1,6 +1,6 @@
-module core.hw.cpu.cp;
+module emu.hw.cpu.cp;
 
 public {
-    import core.hw.cpu.cp.cp15;
-    import core.hw.cpu.cp.tcm;
+    import emu.hw.cpu.cp.cp15;
+    import emu.hw.cpu.cp.tcm;
 }

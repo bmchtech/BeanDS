@@ -1,4 +1,4 @@
-module core.hw.gpu.pixel;
+module emu.hw.gpu.pixel;
 
 import util;
 

@@ -1,13 +1,13 @@
-module core.hw.memory.mmio;
+module emu.hw.memory.mmio;
 
 import std.format;
 
-import core;
+import emu;
 import util;
 
 public {
-    import core.hw.memory.mmio.mmio7;
-    import core.hw.memory.mmio.mmio9;
+    import emu.hw.memory.mmio.mmio7;
+    import emu.hw.memory.mmio.mmio9;
 }
 
 enum {

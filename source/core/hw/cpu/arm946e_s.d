@@ -1,6 +1,6 @@
-module core.hw.cpu.arm946e_s;
+module emu.hw.cpu.arm946e_s;
 
-import core;
+import emu;
 
 import util;
 
@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
     this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
-        cpu_trace = new CpuTrace(this, 100);
+        cpu_trace = new CpuTrace(this, 200);
         arm9 = this;
         
         reset();
@@ -40,9 +40,9 @@ final class ARM946E_S : ArmCPU {
 
     void reset() {
         set_mode!MODE_SYSTEM;
+        current_mode = MODE_SYSTEM;
         regs[pc] = 0;
 
-        current_mode = MODES[0];
         for (int i = 0; i < 7; i++) {
             register_file[MODES[i].OFFSET + 16] |= MODES[i].CPSR_ENCODING;
         }    

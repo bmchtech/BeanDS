@@ -1,5 +1,5 @@
-module core.hw.input;
+module emu.hw.input;
 
 public {
-    import core.hw.input.key_input;
+    import emu.hw.input.key_input;
 }

@@ -1,4 +1,4 @@
-module core.hw.math.sqrt;
+module emu.hw.math.sqrt;
 
 import util;
 

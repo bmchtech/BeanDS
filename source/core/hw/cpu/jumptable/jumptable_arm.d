@@ -1,16 +1,18 @@
-module core.hw.cpu.jumptable.jumptable_arm;
+module emu.hw.cpu.jumptable.jumptable_arm;
 
 import core.bitop;
 
-import core.hw.cpu;
-import core.hw.memory;
+import emu.hw.cpu;
+import emu.hw.memory;
 
 import util;
 
 template execute_arm(T : ArmCPU) {
     alias JumptableEntry = void function(T cpu, Word opcode);
 
-    static void create_nop(T cpu, Word opcode) {}
+    static void create_undefined_instruction(T cpu, Word opcode) {
+        error_unimplemented("Tried to execute undefined ARM instruction: %08x", opcode);
+    }
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
         if (opcode[28..31] == 0xF && v5TE!T) {
@@ -546,14 +548,14 @@ template execute_arm(T : ArmCPU) {
 
         static if (read) {
             Word result = cp15.read(
-                opcode[21..23],
+                opcode[5 .. 7],
                 opcode[16..19],
                 opcode[0 .. 3]
             );
             cpu.set_reg(rd, result);
         } else {
             cp15.write(
-                opcode[21..23],
+                opcode[5 .. 7],
                 opcode[16..19],
                 opcode[0 .. 3],
                 cpu.get_reg(rd)
@@ -680,7 +682,7 @@ template execute_arm(T : ArmCPU) {
                 jumptable[entry] = &create_coprocessor!read;
             } else
             
-            jumptable[entry] = &create_nop;
+            jumptable[entry] = &create_undefined_instruction;
         }}
 
         return jumptable;

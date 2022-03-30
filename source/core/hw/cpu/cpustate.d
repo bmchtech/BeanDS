@@ -1,2 +1,2 @@
-module core.hw.cpu.cpustate;
+module emu.hw.cpu.cpustate;
 

@@ -1,6 +1,6 @@
-module core.hw.math;
+module emu.hw.math;
 
 public {
-    import core.hw.math.division;
-    import core.hw.math.sqrt; 
+    import emu.hw.math.division;
+    import emu.hw.math.sqrt; 
 }

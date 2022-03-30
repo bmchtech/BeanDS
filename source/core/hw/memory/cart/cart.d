@@ -1,6 +1,6 @@
-module core.hw.memory.cart.cart;
+module emu.hw.memory.cart.cart;
 
-import core.hw.memory.cart;
+import emu.hw.memory.cart;
 import util;
 
 final class Cart {

@@ -1,6 +1,6 @@
 module ui.device;
 
-import core.hw;
+import emu.hw;
 
 alias SetKey = void delegate(DSKeyCode key, bool value);
 

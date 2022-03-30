@@ -1,7 +1,7 @@
-module core.hw.cpu.jumptable.jumptable_thumb;
+module emu.hw.cpu.jumptable.jumptable_thumb;
 
-import core.hw.cpu;
-import core.hw.memory;
+import emu.hw.cpu;
+import emu.hw.memory;
 
 import util;
 
@@ -336,7 +336,7 @@ template execute_thumb(T : ArmCPU) {
 
         static if (lr_included) {
             Word value = cpu.read_word(current_address & ~3, access_type);
-            static if (v5TE!T) { cpu.set_flag(Flag.T, value[0]); import std.stdio; writefln("%x", value); }
+            static if (v5TE!T) { cpu.set_flag(Flag.T, value[0]); }
             cpu.set_reg(pc, value);
 
             current_address += 4;
@@ -388,7 +388,9 @@ template execute_thumb(T : ArmCPU) {
         cpu.swi();
     }
 
-    static void create_nop(T cpu, Half opcode) {}
+    static void create_undefined_instruction(T cpu, Half opcode) {      
+        error_unimplemented("Tried to execute undefined THUMB instruction: %04x", opcode);
+    }
 
     static JumptableEntry[256] create_jumptable() {
         JumptableEntry[256] jumptable;
@@ -517,7 +519,7 @@ template execute_thumb(T : ArmCPU) {
                 jumptable[entry] = &create_store_half;
             } else
 
-            jumptable[entry] = &create_nop;
+            jumptable[entry] = &create_undefined_instruction;
         }}
 
         return jumptable;

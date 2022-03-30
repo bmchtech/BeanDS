@@ -1,6 +1,6 @@
-module core.hw.memory.cart;
+module emu.hw.memory.cart;
 
 public {
-    import core.hw.memory.cart.cart;
-    import core.hw.memory.cart.header;
+    import emu.hw.memory.cart.cart;
+    import emu.hw.memory.cart.header;
 }

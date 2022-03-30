@@ -1,6 +1,6 @@
 module ui.reng.device;
 
-import core.hw;
+import emu.hw;
 
 import ui.device;
 import ui.reng;

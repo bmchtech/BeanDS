@@ -1,6 +1,6 @@
-module core.hw.cpu.cp.cp15;
+module emu.hw.cpu.cp.cp15;
 
-import core;
+import emu;
 
 import util;
 
@@ -44,8 +44,9 @@ final class Cp15 {
 
         if (cn == 1 && cm == 0 && opcode == 0) {
             return_value[16] = tcm.dtcm_enabled;
-            return_value[18] = tcm.itcm_enabled;            
-            log_coprocessor("read dtcm and itcm enabled to %x %x", tcm.dtcm_enabled, tcm.itcm_enabled);
+            return_value[17] = tcm.dtcm_load_mode;
+            return_value[18] = tcm.itcm_enabled;  
+            return_value[19] = tcm.itcm_load_mode;          
         }
 
         return return_value;
@@ -61,7 +62,7 @@ final class Cp15 {
 
             tcm.dtcm_virtual_size = 512 << dtcm_virtual_size;
             tcm.dtcm_region_base  = dtcm_region_base << 12;
-            log_coprocessor("set dtcm virtual size and region base to %x %x", tcm.dtcm_virtual_size, tcm.dtcm_region_base);
+            log_coprocessor("set dtcm stuffs to %x %x", tcm.dtcm_virtual_size, tcm.dtcm_region_base);
         }
 
         if (cn == 9 && cm == 1 && opcode == 1) {
@@ -69,7 +70,7 @@ final class Cp15 {
             itcm_region_base  = data[12..31];
 
             tcm.itcm_virtual_size = 512 << itcm_virtual_size;
-            log_coprocessor("set itcm virtual size to %x", itcm_virtual_size);
+            log_coprocessor("set itcm stuffs to %x %x", tcm.itcm_virtual_size, tcm.itcm_region_base);
         }
 
         if (cn == 1 && cm == 0 && opcode == 0) {
@@ -77,7 +78,6 @@ final class Cp15 {
             tcm.dtcm_load_mode = data[17];
             tcm.itcm_enabled   = data[18]; 
             tcm.itcm_load_mode = data[19];           
-            log_coprocessor("set dtcm and itcm enabled to %x %x", tcm.dtcm_enabled, tcm.itcm_enabled);
         }
     }
 

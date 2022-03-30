@@ -1,6 +1,6 @@
-module core.hw.memory.mem9;
+module emu.hw.memory.mem9;
 
-import core;
+import emu;
 
 import util;
 

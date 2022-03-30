@@ -1,6 +1,6 @@
-module core.hw.cpu.ipc;
+module emu.hw.cpu.ipc;
 
-import core;
+import emu;
 
 import util;
 

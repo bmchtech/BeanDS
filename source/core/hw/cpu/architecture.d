@@ -1,4 +1,4 @@
-module core.hw.cpu.architecture;
+module emu.hw.cpu.architecture;
 
 import std.meta;
 

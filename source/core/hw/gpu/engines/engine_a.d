@@ -1,6 +1,6 @@
-module core.hw.gpu.engines.engine_a;
+module emu.hw.gpu.engines.engine_a;
 
-import core.hw;
+import emu.hw;
 
 import util;
 

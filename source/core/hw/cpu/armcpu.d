@@ -1,8 +1,8 @@
-module core.hw.cpu.armcpu;
+module emu.hw.cpu.armcpu;
 
 import std.meta;
 
-import core;
+import emu;
 
 import util;
 

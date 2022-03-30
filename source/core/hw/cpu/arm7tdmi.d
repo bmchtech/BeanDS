@@ -1,7 +1,7 @@
-module core.hw.cpu.arm7tdmi;
+module emu.hw.cpu.arm7tdmi;
 
-import core.hw.cpu;
-import core.hw.memory;
+import emu.hw.cpu;
+import emu.hw.memory;
 
 import util;
 

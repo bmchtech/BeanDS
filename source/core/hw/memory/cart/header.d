@@ -1,4 +1,4 @@
-module core.hw.memory.cart.header;
+module emu.hw.memory.cart.header;
 
 import util;
 

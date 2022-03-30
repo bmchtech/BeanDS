@@ -1,4 +1,4 @@
-module core.hw.cpu.interrupt.interrupt;
+module emu.hw.cpu.interrupt.interrupt;
 
 import util;
 

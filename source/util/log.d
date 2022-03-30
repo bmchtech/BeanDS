@@ -1,6 +1,6 @@
 module util.log;
 
-import core.scheduler;
+import emu.scheduler;
 
 enum LogSource {
     MEM7,
@@ -45,7 +45,7 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     writefln(fmt, args);
 
     if (fatal) {
-        import core;
+        import emu;
         arm9.cpu_trace.print_trace();
         assert(0);
     }

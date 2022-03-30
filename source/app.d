@@ -1,6 +1,6 @@
 import std.stdio;
 
-import core.hw.nds;
+import emu.hw.nds;
 
 import ui;
 

@@ -1,6 +1,6 @@
-module core.hw.memory.dma.dma9;
+module emu.hw.memory.dma.dma9;
 
-import core.hw.memory;
+import emu.hw.memory;
 
 import util;
 

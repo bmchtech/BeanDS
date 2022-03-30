@@ -1,7 +1,7 @@
-module core.hw.gpu.gpu;
+module emu.hw.gpu.gpu;
 
-import core.hw;
-import core.scheduler;
+import emu.hw;
+import emu.scheduler;
 
 import util;
 
