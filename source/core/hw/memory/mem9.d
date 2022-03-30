@@ -25,8 +25,8 @@ final class Mem9 : Mem {
     T read(T)(Word address) {
         check_memory_unit!T;
 
-        if (tcm.in_itcm(address)) return tcm.read_itcm!T(address & 0xFF_FFFF);
-        if (tcm.in_dtcm(address)) return tcm.read_dtcm!T(address & 0xFF_FFFF);
+        if (tcm.can_read_itcm(address)) return tcm.read_itcm!T(address);
+        if (tcm.can_read_dtcm(address)) return tcm.read_dtcm!T(address);
 
         auto region = get_region(address);
 
@@ -53,8 +53,8 @@ final class Mem9 : Mem {
     void write(T)(Word address, T value) {
         check_memory_unit!T;
 
-        if (tcm.in_itcm(address)) { tcm.write_itcm!T(address & 0xFF_FFFF, value); return; }
-        if (tcm.in_dtcm(address)) { tcm.write_dtcm!T(address & 0xFF_FFFF, value); return; }
+        if (tcm.can_write_itcm(address)) { tcm.write_itcm!T(address, value); return; }
+        if (tcm.can_write_dtcm(address)) { tcm.write_dtcm!T(address, value); return; }
 
         auto region = get_region(address);
 

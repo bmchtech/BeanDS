@@ -38,7 +38,7 @@ final class IPC {
                 }
                 last_popped = data[tail];
             }
-            
+
             return last_popped;
         }
 
@@ -129,6 +129,7 @@ final class IPC {
                 result[2] = Byte(fifo_not_empty_irq_enable);
                 result[6] = Byte(fifo_error);
                 result[7] = Byte(fifo.enabled);
+                break;
         }
 
         return result;

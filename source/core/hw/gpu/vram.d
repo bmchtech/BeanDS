@@ -70,7 +70,7 @@ final class VRAM {
 
         // TODO: figure out what VRAM enable encodes
 
-        final switch (target_byte) {
+        switch (target_byte) {
             case 0: set_vram_A(mst, offset); break;
             case 1: set_vram_B(mst, offset); break;
             case 2: set_vram_C(mst, offset); break;
@@ -78,9 +78,10 @@ final class VRAM {
             case 4: set_vram_E(     offset); break;
             case 5: set_vram_F(mst, offset); break;
             case 6: set_vram_G(mst, offset); break;
-            case 7: assert(0);
+            // case 7: assert(0);
             case 8: set_vram_H(     offset); break;
             case 9: set_vram_I(     offset); break;
+            default: break;
         }
     }
 
