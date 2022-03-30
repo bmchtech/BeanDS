@@ -163,6 +163,7 @@ final class DMA9 {
     }
 
     DMAChannel[4] dma_channels;
+    Word[4] dma_fill_registers;
 
     enum SourceAddrMode {
         Increment       = 0b00,
@@ -260,6 +261,10 @@ final class DMA9 {
         }
     }
 
+    void write_DMAxFILL(int target_byte, Byte data, int x) {
+        dma_fill_registers[x].set_byte(target_byte, data);
+    }
+
     Byte read_DMAxSAD(int target_byte, int x) {
         final switch (target_byte) {
             case 0: return cast(Byte) dma_channels[x].source[0.. 7];
@@ -298,5 +303,9 @@ final class DMA9 {
                                     (dma_channels[x].irq_on_end                  << 6) |
                                     (dma_channels[x].enabled                     << 7));
         }
+    }
+
+    Byte read_DMAxFILL(int target_byte, int x) {
+        return dma_fill_registers[x].get_byte(target_byte);
     }
 }
