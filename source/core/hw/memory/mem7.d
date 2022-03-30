@@ -1,6 +1,6 @@
 module emu.hw.memory.mem7;
 
-import emu.hw.memory;
+import emu;
 
 import util;
 
@@ -27,7 +27,7 @@ final class Mem7 : Mem {
             case 0x2:              return main_memory.read!T(address % MAIN_MEMORY_SIZE);
             case 0x3:              return shared_wram.read!T(address % SHARED_WRAM_SIZE);
             case 0x4:              return mmio7.read!T(address);
-            case 0x6:              error_unimplemented("Attempt from ARM7 to read from VRAM: %x", address); break;
+            case 0x6:              return vram.read7!T(address);
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM7 to read from GBA Slot ROM: %x", address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to read from GBA Slot RAM: %x", address); break;
         
@@ -50,7 +50,7 @@ final class Mem7 : Mem {
             case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
             case 0x3:              shared_wram.write!T(address % SHARED_WRAM_SIZE, value); break;
             case 0x4:              mmio7.write!T(address, value); break;
-            case 0x6:              error_unimplemented("Attempt from ARM7 to write %x to VRAM: %x", value, address); break;
+            case 0x6:              vram.write7!T(address, value); break;
             case 0x8: .. case 0x9: log_unimplemented("Attempt from ARM7 to write %x to GBA Slot ROM: %x", value, address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to write %x to GBA Slot RAM: %x", value, address); break;
         

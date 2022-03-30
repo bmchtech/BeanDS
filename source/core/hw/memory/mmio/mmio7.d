@@ -21,4 +21,5 @@ static const mmio7_registers = [
     MMIORegister("interrupt7",   "IME",           0x0400_0208,  4, READ_WRITE),
     MMIORegister("interrupt7",   "IE",            0x0400_0210,  4, READ_WRITE),
     MMIORegister("interrupt7",   "IF",            0x0400_0214,  4, READ_WRITE),
+    MMIORegister("vram",         "VRAMSTAT",      0x0400_0240,  1, READ),
 ];

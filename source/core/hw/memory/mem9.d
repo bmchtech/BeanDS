@@ -37,7 +37,7 @@ final class Mem9 : Mem {
             case 0x3:              return shared_wram.read!T(address % SHARED_WRAM_SIZE);
             case 0x4:              return mmio9.read!T(address);
             case 0x5:              return pram.read!T(address);
-            case 0x6:              return vram.read!T(address);
+            case 0x6:              return vram.read9!T(address);
             case 0x7:              error_unimplemented("Attempt from ARM9 to read from OAM: %x", address); break;
             case 0x8: .. case 0x9: error_unimplemented("Attempt from ARM9 to read from GBA Slot ROM: %x", address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
@@ -65,7 +65,7 @@ final class Mem9 : Mem {
             case 0x3:              shared_wram.write!T(address % SHARED_WRAM_SIZE, value); break;
             case 0x4:              mmio9.write!T(address, value); break;
             case 0x5:              pram.write!T(address, value); break;
-            case 0x6:              vram.write!T(address, value); break;
+            case 0x6:              vram.write9!T(address, value); break;
             case 0x7:              error_unimplemented("Attempt from ARM9 to write %x to OAM: %x", value, address); break;
             case 0x8: .. case 0x9: log_unimplemented("Attempt from ARM9 to write %x to GBA Slot ROM: %x", value, address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM9 to write %x to GBA Slot RAM: %x", value, address); break;

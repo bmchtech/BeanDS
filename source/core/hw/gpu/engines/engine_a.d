@@ -50,10 +50,10 @@ final class GPUEngineA {
 
     Byte* get_vram_block() {
         final switch (vram_block) {
-            case 0: return vram.vram_a;
-            case 1: return vram.vram_b;
-            case 2: return vram.vram_c;
-            case 3: return vram.vram_d;
+            case 0: return cast(Byte*) vram.vram_a.data;
+            case 1: return cast(Byte*) vram.vram_b.data;
+            case 2: return cast(Byte*) vram.vram_c.data;
+            case 3: return cast(Byte*) vram.vram_d.data;
         }
     }
 

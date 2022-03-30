@@ -16,7 +16,8 @@ enum LogSource {
     DIVISION,
     INTERRUPT,
     COPROCESSOR,
-    TCM
+    TCM,
+    VRAM
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();
