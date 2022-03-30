@@ -15,15 +15,17 @@ final class NDS {
     Mem9      mem9;
 
     this() {
-        InterruptManager.reset();
-        IPC.reset();
-        new SqrtController();
-        new DivController();
-
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
         //       or make nothing.
         new Scheduler();
+
+        InterruptManager.reset();
+        IPC.reset();
+        WRAM.reset();
+        
+        new SqrtController();
+        new DivController();
         
         mem7 = new Mem7();
         mem9 = new Mem9();

@@ -34,7 +34,7 @@ final class Mem9 : Mem {
 
         switch (region) {
             case 0x2:              return main_memory.read!T(address % MAIN_MEMORY_SIZE);
-            case 0x3:              return shared_wram.read!T(address % SHARED_WRAM_SIZE);
+            case 0x3:              return wram.read9!T(address);
             case 0x4:              return mmio9.read!T(address);
             case 0x5:              return pram.read!T(address);
             case 0x6:              return vram.read9!T(address);
@@ -62,7 +62,7 @@ final class Mem9 : Mem {
 
         switch (region) {
             case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
-            case 0x3:              shared_wram.write!T(address % SHARED_WRAM_SIZE, value); break;
+            case 0x3:              wram.write9!T(address, value); break;
             case 0x4:              mmio9.write!T(address, value); break;
             case 0x5:              pram.write!T(address, value); break;
             case 0x6:              vram.write9!T(address, value); break;

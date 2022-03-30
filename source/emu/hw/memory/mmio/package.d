@@ -18,27 +18,34 @@ enum {
 
 struct MMIORegister {
     this(string component, string name, uint address, int size, int access_type) {
-        this.component   = component;
-        this.name        = name;
-        this.address     = address;
-        this.size        = size;
-        this.readable    = access_type != WRITE;
-        this.writeable   = access_type != READ;
+        this.component      = component;
+        this.name           = name;
+        this.address        = address;
+        this.size           = size;
+        this.readable       = access_type != WRITE;
+        this.writeable      = access_type != READ;
 
-        this.stride      = -1;
-        this.cnt         = -1;
-        this.all_at_once = false;
+        this.stride         = -1;
+        this.cnt            = -1;
+        this.all_at_once    = false;
+        this.filter_enabled = false;
     }
 
     MMIORegister repeat(int cnt, int stride) {
-        this.cnt         = cnt;
-        this.stride      = stride;
+        this.cnt    = cnt;
+        this.stride = stride;
 
         return this;
     } 
 
     MMIORegister dont_decompose_into_bytes() {
         this.all_at_once = true;
+        return this;
+    }
+
+    MMIORegister filter(bool function(int i) new_f)() {
+        this.filter_enabled = true;
+        this.f = new_f;
         return this;
     }
     
@@ -54,6 +61,9 @@ struct MMIORegister {
 
     bool   readable;
     bool   writeable;
+
+    bool   filter_enabled;
+    bool function(int i) f;
 }
 
 final class MMIO(MMIORegister[] mmio_registers) {
@@ -105,14 +115,18 @@ final class MMIO(MMIORegister[] mmio_registers) {
                 static if (mr.readable && !mr.all_at_once) {
                     static if (mr.stride == -1) {
                         static foreach(int offset; 0..mr.size) {
-                            case mr.address + offset:
-                                mixin("return %s.read_%s(%d);".format(mr.component, mr.name, offset));
+                            static if (!mr.filter_enabled || mr.f(offset)) {
+                                case mr.address + offset:
+                                    mixin("return %s.read_%s(%d);".format(mr.component, mr.name, offset));
+                            }
                         }
                     } else {
                         static foreach(int stride_offset; 0..mr.cnt) {
                             static foreach(int offset; 0..mr.size) {
-                                case mr.address + stride_offset * mr.stride + offset:
-                                    mixin("return %s.read_%s(%d, %d);".format(mr.component, mr.name, offset, stride_offset));
+                                static if (!mr.filter_enabled || mr.f(offset)) {
+                                    case mr.address + stride_offset * mr.stride + offset:
+                                        mixin("return %s.read_%s(%d, %d);".format(mr.component, mr.name, offset, stride_offset));
+                                }
                             }
                         }
                     }
@@ -160,14 +174,18 @@ final class MMIO(MMIORegister[] mmio_registers) {
                 static if (mr.writeable && !mr.all_at_once) {
                     static if (mr.stride == -1) {
                         static foreach(int offset; 0..mr.size) {
-                            case mr.address + offset:
-                                mixin("%s.write_%s(%d, value); break mmio_switch;".format(mr.component, mr.name, offset));
+                            static if (!mr.filter_enabled || mr.f(offset)) {
+                                case mr.address + offset:
+                                    mixin("%s.write_%s(%d, value); break mmio_switch;".format(mr.component, mr.name, offset));
+                            }
                         }
                     } else {
                         static foreach(int stride_offset; 0..mr.cnt) {
                             static foreach(int offset; 0..mr.size) {
-                                case mr.address + stride_offset * mr.stride + offset:
-                                    mixin("%s.write_%s(%d, value, %d); break mmio_switch;".format(mr.component, mr.name, offset, stride_offset));
+                                static if (!mr.filter_enabled || mr.f(offset)) {
+                                    case mr.address + stride_offset * mr.stride + offset:
+                                        mixin("%s.write_%s(%d, value, %d); break mmio_switch;".format(mr.component, mr.name, offset, stride_offset));
+                                }
                             }
                         }
                     }
