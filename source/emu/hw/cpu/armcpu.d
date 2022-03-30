@@ -55,6 +55,8 @@ interface ArmCPU {
     bool           has_spsr();
     
     void           raise_exception(CpuException exception)();
+    void           halt();
+    void           unhalt();
 
     static @property Architecture architecture();
 }

@@ -564,6 +564,7 @@ template execute_arm(T : ArmCPU) {
     }
 
     static void create_swi(T cpu, Word opcode) {
+        log_arm9("swiss cheese, %x", opcode);
         cpu.swi();
     }
 

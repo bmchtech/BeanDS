@@ -102,6 +102,8 @@ final class ARM946E_S : ArmCPU {
     }
 
     void run_instruction() {
+        if (halted) return;
+        
         if (!(cast(bool) get_cpsr()[7]) && interrupt9.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
@@ -213,6 +215,10 @@ final class ARM946E_S : ArmCPU {
 
     void halt() {
         this.halted = true;
+    }
+
+    void unhalt() {
+        this.halted = false;
     }
 
     void set_mode(CpuMode new_mode)() {

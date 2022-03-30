@@ -24,7 +24,7 @@ final class DMA9 {
         // get the channel with highest priority that wants to start dma
         int current_channel = -1;
         for (int i = 0; i < 4; i++) {
-            if (dma_channels[i].enabled && dma_channels[i].waiting_to_start) {
+            if (dma_channels[i].enabled) {
                 current_channel = i;
                 break;
             }
@@ -238,6 +238,7 @@ final class DMA9 {
     }
 
     void write_DMAxCNT_H(int target_byte, Byte data, int x) {
+        log_dma9("wrote to dma cunt: %x %x %x", target_byte, data, x);
         final switch (target_byte) {
             case 0:
                 dma_channels[x].num_units[16..20]   = data;

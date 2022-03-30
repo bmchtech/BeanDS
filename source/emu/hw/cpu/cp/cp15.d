@@ -79,6 +79,10 @@ final class Cp15 {
             tcm.itcm_enabled   = data[18]; 
             tcm.itcm_load_mode = data[19];           
         }
+
+        if (cn == 7 && cm == 0 && opcode == 4 && data == 0) {
+            arm9.halt();
+        }
     }
 
     Word get_data_tcm_size() { return Word(512 << 0); }

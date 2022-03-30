@@ -1,5 +1,6 @@
 module emu.hw.cpu.interrupt.interrupt;
 
+import emu;
 import util;
 
 enum Interrupt {
@@ -35,20 +36,25 @@ final class InterruptManager {
     Word status;
     bool master_enable;
 
+    ArmCPU cpu;
+    
+    this(ArmCPU cpu) {
+        this.cpu = cpu;
+    }
+
     static void reset() {
-        interrupt7 = new InterruptManager();
-        interrupt9 = new InterruptManager();
+        interrupt7 = new InterruptManager(arm7);
+        interrupt9 = new InterruptManager(arm9);
     }
 
     void raise_interrupt(Interrupt code) {
         log_interrupt("interrupt raised: %x", code);
         status[code] = 1;
+
+        if ((enable & status) != 0) cpu.unhalt();
     }
 
     bool irq_pending() {
-        // TODO: is this old remnants from the GBA? check if this logic still holds.
-        if (master_enable && ((enable & status) != 0)) 
-        log_interrupt("%x %x %x", master_enable, enable, status);
         return master_enable && ((enable & status) != 0);
     }
 

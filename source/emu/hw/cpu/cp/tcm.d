@@ -23,7 +23,7 @@ final class TCM {
     bool dtcm_load_mode;
 
     void skip_firmware() {
-        itcm_virtual_size = 0;
+        itcm_virtual_size = 1 << 25;
         itcm_region_base  = 0;
         dtcm_region_base  = 0x27C0000;
         dtcm_enabled      = true;

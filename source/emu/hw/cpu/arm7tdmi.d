@@ -94,6 +94,8 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void run_instruction() {
+        if (halted) return;
+        
         if (!(cast(bool) get_cpsr()[7]) && interrupt7.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
@@ -184,6 +186,10 @@ final class ARM7TDMI : ArmCPU {
 
     void halt() {
         this.halted = true;
+    }
+
+    void unhalt() {
+        this.halted = false;
     }
 
     void set_mode(CpuMode new_mode)() {
