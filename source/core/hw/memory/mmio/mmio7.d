@@ -12,6 +12,7 @@ final class MMIO7 {
 }
 
 static const mmio7_registers = [
+    MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
     MMIORegister("ipc7",         "IPCSYNC",       0x0400_0180,  2, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  2, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
