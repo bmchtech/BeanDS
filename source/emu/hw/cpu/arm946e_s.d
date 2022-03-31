@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 9999);
+        cpu_trace = new CpuTrace(this, 100);
         reset();
     }
 

@@ -113,6 +113,7 @@ final class ARM7TDMI : ArmCPU {
 
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();
+            if (opcode == 0) error_arm7("ARM7 is probably executing data");
             execute!Word(opcode);
         } else {
             Half opcode = fetch!Half();

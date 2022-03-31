@@ -49,7 +49,7 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     writefln(fmt, args);
 
     if (fatal) {
-        arm9.cpu_trace.print_trace();
+        arm7.cpu_trace.print_trace();
         assert(0);
     }
 }

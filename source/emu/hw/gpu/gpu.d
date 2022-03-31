@@ -30,6 +30,7 @@ final class GPU {
 
         new PRAM();
         new VRAM();
+        OAM.reset();
         
         gpu = this;
     }

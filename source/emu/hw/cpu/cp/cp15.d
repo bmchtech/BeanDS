@@ -54,6 +54,7 @@ final class Cp15 {
 
     void write(Word opcode, Word cn, Word cm, Word data) {
         log_coprocessor("Received a CP15 write: %x %x %x %x", opcode, cn, cm, data);
+        arm7.num_log += 10;
 
         // think of a prettier way to decode this stuff
         if (cn == 9 && cm == 1 && opcode == 0) {
