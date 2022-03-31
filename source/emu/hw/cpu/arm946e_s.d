@@ -50,6 +50,12 @@ final class ARM946E_S : ArmCPU {
         Cp15.reset();
     }
 
+    void skip_firmware() {
+        register_file[MODE_USER      .OFFSET + sp] = 0x0300_2F7C;
+        register_file[MODE_IRQ       .OFFSET + sp] = 0x0300_3F7C;
+        register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x0300_3FC0;
+    }
+
     @property
     static Architecture architecture() {
         return Architecture.v5TE;

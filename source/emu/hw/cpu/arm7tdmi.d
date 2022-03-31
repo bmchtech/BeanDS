@@ -48,6 +48,12 @@ final class ARM7TDMI : ArmCPU {
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
     }
 
+    void skip_firmware() {
+        register_file[MODE_USER      .OFFSET + sp] = 0x0380_FD80;
+        register_file[MODE_IRQ       .OFFSET + sp] = 0x0380_FF80;
+        register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x0380_FFC0;
+    }
+
     @property
     static Architecture architecture() {
         return Architecture.v4T;

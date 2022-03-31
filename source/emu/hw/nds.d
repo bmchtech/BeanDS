@@ -77,6 +77,8 @@ final class NDS {
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
     
+        arm7.skip_firmware();
+        arm9.skip_firmware();
         mem9.skip_firmware();
         wram.skip_firmware();
     }
