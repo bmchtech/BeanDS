@@ -5,9 +5,6 @@ import emu;
 import util;
 
 final class Mem7 : Mem {
-    enum MAIN_MEMORY_SIZE = 1 << 22;
-    Byte[MAIN_MEMORY_SIZE] main_memory = new Byte[MAIN_MEMORY_SIZE];
-
     enum BIOS_SIZE = 1 << 14;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 

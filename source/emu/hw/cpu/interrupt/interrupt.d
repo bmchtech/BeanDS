@@ -4,7 +4,7 @@ import emu;
 import util;
 
 enum Interrupt {
-    LDC_VBLANK                    = 0,
+    LCD_VBLANK                    = 0,
     LCD_HBLANK                    = 1,
     LCD_VCOUNT                    = 2,
     TIMER_0_OVERFLOW              = 3,
@@ -82,4 +82,9 @@ final class InterruptManager {
         if (target_byte == 0) return Byte(master_enable);
         return Byte(0);
     }
+}
+
+void raise_interrupt_for_both_cpus(Interrupt code) {
+    interrupt7.raise_interrupt(code);
+    interrupt9.raise_interrupt(code);
 }

@@ -1,7 +1,6 @@
 module emu.hw.cpu.arm7tdmi;
 
-import emu.hw.cpu;
-import emu.hw.memory;
+import emu;
 
 import util;
 
@@ -24,11 +23,14 @@ final class ARM7TDMI : ArmCPU {
 
     AccessType pipeline_access_type;
 
+    CpuTrace cpu_trace;
+
     this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
         
         arm7 = this;
+        cpu_trace = new CpuTrace(this, 100);
         reset();
     }
 
@@ -95,10 +97,12 @@ final class ARM7TDMI : ArmCPU {
 
     void run_instruction() {
         if (halted) return;
-        
+
         if (!(cast(bool) get_cpsr()[7]) && interrupt7.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
+
+        cpu_trace.capture();
 
         // log_state();
 

@@ -1,6 +1,8 @@
 module util.log;
 
-import emu.scheduler;
+import emu;
+
+private __gshared NDS nds;
 
 enum LogSource {
     MEM7,
@@ -47,10 +49,13 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     writefln(fmt, args);
 
     if (fatal) {
-        import emu;
-        arm9.cpu_trace.print_trace();
+        arm7.cpu_trace.print_trace();
         assert(0);
     }
+}
+
+private void connect_nds(NDS nds_) {
+    nds = nds_;
 }
 
 static string pad_string_right(string s, ulong pad)() {

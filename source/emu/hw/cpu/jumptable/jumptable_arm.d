@@ -11,7 +11,7 @@ template execute_arm(T : ArmCPU) {
     alias JumptableEntry = void function(T cpu, Word opcode);
 
     static void create_undefined_instruction(T cpu, Word opcode) {
-        error_unimplemented("Tried to execute undefined ARM instruction: %08x", opcode);
+        log_unimplemented("Tried to execute undefined ARM instruction: %08x", opcode);
     }
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {

@@ -59,24 +59,19 @@ final class TCM {
         return address >= dtcm_region_base && address < dtcm_region_base + dtcm_virtual_size;
     }
 
-    import std.stdio : writefln;
     T read_itcm(T)(Word address) {
-        writefln("reading from itcm at %x", address);
         return itcm.read!T((address - itcm_region_base) % ITCM_PHYSICAL_SIZE);
     }
 
     void write_itcm(T)(Word address, T value) {
-        writefln("writing %x to itcm at %x",value, address);
         itcm.write!T((address - itcm_region_base) % ITCM_PHYSICAL_SIZE, value);
     }
 
     T read_dtcm(T)(Word address) {
-        writefln("reading from dtcm at %x", address);
         return dtcm.read!T((address - dtcm_region_base) % DTCM_PHYSICAL_SIZE);
     }
 
     void write_dtcm(T)(Word address, T value) {
-        writefln("writing %x to dtcm at %x",value, address);
         dtcm.write!T((address - dtcm_region_base) % DTCM_PHYSICAL_SIZE, value);
     }
 }

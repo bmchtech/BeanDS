@@ -14,6 +14,10 @@ final class GPU {
     bool vblank;
     bool hblank;
 
+    bool vblank_irq_enabled;
+    bool hblank_irq_enabled;
+    bool vcounter_irq_enabled;
+
     void delegate(Pixel[192][256]) present_videobuffer;
 
     this() {
@@ -35,7 +39,7 @@ final class GPU {
     // }
 
     void on_hblank_start() {
-        // if (hblank_irq_enabled) interrupt_cpu(Interrupt.LCD_HBLANK);
+        if (hblank_irq_enabled) raise_interrupt_for_both_cpus(Interrupt.LCD_HBLANK);
 
         if (scanline >= 0 && scanline < 192) {
             render();
@@ -53,7 +57,7 @@ final class GPU {
         if (scanline == 263) on_vblank_end();
 
         // if (vcounter_irq_enabled && scanline == vcount_lyc) {
-        //     interrupt_cpu(Interrupt.LCD_VCOUNTER_MATCH);
+        //     raise_interrupt_for_both_cpus(Interrupt.LCD_VCOUNTER_MATCH);
         // }
 
         scheduler.add_event_relative_to_self(&on_hblank_start, 256 * 6);
@@ -66,7 +70,7 @@ final class GPU {
     void on_vblank_start() {
         vblank = true;
 
-        // if (vblank_irq_enabled) interrupt_cpu(Interrupt.LCD_VBLANK);
+        if (vblank_irq_enabled) raise_interrupt_for_both_cpus(Interrupt.LCD_VBLANK);
     }
 
     void on_vblank_end() {
@@ -84,7 +88,17 @@ final class GPU {
     }
 
     void write_DISPSTAT(int target_byte, Byte value) {
-
+        final switch (target_byte) {
+            case 0:
+                vblank_irq_enabled   = value[3];
+                hblank_irq_enabled   = value[4];
+                vcounter_irq_enabled = value[5];
+                break;
+            case 1:
+            case 2:
+            case 3:
+                break;
+        }
     }
 
     Byte read_DISPSTAT(int target_byte) {
@@ -94,6 +108,9 @@ final class GPU {
             case 0:
                 result[0] = Byte(vblank);
                 result[1] = Byte(hblank);
+                result[3] = Byte(vblank_irq_enabled);
+                result[4] = Byte(hblank_irq_enabled);
+                result[5] = Byte(vcounter_irq_enabled);
                 break;
 
             case 1: break;

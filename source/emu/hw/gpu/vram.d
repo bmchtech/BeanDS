@@ -106,7 +106,6 @@ final class VRAM {
 
     void write9(T)(Word address, T value) {
         auto region = get_region(address);
-        log_vram("recieved a write: %x %x", address, value);
 
         bool performed_write = false;
 
