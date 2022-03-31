@@ -25,12 +25,14 @@ final class ARM7TDMI : ArmCPU {
 
     CpuTrace cpu_trace;
 
+    ulong num_log;
+
     this(Mem memory) {
         this.memory = memory;
         current_mode = MODE_USER;
         
         arm7 = this;
-        cpu_trace = new CpuTrace(this, 100);
+        cpu_trace = new CpuTrace(this, 1000);
         reset();
     }
 
@@ -104,7 +106,10 @@ final class ARM7TDMI : ArmCPU {
 
         cpu_trace.capture();
 
-        // log_state();
+        if (num_log > 0) {
+            num_log--;
+            log_state();
+        }
 
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();

@@ -317,6 +317,7 @@ template execute_thumb(T : ArmCPU) {
         Word current_address = cpu.get_reg(sp);
 
         if (register_list == 0 && !lr_included) {
+            arm7.num_log += 200;
             if (v4T!T) cpu.set_reg(pc, cpu.read_word(current_address, access_type));
             cpu.set_reg(sp, current_address + 0x40);
             return;
@@ -336,7 +337,7 @@ template execute_thumb(T : ArmCPU) {
 
         static if (lr_included) {
             Word value = cpu.read_word(current_address & ~3, access_type);
-            static if (v5TE!T) { cpu.set_flag(Flag.T, value[0]); }
+            static if (v5TE!T) cpu.set_flag(Flag.T, value[0]);
             cpu.set_reg(pc, value);
 
             current_address += 4;
@@ -351,7 +352,7 @@ template execute_thumb(T : ArmCPU) {
 
         Word current_address = cpu.get_reg(sp);
 
-        if (register_list == 0) {
+        if (register_list == 0 && !lr_included) {
             cpu.write_word(current_address, cpu.get_reg(pc) + 2, access_type);
             if (v4T!T) cpu.set_reg(sp, current_address + 0x40);
             return;
