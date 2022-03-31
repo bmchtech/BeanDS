@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 100);
+        cpu_trace = new CpuTrace(this, 9999);
         reset();
     }
 
@@ -62,6 +62,8 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) T fetch(T)() {
+        if (regs[pc] == 0x20049b8) num_log += 20;
+
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
             AccessType old_access_type = pipeline_access_type;
