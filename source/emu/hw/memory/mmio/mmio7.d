@@ -13,6 +13,8 @@ final class MMIO7 {
 
 static const mmio7_registers = [
     MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
+    MMIORegister("timers7",      "TMxCNT_L",      0x0400_0100,  4, READ_WRITE).repeat(4, 8),
+    MMIORegister("timers7",      "TMxCNT_H",      0x0400_0104,  4, READ_WRITE).repeat(4, 8),
     MMIORegister("input",        "KEYINPUT",      0x0400_0130,  2, READ),
     MMIORegister("ipc7",         "IPCSYNC",       0x0400_0180,  2, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  2, READ_WRITE),

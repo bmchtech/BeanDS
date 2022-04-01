@@ -31,6 +31,7 @@ final class NDS {
         InterruptManager.reset();
         IPC.reset();
         WRAM.reset();
+        TimerManager.reset();
         
         new SqrtController();
         new DivController();
