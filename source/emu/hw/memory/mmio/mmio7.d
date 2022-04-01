@@ -13,8 +13,8 @@ final class MMIO7 {
 
 static const mmio7_registers = [
     MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
-    MMIORegister("timers7",      "TMxCNT_L",      0x0400_0100,  4, READ_WRITE).repeat(4, 8),
-    MMIORegister("timers7",      "TMxCNT_H",      0x0400_0104,  4, READ_WRITE).repeat(4, 8),
+    MMIORegister("timers7",      "TMxCNT_L",      0x0400_0100,  2, READ_WRITE).repeat(4, 4),
+    MMIORegister("timers7",      "TMxCNT_H",      0x0400_0102,  2, READ_WRITE).repeat(4, 4),
     MMIORegister("input",        "KEYINPUT",      0x0400_0130,  2, READ),
     MMIORegister("ipc7",         "IPCSYNC",       0x0400_0180,  2, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  2, READ_WRITE),
@@ -25,4 +25,5 @@ static const mmio7_registers = [
     MMIORegister("interrupt7",   "IF",            0x0400_0214,  4, READ_WRITE),
     MMIORegister("vram",         "VRAMSTAT",      0x0400_0240,  1, READ),
     MMIORegister("wram",         "WRAMSTAT",      0x0400_0241,  1, READ),
+    MMIORegister("nds",          "HALTCNT",       0x0400_0301,  1, READ_WRITE)
 ];

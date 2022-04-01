@@ -58,7 +58,7 @@ final class CpuTrace {
             for (int j = 0; j < 16; j++)
                 write(format("%08x ", trace[i].regs[j]));
 
-            write(format(" | %08x", trace[i].cpsr));
+            write(format("| %08x", trace[i].cpsr));
             writeln();
         }
     }

@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 9999);
+        cpu_trace = new CpuTrace(this, 99);
         reset();
     }
 
@@ -321,8 +321,6 @@ final class ARM946E_S : ArmCPU {
             (exception == CpuException.FIQ && cpsr[6])) {
             return;
         }
-        
-        log_interrupt("interrupt acknowledged by arm9");
 
         enum mode = get_mode_from_exception!(exception);
 
