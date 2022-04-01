@@ -62,7 +62,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) T fetch(T)() {
-        if (regs[pc] == 0x20049b8) num_log += 20;
+        if (regs[pc] == 0x0200497C) num_log = 200;
 
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
@@ -115,8 +115,6 @@ final class ARM946E_S : ArmCPU {
         }
 
         cpu_trace.capture();
-
-        if (regs[pc] == 0x2007878) num_log += 200;
 
         if (num_log > 0) {
             log_state();

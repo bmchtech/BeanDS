@@ -13,10 +13,10 @@ final class DMA9 {
         dma9 = this;
 
         dma_channels = [
-            DMAChannel(Word(0), Word(0), Half(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
-            DMAChannel(Word(0), Word(0), Half(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
-            DMAChannel(Word(0), Word(0), Half(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
-            DMAChannel(Word(0), Word(0), Half(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
+            DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
+            DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
+            DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
+            DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
         ];
     }
 
@@ -128,7 +128,7 @@ final class DMA9 {
 
     void enable_dma(int dma_id) {
         dma_channels[dma_id].num_units = dma_channels[dma_id].num_units & 0x0001FFFF;
-        if (dma_channels[dma_id].num_units) dma_channels[dma_id].num_units = 0x20000;
+        if (dma_channels[dma_id].num_units == 0) dma_channels[dma_id].num_units = 0x20000;
 
         dma_channels[dma_id].enabled  = true;
 
@@ -193,11 +193,11 @@ final class DMA9 {
     struct DMAChannel {
         Word  source;
         Word  dest;
-        Half  num_units;
+        Word  num_units;
 
         uint   source_buf;
         uint   dest_buf;
-        ushort size_buf;
+        uint   size_buf;
         
         bool   enabled;
         bool   waiting_to_start;
@@ -238,7 +238,9 @@ final class DMA9 {
     }
 
     void write_DMAxCNT_H(int target_byte, Byte data, int x) {
-        log_dma9("wrote to dma cunt: %x %x %x", target_byte, data, x);
+        import emu;
+        arm9.num_log += 30;
+
         final switch (target_byte) {
             case 0:
                 dma_channels[x].num_units[16..20]   = data;

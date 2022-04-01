@@ -81,12 +81,13 @@ final class WRAM {
             value= (*(arm7_mapping[address[14]])).read!T(address % WRAM_SIZE);
         } else {
             value= arm7_only_wram.read!T(address % ARM7_ONLY_WRAM_SIZE);
-        }        log_wram("arm7 reading from %x in mode %x %x %x", address, mode, arm7_wram_enabled, value);
+        }        
+        // log_wram("arm7 reading from %x in mode %x %x %x", address, mode, arm7_wram_enabled, value);
         return value;
     }
 
     void write7(T)(Word address, T value) {
-        log_wram("arm7 writing %x to %x in mode %x %x", value, address, mode, arm7_wram_enabled);
+        // log_wram("arm7 writing %x to %x in mode %x %x", value, address, mode, arm7_wram_enabled);
         if (address < 0x0380_0000 && arm7_wram_enabled) {
             (*(arm7_mapping[address[14]])).write!T(address % WRAM_SIZE, value);
         } else {
@@ -100,7 +101,7 @@ final class WRAM {
     }
 
     void write9(T)(Word address, T value) {
-        log_wram("arm9 writing %x to %x in mode %x", value, address, mode);
+        // log_wram("arm9 writing %x to %x in mode %x", value, address, mode);
         if (!arm9_wram_enabled) error_wram("ARM9 tried to write %x to WRAM at %x when it wasn't allowed to.", value, address);
         (*(arm9_mapping[address[14]])).write!T(address % WRAM_SIZE, value);
     }

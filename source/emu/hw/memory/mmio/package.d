@@ -140,6 +140,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
     }
 
     void write(T)(Word address, T value) {
+        if (address == 0x0400_00B8) log_unimplemented("SUSSY!!! %x %x", value, address);
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {
