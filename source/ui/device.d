@@ -21,7 +21,7 @@ abstract class MultiMediaDevice {
         void draw();
 
         // video stuffs
-        void present_videobuffer(Pixel[192][256] buffer);
+        void present_videobuffers(Pixel[192][256], Pixel[192][256] buffer);
         void reset_fps();
 
         // audio stuffs

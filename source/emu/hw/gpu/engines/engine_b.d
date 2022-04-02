@@ -1,27 +1,35 @@
-module emu.hw.gpu.engines.engine_a;
+module emu.hw.gpu.engines.engine_b;
 
 import emu.hw;
 
 import util;
 
-__gshared GPUEngineA gpu_engine_a;
-final class GPUEngineA {
+__gshared GPUEngineB gpu_engine_b;
+final class GPUEngineB {
+    PPU ppu;
 
     this() {
+        ppu = new PPU();
         videobuffer = new Pixel[192][256];
-        gpu_engine_a = this;
+        gpu_engine_b = this;
     }
 
     int bg_mode;
     int display_mode;
     int vram_block;
     void write_DISPCNT(int target_byte, Byte value) {
+        log_engine_b("wrote %x to dispcnt %x", value, target_byte);
         final switch (target_byte) {
             case 0:
                 bg_mode = value[0..2];
                 break;
 
-            case 1: break;
+            case 1: 
+                backgrounds[0].enabled = value[0];
+                backgrounds[1].enabled = value[1];
+                backgrounds[2].enabled = value[2];
+                backgrounds[3].enabled = value[3];
+                break;
 
             case 2:
                 display_mode = value[0..1];
@@ -35,12 +43,20 @@ final class GPUEngineA {
     Pixel[192][256] videobuffer;
 
     void render(int scanline) {
+            log_engine_b("b is rendering!");
         // just do the bitmap mode for now ig
         switch (display_mode) {
             case 0:
                 for (int x = 0; x < 256; x++) videobuffer[x][scanline] = Pixel(Half(0xFFFF));
                 break;
-                
+            case 1:
+            log_engine_b("ppu is rendering!");
+                ppu.render(scanline);
+                for (int x = 0; x < 256; x++) {
+                    videobuffer[x][scanline] = ppu.scanline_buffer[x];
+                }
+                break;
+
             case 2:
                 Byte* vram_block = get_vram_block();
                 for (int x = 0; x < 256; x++) {
@@ -62,6 +78,23 @@ final class GPUEngineA {
     }
 
     Byte read_DISPCNT(int target_byte) {
-        return Byte(0);
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                result[0..2] = Byte(bg_mode);
+                break;
+
+            case 1: break;
+
+            case 2:
+                result[0..1] = Byte(display_mode);
+                result[2..3] = Byte(vram_block);
+                break;
+
+            case 3: break; 
+        }
+
+        return result;  
     }
 }

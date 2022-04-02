@@ -42,6 +42,7 @@ final class NDS {
         //       about the two GBA engines to find out
         new GPU();
         new GPUEngineA();
+        new GPUEngineB();
 
         new KeyInput();
 
@@ -98,7 +99,7 @@ final class NDS {
     }
 
     void set_multimedia_device(MultiMediaDevice device) {
-        gpu.set_present_videobuffer_callback(&device.present_videobuffer);
+        gpu.set_present_videobuffers_callback(&device.present_videobuffers);
         device.set_update_key_callback(&input.update_key);
     }
 

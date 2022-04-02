@@ -18,7 +18,7 @@ final class GPU {
     bool hblank_irq_enabled;
     bool vcounter_irq_enabled;
 
-    void delegate(Pixel[192][256]) present_videobuffer;
+    void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
 
     this() {
         dot      = 0;
@@ -35,7 +35,7 @@ final class GPU {
         gpu = this;
     }
 
-    // void set_frontend_vblank_callback(void delegate(Pixel[SCREEN_HEIGHT][SCREEN_WIDTH]) frontend_vblank_callback) {
+    // void set_frontend_vblank_callback(void delegate(Pixel[192][256]) frontend_vblank_callback) {
     //     this.frontend_vblank_callback = frontend_vblank_callback;
     // }
 
@@ -70,6 +70,8 @@ final class GPU {
 
     void on_vblank_start() {
         vblank = true;
+        // gpu_engine_a.ppu.vblank();
+        gpu_engine_b.ppu.vblank();
 
         if (vblank_irq_enabled) raise_interrupt_for_both_cpus(Interrupt.LCD_VBLANK);
     }
@@ -77,15 +79,17 @@ final class GPU {
     void on_vblank_end() {
         vblank = false;
         scanline = 0;
-        present_videobuffer(gpu_engine_a.videobuffer);
+
+        present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
     }
 
     void render() {
         gpu_engine_a.render(scanline);
+        gpu_engine_b.render(scanline);
     }
 
-    void set_present_videobuffer_callback(void delegate(Pixel[192][256]) present_videobuffer) {
-        this.present_videobuffer = present_videobuffer;
+    void set_present_videobuffers_callback(void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers) {
+        this.present_videobuffers = present_videobuffers;
     }
 
     void write_DISPSTAT(int target_byte, Byte value) {

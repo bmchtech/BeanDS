@@ -32,7 +32,7 @@ final class ARM7TDMI : ArmCPU {
         current_mode = MODE_USER;
         
         arm7 = this;
-        cpu_trace = new CpuTrace(this, 99);
+        cpu_trace = new CpuTrace(this, 1);
         reset();
     }
 

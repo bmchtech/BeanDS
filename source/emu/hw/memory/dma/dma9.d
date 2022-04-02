@@ -239,8 +239,7 @@ final class DMA9 {
 
     void write_DMAxCNT_H(int target_byte, Byte data, int x) {
         import emu;
-        arm9.num_log += 30;
-
+        
         final switch (target_byte) {
             case 0:
                 dma_channels[x].num_units[16..20]   = data;

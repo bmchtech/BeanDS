@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 99);
+        cpu_trace = new CpuTrace(this, 1);
         reset();
     }
 
@@ -62,7 +62,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) T fetch(T)() {
-        if (regs[pc] == 0x0200497C) num_log = 200;
+        // if (regs[pc] == 0x0200497C) num_log = 200;
 
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
@@ -116,7 +116,7 @@ final class ARM946E_S : ArmCPU {
 
         cpu_trace.capture();
 
-        if (num_log > 0) {
+        if (num_log > 0 && false) {
             log_state();
             num_log--;
         }
@@ -186,7 +186,7 @@ final class ARM946E_S : ArmCPU {
     pragma(inline, true) void set_reg__raw(Reg id, Word value, Word[18]* regs) {
         (*regs)[id] = value;
 
-        if (id == pc) {        
+        if (id == pc) {
             (*regs)[pc] &= instruction_set == InstructionSet.ARM ? ~3 : ~1;
             pipeline_access_type = AccessType.NONSEQUENTIAL;
             refill_pipeline();

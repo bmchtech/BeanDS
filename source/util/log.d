@@ -21,7 +21,9 @@ enum LogSource {
     TCM,
     VRAM,
     WRAM,
-    TIMERS
+    PRAM,   
+    TIMERS,
+    PPU
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();
@@ -52,7 +54,6 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     if (fatal) {
         writefln("===== ARM7 TRACE =====");
         arm7.cpu_trace.print_trace();
-        writefln("\n");
         writefln("===== ARM9 TRACE =====");
         arm9.cpu_trace.print_trace();
         assert(0);

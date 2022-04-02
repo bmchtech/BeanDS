@@ -72,9 +72,9 @@ final class MMIO(MMIORegister[] mmio_registers) {
         this.name = name;
     }
 
-    static foreach (MMIORegister mr; mmio_registers) {
-        mixin("enum %s = %d;".format(mr.name, mr.address));
-    }
+    // static foreach (MMIORegister mr; mmio_registers) {
+    //     mixin("enum %s = %d;".format(mr.name, mr.address));
+    // }
 
     T read(T)(Word address) {
         import std.format;
@@ -140,7 +140,6 @@ final class MMIO(MMIORegister[] mmio_registers) {
     }
 
     void write(T)(Word address, T value) {
-        if (address == 0x0400_00B8) log_unimplemented("SUSSY!!! %x %x", value, address);
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {

@@ -179,13 +179,18 @@ template execute_thumb(T : ArmCPU) {
             }
         }
 
+        import std.stdio;
         bool base_in_register_list = register_list[base];
-        if (v4T!T && !base_in_register_list) {
+        if (v4T!T && !base_in_register_list) {        
             cpu.set_reg(base, current_address);
         }
 
-        if (v5TE!T && base_in_register_list) {
-            if (register_list >= 1 << base) {
+        if (v5TE!T) {
+            if (base_in_register_list) {
+                if (register_list == 1 << base || register_list >> (base + 1) > 0) {
+                    cpu.set_reg(base, current_address);
+                }
+            } else {
                 cpu.set_reg(base, current_address);
             }
         }

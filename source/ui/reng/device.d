@@ -18,15 +18,20 @@ class RengMultimediaDevice : MultiMediaDevice {
 
     override {
         // video stuffs
-        void present_videobuffer(Pixel[192][256] buffer) {
+        void present_videobuffers(Pixel[192][256] buffer_top, Pixel[192][256] buffer_bot) {
             ds_video = Core.jar.resolve!DSVideo().get; 
 
             for (int y = 0; y < 192; y++) {
             for (int x = 0; x < 256;  x++) {
-                    ds_video.videobuffer[y * 256 + x] = 
-                        (buffer[x][y].r << 3 <<  0) |
-                        (buffer[x][y].g << 3 <<  8) |
-                        (buffer[x][y].b << 3 << 16) |
+                    ds_video.videobuffer_top[y * 256 + x] = 
+                        (buffer_top[x][y].r << 3 <<  0) |
+                        (buffer_top[x][y].g << 3 <<  8) |
+                        (buffer_top[x][y].b << 3 << 16) |
+                        0xFF000000;
+                    ds_video.videobuffer_bot[y * 256 + x] = 
+                        (buffer_bot[x][y].r << 3 <<  0) |
+                        (buffer_bot[x][y].g << 3 <<  8) |
+                        (buffer_bot[x][y].b << 3 << 16) |
                         0xFF000000;
             }
             }
