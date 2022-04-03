@@ -18,7 +18,6 @@ final class GPUEngineB {
     int display_mode;
     int vram_block;
     void write_DISPCNT(int target_byte, Byte value) {
-        log_engine_b("wrote %x to dispcnt %x", value, target_byte);
         final switch (target_byte) {
             case 0:
                 bg_mode = value[0..2];
@@ -43,14 +42,12 @@ final class GPUEngineB {
     Pixel[192][256] videobuffer;
 
     void render(int scanline) {
-            log_engine_b("b is rendering!");
         // just do the bitmap mode for now ig
         switch (display_mode) {
             case 0:
                 for (int x = 0; x < 256; x++) videobuffer[x][scanline] = Pixel(Half(0xFFFF));
                 break;
             case 1:
-            log_engine_b("ppu is rendering!");
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];

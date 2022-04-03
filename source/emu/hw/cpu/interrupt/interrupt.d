@@ -48,14 +48,12 @@ final class InterruptManager {
     }
 
     void raise_interrupt(Interrupt code) {
-        log_interrupt("interrupt raised: %x", code);
         status[code] = 1;
-
-        if ((enable & status) != 0) cpu.unhalt();
+        if (enable & status) cpu.unhalt();
     }
 
     bool irq_pending() {
-        return master_enable && ((enable & status) != 0);
+        return master_enable && (enable & status);
     }
 
     void write_IF(int target_byte, Byte data) {

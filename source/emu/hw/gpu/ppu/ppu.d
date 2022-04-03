@@ -162,7 +162,6 @@ final class PPU {
             }
             
             Byte[8] tile_data = vram.vram_c.data[tile_address .. tile_address + 8];
-            for (int i = 0; i < 8; i++) log_ppu("TILE: %x %x %x %x %x %x", bpp8, flipped_y, tile_base_address, tile_data[i], tile, tile_address);
 
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
@@ -311,7 +310,6 @@ final class PPU {
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][0],
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][1]);
             int tile = vram.vram_c.data.read!Half(Word(screen_base_address + tile_address));
-            log_ppu("tile addr: %x", screen_base_address + tile_address);
             int draw_x = tile_x_offset * 8 - tile_dx;
             int draw_y = bg_scanline;
             bool flipped_x = (tile >> 10) & 1;
