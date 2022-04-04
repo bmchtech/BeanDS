@@ -23,7 +23,9 @@ enum LogSource {
     WRAM,
     PRAM,   
     TIMERS,
-    PPU
+    PPU,
+    SPU,
+    IPC
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

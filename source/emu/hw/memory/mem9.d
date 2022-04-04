@@ -4,15 +4,20 @@ import emu;
 
 import util;
 
+__gshared Mem9 mem9;
 final class Mem9 : Mem {
     enum BIOS_SIZE = 3072;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    this() {
+    private this() {
         new DMA9(this);
 
         MMIO9.reset();
         TCM.reset();
+    }
+
+    static void reset() {
+        mem9 = new Mem9();
     }
 
     void skip_firmware() {

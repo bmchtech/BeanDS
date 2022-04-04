@@ -42,7 +42,8 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         void push_sample(Sample s) {
-
+            import util;
+            log_spu("%s", s);
         }
 
         void update() {

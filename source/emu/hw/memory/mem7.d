@@ -4,12 +4,17 @@ import emu;
 
 import util;
 
+__gshared Mem7 mem7;
 final class Mem7 : Mem {
     enum BIOS_SIZE = 1 << 14;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    this() {
+    private this() {
         MMIO7.reset();
+    }
+
+    static void reset() {
+        mem7 = new Mem7();
     }
 
     T read(T)(Word address) {

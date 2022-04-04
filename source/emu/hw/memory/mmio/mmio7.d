@@ -25,5 +25,12 @@ static const mmio7_registers = [
     MMIORegister("interrupt7",   "IF",            0x0400_0214,  4, READ_WRITE),
     MMIORegister("vram",         "VRAMSTAT",      0x0400_0240,  1, READ),
     MMIORegister("wram",         "WRAMSTAT",      0x0400_0241,  1, READ),
-    MMIORegister("nds",          "HALTCNT",       0x0400_0301,  1, READ_WRITE)
+    MMIORegister("nds",          "HALTCNT",       0x0400_0301,  1, READ_WRITE),
+    MMIORegister("spu",          "SOUNDxCNT",     0x0400_0400,  4, READ_WRITE).repeat(16, 16),
+    MMIORegister("spu",          "SOUNDxSAD",     0x0400_0404,  4,      WRITE).repeat(16, 16),
+    MMIORegister("spu",          "SOUNDxTMR",     0x0400_0408,  2,      WRITE).repeat(16, 16),
+    MMIORegister("spu",          "SOUNDxPNT",     0x0400_040A,  2,      WRITE).repeat(16, 16),
+    MMIORegister("spu",          "SOUNDxLEN",     0x0400_040C,  2,      WRITE).repeat(16, 16),
+    MMIORegister("spu",          "SOUNDCNT",      0x0400_0500,  2, READ_WRITE),
+    MMIORegister("spu",          "SOUNDBIAS",     0x0400_0504,  2, READ_WRITE),
 ];

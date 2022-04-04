@@ -55,7 +55,9 @@ struct MemoryUnit(T) {
         static if (is(T == ubyte))  return 8;
     }
 
-    void opSliceAssign(T value, size_t start, size_t end) {
+    void opSliceAssign(S)(S value_s, size_t start, size_t end) {
+        T value = cast(T) value_s;
+
         auto mask = create_mask(start, end);
         value &= mask;
 
@@ -63,7 +65,9 @@ struct MemoryUnit(T) {
         this.value |=  value << start;
     }
 
-    void opIndexAssign(T value, size_t index) {
+    void opIndexAssign(S)(S value_s, size_t index) {
+        T value = cast(T) value_s;
+
         this.value &= ~(1     << index);
         this.value |=  (value << index);
     }

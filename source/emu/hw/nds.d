@@ -11,8 +11,6 @@ final class NDS {
     Cart      cart;
     ARM7TDMI  arm7;
     ARM946E_S arm9;
-    Mem7      mem7;
-    Mem9      mem9;
     
     CpuTrace cpu_trace;
 
@@ -22,8 +20,10 @@ final class NDS {
         //       or make nothing.
         new Scheduler();
 
-        mem7 = new Mem7();
-        mem9 = new Mem9();
+        Mem7.reset();
+        Mem9.reset();
+        SPU.reset();
+
         arm7 = new ARM7TDMI(mem7);
         arm9 = new ARM946E_S(mem9);
 
@@ -86,8 +86,6 @@ final class NDS {
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
-
-        log_nds("the sussy parameters: %x %x %x %x", cart.cart_header.arm7_ram_address, cart.cart_header.arm7_size, cart.cart_header.arm9_ram_address, cart.cart_header.arm9_size);
     }
 
     void cycle() {
@@ -101,6 +99,11 @@ final class NDS {
     void set_multimedia_device(MultiMediaDevice device) {
         gpu.set_present_videobuffers_callback(&device.present_videobuffers);
         device.set_update_key_callback(&input.update_key);
+        spu.set_push_sample_callback(&device.push_sample);
+    }
+
+    void set_sample_rate(int sample_rate) {
+        spu.set_cycles_per_sample(33_513_982 / sample_rate);
     }
 
     void write_HALTCNT(int target_byte, Byte data) {

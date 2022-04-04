@@ -43,5 +43,4 @@ static const mmio9_registers = [
     MMIORegister("gpu_engine_b.ppu", "BGxCNT",        0x0400_1008,  2, READ_WRITE).repeat(4, 2),
     MMIORegister("gpu_engine_b.ppu", "BGxHOFS",       0x0400_1010,  2,      WRITE).repeat(4, 4),
     MMIORegister("gpu_engine_b.ppu", "BGxVOFS",       0x0400_1012,  2,      WRITE).repeat(4, 4),
-
 ];
