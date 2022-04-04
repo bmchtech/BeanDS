@@ -1,17 +1,18 @@
-module emu.hw.memory.dma.dma9;
+module emu.hw.memory.dma.dma;
 
-import emu.hw.memory;
-
+import emu;
 import util;
 
-__gshared DMA9 dma9;
-final class DMA9 {
-    Mem9 mem9;
+__gshared DMA!(HwType.NDS7) dma7;
+__gshared DMA!(HwType.NDS9) dma9;
 
-    this(Mem9 mem9) {
-        this.mem9 = mem9;
-        dma9 = this;
+static void DMA_reset() {
+    dma7 = new DMA!(HwType.NDS7)();
+    dma9 = new DMA!(HwType.NDS9)();
+}
 
+final class DMA(HwType H) {
+    private this() {
         dma_channels = [
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
@@ -34,15 +35,15 @@ final class DMA9 {
 
         auto bytes_to_transfer = dma_channels[current_channel].size_buf;
 
-        log_dma9(
-            "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
-            current_channel,
-            bytes_to_transfer,
-            dma_channels[current_channel].transferring_words ? "words" : "halfwords",
-            dma_channels[current_channel].source_buf,
-            dma_channels[current_channel].dest_buf,
-            read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
-        );
+        // log_dma(
+        //     "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
+        //     current_channel,
+        //     bytes_to_transfer,
+        //     dma_channels[current_channel].transferring_words ? "words" : "halfwords",
+        //     dma_channels[current_channel].source_buf,
+        //     dma_channels[current_channel].dest_buf,
+        //     read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
+        // );
 
         auto source_increment = 0;
         auto dest_increment = 0;
@@ -115,8 +116,15 @@ final class DMA9 {
         }
     }
 
-    const uint[4] DMA_SOURCE_BUF_MASK = [0x07FF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF];
-    const uint[4] DMA_DEST_BUF_MASK   = [0x07FF_FFFF, 0x07FF_FFFF, 0x07FF_FFFF, 0x0FFF_FFFF];
+    static if (is(H == HwType.NDS7)) {
+        const uint[4] DMA_SOURCE_BUF_MASK = [0x07FF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF];
+        const uint[4] DMA_DEST_BUF_MASK   = [0x07FF_FFFF, 0x07FF_FFFF, 0x07FF_FFFF, 0x0FFF_FFFF];
+        const uint[4] DMA_NUM_UNITS_MASK  = [0x0000_3FFF, 0x0000_3FFF, 0x0000_3FFF, 0x0000_FFFF];
+    } else { // NDS9
+        const uint[4] DMA_SOURCE_BUF_MASK = [0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF];
+        const uint[4] DMA_DEST_BUF_MASK   = [0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF, 0x0FFF_FFFF];
+        const uint[4] DMA_NUM_UNITS_MASK  = [0x0001_FFFF, 0x0001_FFFF, 0x0001_FFFF, 0x0001_FFFF];
+    }
 
     void initialize_dma(int dma_id) {
         dma_channels[dma_id].source_buf = dma_channels[dma_id].source & (dma_channels[dma_id].transferring_words ? ~3 : ~1);
@@ -127,8 +135,7 @@ final class DMA9 {
     }
 
     void enable_dma(int dma_id) {
-        dma_channels[dma_id].num_units = dma_channels[dma_id].num_units & 0x0001FFFF;
-        if (dma_channels[dma_id].num_units == 0) dma_channels[dma_id].num_units = 0x20000;
+        dma_channels[dma_id].num_units = dma_channels[dma_id].num_units & DMA_NUM_UNITS_MASK[dma_id];
 
         dma_channels[dma_id].enabled  = true;
 

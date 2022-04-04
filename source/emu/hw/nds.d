@@ -6,6 +6,11 @@ import ui.device;
 
 import util;
 
+enum HwType {
+    NDS7,
+    NDS9
+}
+
 __gshared NDS nds;
 final class NDS {
     Cart      cart;
@@ -23,6 +28,7 @@ final class NDS {
         Mem7.reset();
         Mem9.reset();
         SPU.reset();
+        DMA_reset();
 
         arm7 = new ARM7TDMI(mem7);
         arm9 = new ARM946E_S(mem9);

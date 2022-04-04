@@ -10,8 +10,6 @@ final class Mem9 : Mem {
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
     private this() {
-        new DMA9(this);
-
         MMIO9.reset();
         TCM.reset();
     }
