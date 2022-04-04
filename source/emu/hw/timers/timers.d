@@ -54,7 +54,7 @@ final class TimerManager {
     }
 
     void timer_overflow(int x) {
-        log_timers("baka!!! %x", x);
+        log_timers("baka!!! %x %x", x, timers[x].irq_enable);
 
         timers[x].reload_value_buffer = timers[x].reload_value;
         reload_timer(x);
@@ -62,7 +62,6 @@ final class TimerManager {
         // on_timer_overflow(x);
 
         if (timers[x].irq_enable) {
-            log_timers("sussy timer inetrrupt!");
             interrupt_manager.raise_interrupt(get_interrupt_from_timer_id(x));
         }
 

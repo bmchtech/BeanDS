@@ -104,7 +104,7 @@ final class SPU {
         return result;
     }
 
-    void write_SOUNDxCNT(int target_byte, Byte value, int x) {        
+    void write_SOUNDxCNT(int target_byte, Byte value, int x) {    
         auto c = sound_channels[x];
         final switch (target_byte) {
              case 0:
@@ -128,6 +128,7 @@ final class SPU {
     }
 
     void write_SOUNDxSAD(int target_byte, Byte value, int x) {
+        log_spu("wrote to sad");
         sound_channels[x].source_address.set_byte(target_byte, value);
         sound_channels[x].source_address &= create_mask(0, 26);
     }
