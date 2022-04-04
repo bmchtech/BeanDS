@@ -36,5 +36,4 @@ pragma(inline, true) {
         if (negative) value |= (((1UL << (64UL - size)) - 1UL) << size);
         return value;
     }
-
 }

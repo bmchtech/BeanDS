@@ -17,6 +17,7 @@ final class SPU {
     OutputSource output_source_right;
     bool output_mixer_ch1 = true;
     bool output_mixer_ch3 = true;
+    Half sound_bias;
 
     enum OutputSource {
         MIXER        = 0,
@@ -103,7 +104,7 @@ final class SPU {
         return result;
     }
 
-    void write_SOUNDxCNT(int target_byte, Byte value, int x) {
+    void write_SOUNDxCNT(int target_byte, Byte value, int x) {        
         auto c = sound_channels[x];
         final switch (target_byte) {
              case 0:
@@ -180,11 +181,12 @@ final class SPU {
     }
     
     Byte read_SOUNDBIAS(int target_byte) {
-        return Byte(0);
+        return sound_bias.get_byte(target_byte);
     }
     
     void write_SOUNDBIAS(int target_byte, Byte value) {
-
+        sound_bias.set_byte(target_byte, value);
+        sound_bias &= 0x3FF;
     }
 
     void set_push_sample_callback(void delegate(Sample s) push_sample_callback) {
