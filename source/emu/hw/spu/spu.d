@@ -11,7 +11,19 @@ final class SPU {
 
     void delegate(Sample s) push_sample_callback;
 
+    short master_volume;
     bool master_enable;
+    OutputSource output_source_left;
+    OutputSource output_source_right;
+    bool output_mixer_ch1 = true;
+    bool output_mixer_ch3 = true;
+
+    enum OutputSource {
+        MIXER        = 0,
+        CH1          = 1,
+        CH3          = 2,
+        CH1_PLUS_CH3 = 3
+    }
 
     private this() {
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
@@ -132,11 +144,39 @@ final class SPU {
     }
     
     Byte read_SOUNDCNT(int target_byte) {
-        return Byte(0);
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                result[0..6] = master_volume;
+                break;
+
+            case 1: 
+                result[0..1] = output_source_left;
+                result[2..3] = output_source_right;
+                result[4]    = !output_mixer_ch1;
+                result[5]    = !output_mixer_ch3;
+                result[7]    = master_enable; 
+                break;
+        }
+
+        return result;
     }
     
     void write_SOUNDCNT(int target_byte, Byte value) {
-        
+        final switch (target_byte) {
+            case 0: 
+                master_volume = value[0..6];
+                break;
+
+            case 1:
+                output_source_left  = cast(OutputSource) value[0..1];
+                output_source_right = cast(OutputSource) value[2..3];
+                output_mixer_ch1    = !value[4];
+                output_mixer_ch3    = !value[5];
+                master_enable       = value[7];
+                break;
+        }
     }
     
     Byte read_SOUNDBIAS(int target_byte) {
@@ -144,15 +184,7 @@ final class SPU {
     }
     
     void write_SOUNDBIAS(int target_byte, Byte value) {
-        final switch (target_byte) {
-            case 0: 
-                // bruh im too lazy to program the rest of these values in
-                break;
 
-            case 1:
-                master_enable = value[7];
-                break;
-        }
     }
 
     void set_push_sample_callback(void delegate(Sample s) push_sample_callback) {
