@@ -5,6 +5,10 @@ import emu.hw;
 import ui.device;
 import ui.reng;
 
+import std.format;
+import std.string;
+
+import raylib;
 import re;
 
 class RengMultimediaDevice : MultiMediaDevice {
@@ -37,8 +41,8 @@ class RengMultimediaDevice : MultiMediaDevice {
             }
         }
 
-        void reset_fps() {
-
+        void set_fps(int fps) {
+            raylib.SetWindowTitle(toStringz("FPS: %d".format(fps)));
         }
 
         void push_sample(Sample s) {

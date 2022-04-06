@@ -1,10 +1,12 @@
-import std.stdio;
-
 import emu.hw.nds;
 
 import ui;
 
 import util;
+
+version (gperf) {
+	import gperftools_d.profiler;
+}
 
 void main(string[] args) {
 	auto cli_args = parse_cli_args(args);
@@ -23,5 +25,17 @@ void main(string[] args) {
 
 	auto reng = new RengMultimediaDevice(1);
 	nds.set_multimedia_device(reng);
+
+	import std.stdio;
+	version (gperf) {
+		writefln("Started profiler");
+		ProfilerStart();
+	}
+
 	new Runner(nds, 1, reng).run();
+
+	version (gperf) {
+		ProfilerStop();
+		writefln("Ended profiler");
+	}
 }

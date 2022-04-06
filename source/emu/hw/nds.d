@@ -94,12 +94,16 @@ final class NDS {
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
     }
 
-    void cycle() {
-        arm7.run_instruction();
-        arm9.run_instruction();
-        arm9.run_instruction();
-        scheduler.tick(4);
-        scheduler.process_events();
+    void cycle(int num_cycles) {
+        auto target_timestamp = scheduler.get_current_time_relative_to_cpu() + num_cycles;
+
+        while (scheduler.get_current_time_relative_to_cpu() < target_timestamp) {
+            arm7.run_instruction();
+            arm9.run_instruction();
+            arm9.run_instruction();
+            scheduler.tick(2);
+            scheduler.process_events();
+        }
     }
 
     void set_multimedia_device(MultiMediaDevice device) {

@@ -19,6 +19,7 @@ final class Mem7 : Mem {
 
     T read(T)(Word address) {
         check_memory_unit!T;
+        scheduler.tick(1);
 
         auto region = get_region(address);
 
@@ -43,6 +44,7 @@ final class Mem7 : Mem {
 
     void write(T)(Word address, T value) {
         check_memory_unit!T;
+        scheduler.tick(1);
 
         auto region = get_region(address);
 

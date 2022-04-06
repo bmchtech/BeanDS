@@ -6,6 +6,7 @@
 		"ddmp": "0.0.1-0.dev.3",
 		"dray": "4.0.0-r5",
 		"fluent-asserts": "0.13.3",
+		"gperftools_d": "0.1.0",
 		"jar": "0.1.0",
 		"libdparse": "0.14.0",
 		"reng": "0.7.3",

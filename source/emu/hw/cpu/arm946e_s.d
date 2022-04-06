@@ -114,7 +114,7 @@ final class ARM946E_S : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
 
-        cpu_trace.capture();
+        // cpu_trace.capture();
 
         if (num_log > 0 && false) {
             log_state();

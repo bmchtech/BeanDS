@@ -190,7 +190,6 @@ final class IPC {
         if (fifo.empty) {
             fifo_error = true;
         }
-        // arm7.num_log = 1000;
 
         T sus = cast(T) fifo.pop();
         if (interrupt == interrupt7) log_ipc("ARM7 POPPING: %x", sus);

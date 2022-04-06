@@ -5,6 +5,8 @@ import ui.reng;
 
 import emu.hw;
 
+import std.datetime.stopwatch;
+
 import core.sync.mutex;
 
 final class Runner {
@@ -20,9 +22,11 @@ final class Runner {
     size_t sync_to_audio_lower;
     size_t sync_to_audio_upper;
 
-    ulong start_timestamp;
+    StopWatch stopwatch;
 
     bool running;
+
+    int fps = 0;
 
     this(NDS nds, uint cycles_per_batch, MultiMediaDevice frontend) {
         this.nds = nds;
@@ -47,36 +51,30 @@ final class Runner {
         if (buffer_size > sync_to_audio_upper) set_should_cycle_nds(false);
         if (buffer_size < sync_to_audio_lower) set_should_cycle_nds(true);
         
-		ulong end_timestamp = 0;
-		ulong elapsed = end_timestamp - start_timestamp;
-        if (elapsed > 1000) {
-            frontend.reset_fps();
-            start_timestamp = end_timestamp;
+        if (stopwatch.peek.total!"msecs" > 1000) {
+            frontend.set_fps(fps);
+            stopwatch.reset();
+            fps = 0;
         }
 
         frontend.update();
         frontend.draw();
+
+        fps++;
     }
 
-    int x = 0;
-
     void run() {
-        start_timestamp = 0;
+        stopwatch = StopWatch(AutoStart.yes);
 
         while (running) {
             // i separated the ifs so fast fowarding doesn't
             // incur a mutex call from get_should_cycle_nds
             if (true) {
-                for (int i = 0; i < 275000; i++) nds.cycle();
+                nds.cycle(33_560_000 / 60);
             } else {
                 if (get_should_cycle_nds()) {
-                    for (int i = 0; i < 275000; i++) nds.cycle();
+                    nds.cycle(33_560_000 / 60);
                 }
-            }
-
-            x++;
-            if (x == 60) {
-                x = 0;
             }
 
             tick();

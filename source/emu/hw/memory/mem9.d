@@ -24,6 +24,7 @@ final class Mem9 : Mem {
 
     T read(T)(Word address) {
         check_memory_unit!T;
+        scheduler.tick(1);
 
         if (tcm.can_read_itcm(address)) return tcm.read_itcm!T(address);
         if (tcm.can_read_dtcm(address)) return tcm.read_dtcm!T(address);
@@ -53,6 +54,7 @@ final class Mem9 : Mem {
 
     void write(T)(Word address, T value) {
         check_memory_unit!T;
+        scheduler.tick(1);
 
         if (tcm.can_write_itcm(address)) { tcm.write_itcm!T(address, value); return; }
         if (tcm.can_write_dtcm(address)) { tcm.write_dtcm!T(address, value); return; }
