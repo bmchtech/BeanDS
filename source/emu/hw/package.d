@@ -7,6 +7,7 @@ public {
     import emu.hw.math;
     import emu.hw.memory;
     import emu.hw.nds;
+    import emu.hw.spi;
     import emu.hw.spu;
     import emu.hw.timers;
 }
