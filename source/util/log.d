@@ -50,8 +50,8 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.stdio : writef, writefln;
 
     ulong timestamp = scheduler.get_current_time_relative_to_cpu();
-    // writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
-    // writefln(fmt, args);
+    writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
+    writefln(fmt, args);
 
     if (fatal) {
         writefln("===== ARM7 TRACE =====");

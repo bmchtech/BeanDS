@@ -106,7 +106,6 @@ final class VRAM {
 
     T read9(T)(Word address) {
         auto region = get_region(address);
-        log_vram("recieved a read: %x", address);
 
         T result = 0;
         bool performed_read = false;
@@ -139,13 +138,10 @@ final class VRAM {
             VRAMBlock block = blocks[i];
 
             if (block.in_range(address)) {
-                log_vram("wrote %x to %x", value, address);
                 block.write!T(address, value);
                 performed_write = true;
             }
         }
-
-        log_arm9("wrote %x to vram at %x", value, address);
 
         if (!performed_write) error_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
     }

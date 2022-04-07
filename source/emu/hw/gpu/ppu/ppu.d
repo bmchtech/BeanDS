@@ -14,7 +14,9 @@ enum AffineParameter {
     D = 3
 }
 
-final class PPU {
+final class PPU(HwType H) {
+    static assert (H == HwType.NDS9 || H == HwType.NDS7);
+
     enum Pixel RESET_PIXEL = Pixel(Half(0));
 
     ushort scanline;
@@ -25,10 +27,25 @@ final class PPU {
 
     Scheduler scheduler;
 
+    @property 
+    Byte[] bg_vram() {
+        static if (H == HwType.NDS9) return vram.vram_a.data;
+        static if (H == HwType.NDS7) return vram.vram_c.data;
+        assert(0);
+    }
+
+    @property 
+    Byte[] obj_vram() {
+        static if (H == HwType.NDS9) return vram.vram_b.data;
+        static if (H == HwType.NDS7) return vram.vram_d.data;
+        assert(0);
+    }
+
     this() {
         scanline = 0;
 
-        canvas = new Canvas(this);
+        static if (H == HwType.NDS9) canvas = new Canvas(0);
+        static if (H == HwType.NDS7) canvas = new Canvas(0x400);
     }
 
     void render(int scanline) {
@@ -45,7 +62,7 @@ final class PPU {
 
         canvas.apply_horizontal_mosaic(bg_mosaic_h, obj_mosaic_h);
 
-        if (bg_mode < 3) canvas.composite();
+        if (bg_mode < 3) canvas.composite(scanline);
 
         for (int x = 0; x < 256; x++) {
             scanline_buffer[x] = canvas.pixels_output[x];
@@ -161,7 +178,7 @@ final class PPU {
                 else                  uint tile_address = tile_base_address + (tile & 0x3ff) * 32 + (y)     * 4;
             }
             
-            Byte[8] tile_data = vram.vram_c.data[tile_address .. tile_address + 8];
+            Byte[8] tile_data = bg_vram[tile_address .. tile_address + 8];
 
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
@@ -239,7 +256,7 @@ final class PPU {
                     
 
                 static if (bpp8) {
-                    ubyte index = vram.vram_c.data.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 64) + ofs_y * 8 + ofs_x));
+                    ubyte index = obj_vram.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 64) + ofs_y * 8 + ofs_x));
                     
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
                         canvas.draw_obj_pixel(draw_pos.x, index + 256, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
@@ -248,7 +265,7 @@ final class PPU {
                     }
 
                 } else {
-                    ubyte index = vram.vram_c.data.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 32) + ofs_y * 4 + (ofs_x / 2)));
+                    ubyte index = obj_vram.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 32) + ofs_y * 4 + (ofs_x / 2)));
 
                     index = !(ofs_x % 2) ? index & 0xF : index >> 4;
                     index += texture.palette * 16;
@@ -309,7 +326,7 @@ final class PPU {
             int tile_address = get_tile_address__text(topleft_tile_x + tile_x_offset, topleft_tile_y, 
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][0],
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][1]);
-            int tile = vram.vram_c.data.read!Half(Word(screen_base_address + tile_address));
+            int tile = bg_vram.read!Half(Word(screen_base_address + tile_address));
             int draw_x = tile_x_offset * 8 - tile_dx;
             int draw_y = bg_scanline;
             bool flipped_x = (tile >> 10) & 1;
@@ -364,9 +381,9 @@ final class PPU {
                 tile_y &= tile_mask;
                 
                 int tile_address = get_tile_address__rotation_scaling(tile_x, tile_y, tiles_per_row);
-                int tile = vram.vram_c.data.read!Byte(Word(screen_base_address + tile_address));
+                int tile = bg_vram.read!Byte(Word(screen_base_address + tile_address));
 
-                ubyte color_index = vram.vram_c.data.read!Byte(Word(tile_base_address + (tile & 0x3FF) * 64 + fine_y * 8 + fine_x));
+                ubyte color_index = bg_vram.read!Byte(Word(tile_base_address + (tile & 0x3FF) * 64 + fine_y * 8 + fine_x));
                 canvas.draw_bg_pixel(x, background_id, color_index, background.priority, color_index == 0);
             }
 

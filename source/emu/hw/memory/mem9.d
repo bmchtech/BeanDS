@@ -56,6 +56,8 @@ final class Mem9 : Mem {
         check_memory_unit!T;
         scheduler.tick(1);
 
+        if (address == 0x204c9d0) log_spu("%X SUSSSS", value);
+
         if (tcm.can_write_itcm(address)) { tcm.write_itcm!T(address, value); return; }
         if (tcm.can_write_dtcm(address)) { tcm.write_dtcm!T(address, value); return; }
 

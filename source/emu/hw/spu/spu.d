@@ -55,23 +55,27 @@ final class SPU {
             Word current_address;
             Half current_sample;
             int  extra_cycles;
+            int  cycles_since_last_dma;
         }
 
         void reset() {
             current_address = source_address;
-            extra_cycles    = 0;
             current_sample  = 0;
+            cycles_since_last_dma = 0;
         }
 
         short sample() {
             if (!enabled) return 0;
 
-            auto cycles_since_last_sample = spu.cycles_per_sample - extra_cycles;
-            auto dmas_since_last_sample   = cycles_since_last_sample / timer_value;
-            extra_cycles                  = cycles_since_last_sample % timer_value;
+            log_spu("thing: %x %x %x %x", current_address, spu.cycles_per_sample, cycles_since_last_dma, timer_value);
+            cycles_since_last_dma += spu.cycles_per_sample;
 
-            current_address += dmas_since_last_sample * 2;
-            current_sample = mem7.read!Half(current_address);
+            if (cycles_since_last_dma > timer_value) {
+                current_address += (cycles_since_last_dma / timer_value) * 2;
+                cycles_since_last_dma %= timer_value;
+                current_sample = mem9.read!Half(current_address);
+                log_spu("read: %x", current_sample);
+            }
 
             return current_sample;
         }
@@ -105,7 +109,8 @@ final class SPU {
     }
 
     void write_SOUNDxCNT(int target_byte, Byte value, int x) {    
-        auto c = sound_channels[x];
+        log_spu("wrote to cunt %x %x %x", target_byte, value, x);
+        auto c = &sound_channels[x];
         final switch (target_byte) {
              case 0:
                 c.volume_mul  = value[0..6];
@@ -128,7 +133,7 @@ final class SPU {
     }
 
     void write_SOUNDxSAD(int target_byte, Byte value, int x) {
-        log_spu("wrote to sad");
+        log_spu("wrote to sad %x %x %x", target_byte, value, x);
         sound_channels[x].source_address.set_byte(target_byte, value);
         sound_channels[x].source_address &= create_mask(0, 26);
     }
@@ -199,6 +204,7 @@ final class SPU {
         for (int i = 0; i < 16; i++) result += sound_channels[i].sample();
         push_sample_callback(Sample(result, result));
 
+        log_spu("sample: %x", result);
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 

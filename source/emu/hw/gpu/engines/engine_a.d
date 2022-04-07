@@ -7,7 +7,10 @@ import util;
 __gshared GPUEngineA gpu_engine_a;
 final class GPUEngineA {
 
+    PPU!(HwType.NDS9) ppu;
+
     this() {
+        ppu = new PPU!(HwType.NDS9);
         videobuffer = new Pixel[192][256];
         gpu_engine_a = this;
     }
@@ -39,6 +42,13 @@ final class GPUEngineA {
         switch (display_mode) {
             case 0:
                 for (int x = 0; x < 256; x++) videobuffer[x][scanline] = Pixel(Half(0xFFFF));
+                break;
+                
+            case 1:
+                ppu.render(scanline);
+                for (int x = 0; x < 256; x++) {
+                    videobuffer[x][scanline] = ppu.scanline_buffer[x];
+                }
                 break;
                 
             case 2:

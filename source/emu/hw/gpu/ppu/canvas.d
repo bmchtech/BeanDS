@@ -107,17 +107,17 @@ final class Canvas {
         bool[2]    obj_target_pixel;
         bool[2]    backdrop_target_pixel;
 
+        int pram_offset;
+
     private:
-        PPU ppu;
         Background[4] sorted_backgrounds;
 
-    public this(PPU ppu) {
-        this.ppu = ppu;
-
+    public this(int pram_offset) {
         this.bg_scanline   = new PixelData[256][4];
         this.obj_scanline  = new PixelData[256];
         this.pixels_output = new Pixel    [256];
 
+        this.pram_offset = pram_offset;
         reset();
     }
 
@@ -202,9 +202,7 @@ final class Canvas {
         }
     }
 
-    public void composite() {
-        // for (int x = 0; x < 240; x++) pixels_output[x] = hw.ppu.get_pixel_from_color(bg_scanline[1][x].index);
-        // return;
+    public void composite(int scanline) {
         // step 1: sort the backgrounds by priority
         sorted_backgrounds = backgrounds;
 
@@ -237,8 +235,8 @@ final class Canvas {
 
             for (int i = 0; i < 2; i++) {
                 if (windows[i].enabled) {
-                    if (windows[i].left <= x            && x            < windows[i].right  && 
-                        windows[i].top  <= ppu.scanline && ppu.scanline < windows[i].bottom) {
+                    if (windows[i].left <= x        && x        < windows[i].right  && 
+                        windows[i].top  <= scanline && scanline < windows[i].bottom) {
                         current_window_type = cast(WindowType) i;
                         break;
                     }
@@ -323,12 +321,12 @@ final class Canvas {
     private pragma(inline, true) Pixel blend(int[] index, int blendable_pixels, Blending effective_blending_type) {
         final switch (effective_blending_type) {
             case Blending.NONE:
-                return Pixel(pram.read!Half(Word(0x400 + index[0] * 2)));
+                return Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
 
             case Blending.BRIGHTNESS_INCREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = Pixel(pram.read!Half(Word(0x400 + index[0] * 2)));
+                Pixel output = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
 
                 output.r += cast(ubyte) (((31 - output.r) * evy_coeff) >> 4);
                 output.g += cast(ubyte) (((31 - output.g) * evy_coeff) >> 4);
@@ -338,7 +336,7 @@ final class Canvas {
             case Blending.BRIGHTNESS_DECREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = Pixel(pram.read!Half(Word(0x400 + index[0] * 2)));
+                Pixel output = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
 
                 output.r -= cast(ubyte) (((output.r) * evy_coeff) >> 4);
                 output.g -= cast(ubyte) (((output.g) * evy_coeff) >> 4);
@@ -348,8 +346,8 @@ final class Canvas {
             case Blending.ALPHA:
                 if (blendable_pixels < 2) goto case Blending.NONE;
 
-                Pixel input_A = Pixel(pram.read!Half(Word(0x400 + index[0] * 2)));
-                Pixel input_B = Pixel(pram.read!Half(Word(0x400 + index[1] * 2)));
+                Pixel input_A = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
+                Pixel input_B = Pixel(pram.read!Half(Word(pram_offset + index[1] * 2)));
                 Pixel output;
 
                 output.r = min(31, (blend_a * input_A.r + blend_b * input_B.r) >> 4);
