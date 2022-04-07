@@ -70,9 +70,9 @@ final class SPU {
             log_spu("thing: %x %x %x %x", current_address, spu.cycles_per_sample, cycles_since_last_dma, timer_value);
             cycles_since_last_dma += spu.cycles_per_sample;
 
-            if (cycles_since_last_dma > timer_value) {
-                current_address += (cycles_since_last_dma / timer_value) * 2;
-                cycles_since_last_dma %= timer_value;
+            if (cycles_since_last_dma > (0x10000 - timer_value)) {
+                current_address += (cycles_since_last_dma / (0x10000 - timer_value)) * 2;
+                cycles_since_last_dma %= (0x10000 - timer_value);
                 current_sample = mem9.read!Half(current_address);
                 log_spu("read: %x", current_sample);
             }
@@ -108,8 +108,7 @@ final class SPU {
         return result;
     }
 
-    void write_SOUNDxCNT(int target_byte, Byte value, int x) {    
-        log_spu("wrote to cunt %x %x %x", target_byte, value, x);
+    void write_SOUNDxCNT(int target_byte, Byte value, int x) {
         auto c = &sound_channels[x];
         final switch (target_byte) {
              case 0:
@@ -200,8 +199,8 @@ final class SPU {
     }
     
     void sample() {
-        short result = 0;
-        for (int i = 0; i < 16; i++) result += sound_channels[i].sample();
+        short result = 0x200;
+        result += sound_channels[0].sample();
         push_sample_callback(Sample(result, result));
 
         log_spu("sample: %x", result);

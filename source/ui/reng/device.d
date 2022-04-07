@@ -14,11 +14,17 @@ import re;
 class RengMultimediaDevice : MultiMediaDevice {
     RengCore reng_core;
     DSVideo  ds_video;
+    AudioStream stream;
 
     this(int screen_scale) {
-        Core.target_fps = 999_999;
+        Core.target_fps = 60;
         reng_core = new RengCore(screen_scale);
+
+        InitAudioDevice();
+        stream = LoadAudioStream(44100, 16, 1);
+        PlayAudioStream(stream);
     }
+
 
     override {
         // video stuffs
@@ -45,9 +51,16 @@ class RengMultimediaDevice : MultiMediaDevice {
             raylib.SetWindowTitle(toStringz("FPS: %d".format(fps)));
         }
 
+        int x = 0;
         void push_sample(Sample s) {
-            import util;
-            log_spu("%s", s);
+            audio_buffer[x] = s.L;
+            x++;
+
+            if (x == 44100 / 60) {
+                while (!IsAudioStreamProcessed(stream)) {}
+                UpdateAudioStream(stream, &audio_buffer, 44100 / 60);
+                x = 0;
+            }
         }
 
         void update() {
@@ -65,6 +78,10 @@ class RengMultimediaDevice : MultiMediaDevice {
 
         void play() {
 
+        }
+
+        void update_audio_buffer() {
+            
         }
 
         uint get_sample_rate() {

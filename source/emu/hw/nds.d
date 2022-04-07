@@ -57,6 +57,11 @@ final class NDS {
 
     void load_rom(Byte[] rom) {
         cart = new Cart(rom);
+        
+        if (cart.cart_header.rom_header_size >= cart.rom_size()) {
+            error_nds("Malformed ROM - the specified rom header size is greater than the rom size.");
+        }
+        mem9.memcpy(Word(0x27FFE00), &cart.rom[0], cart.cart_header.rom_header_size);
     }
 
     void load_bios7(Byte[] bios) {

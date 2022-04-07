@@ -31,6 +31,7 @@ abstract class MultiMediaDevice {
         uint get_sample_rate();
         uint get_samples_per_callback();
         size_t get_buffer_size();
+        void update_audio_buffer();
 
         // input stuffs
         void handle_input();

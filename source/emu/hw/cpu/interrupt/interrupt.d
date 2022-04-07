@@ -49,8 +49,6 @@ final class InterruptManager {
 
     void raise_interrupt(Interrupt code) {
         status[code] = 1;
-        log_interrupt("Interrupt raised: %x", code);
-        if (code == 3) arm7.num_log = 10000;
         if (enable & status) cpu.unhalt();
     }
 
@@ -71,7 +69,6 @@ final class InterruptManager {
     }
 
     Byte read_IF(int target_byte) {
-        log_interrupt("sussy! %x %x", target_byte, status.get_byte(target_byte));
         return status.get_byte(target_byte);
     }
 

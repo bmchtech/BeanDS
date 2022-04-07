@@ -114,9 +114,14 @@ final class ARM946E_S : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
 
+        if (regs[pc] == 0x0200E486) {
+            log_arm9("WHY ARENT YOU TRIGGERING!");
+            num_log = 100;
+        }
+
         // cpu_trace.capture();
 
-        if (num_log > 0 && false) {
+        if (num_log > 0) {
             log_state();
             num_log--;
         }

@@ -25,7 +25,9 @@ enum LogSource {
     TIMERS,
     PPU,
     SPU,
-    IPC
+    IPC,
+    CART,
+    SPI
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();
@@ -49,19 +51,20 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.format.write : formattedWrite;
     import std.stdio : writef, writefln;
 
-    ulong timestamp = scheduler.get_current_time_relative_to_cpu();
-    writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
-    writefln(fmt, args);
-
     if (fatal) {
         writefln("===== ARM7 TRACE =====");
         arm7.cpu_trace.print_trace();
         writefln("===== ARM9 TRACE =====");
         arm9.cpu_trace.print_trace();
-        assert(0);
     }
-}
 
+    ulong timestamp = scheduler.get_current_time_relative_to_cpu();
+    writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
+    writefln(fmt, args);
+
+    if (fatal) assert(0);
+}
+ 
 private void connect_nds(NDS nds_) {
     nds = nds_;
 }
