@@ -189,7 +189,7 @@ final class IPC {
             fifo_error = true;
         }
 
-        return fifo.pop();
+        return cast(T) fifo.pop();
     }
 
     void request_sync_interrupt() {
