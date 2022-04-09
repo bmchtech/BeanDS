@@ -67,7 +67,6 @@ final class SPU {
         short sample() {
             if (!enabled) return 0;
 
-            // log_spu("thing: %x %x %x %x", current_address, spu.cycles_per_sample, cycles_since_last_dma, timer_value);
             cycles_since_last_dma += spu.cycles_per_sample;
 
             auto cycles_till_dma_increment = (0x10000 - timer_value) * 2;
@@ -79,7 +78,6 @@ final class SPU {
 
                 cycles_since_last_dma %= cycles_till_dma_increment;
                 current_sample = mem9.read!Half(current_address);
-                // log_spu("read: %x", current_sample);
             }
 
             return current_sample;
@@ -137,7 +135,6 @@ final class SPU {
     }
 
     void write_SOUNDxSAD(int target_byte, Byte value, int x) {
-        log_spu("wrote to sad %x %x %x", target_byte, value, x);
         sound_channels[x].source_address.set_byte(target_byte, value);
         sound_channels[x].source_address &= create_mask(0, 26);
     }
