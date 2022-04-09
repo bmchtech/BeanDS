@@ -67,14 +67,19 @@ final class SPU {
         short sample() {
             if (!enabled) return 0;
 
-            log_spu("thing: %x %x %x %x", current_address, spu.cycles_per_sample, cycles_since_last_dma, timer_value);
+            // log_spu("thing: %x %x %x %x", current_address, spu.cycles_per_sample, cycles_since_last_dma, timer_value);
             cycles_since_last_dma += spu.cycles_per_sample;
 
-            if (cycles_since_last_dma > (0x10000 - timer_value)) {
-                current_address += (cycles_since_last_dma / (0x10000 - timer_value)) * 2;
-                cycles_since_last_dma %= (0x10000 - timer_value);
+            auto cycles_till_dma_increment = (0x10000 - timer_value) * 2;
+
+            if (cycles_since_last_dma > cycles_till_dma_increment) {
+                current_address += (cycles_since_last_dma / cycles_till_dma_increment) * 2;
+                
+                if (repeat_mode == 1 && current_address >= source_address + length * 4) current_address = source_address;
+
+                cycles_since_last_dma %= cycles_till_dma_increment;
                 current_sample = mem9.read!Half(current_address);
-                log_spu("read: %x", current_sample);
+                // log_spu("read: %x", current_sample);
             }
 
             return current_sample;
@@ -199,11 +204,20 @@ final class SPU {
     }
     
     void sample() {
-        short result = 0x200;
-        result += sound_channels[0].sample();
-        push_sample_callback(Sample(result, result));
+        Sample result = Sample(0, 0);
+        for (int i = 0; i < 16; i++) {
+            short channel_sample = sound_channels[i].sample();
+            result.L += channel_sample * (127 - sound_channels[i].panning) / 128;
+            result.R += channel_sample * (      sound_channels[i].panning) / 128;
+        }
 
-        log_spu("sample: %x", result);
+        result.L += 0x200;
+        result.R += 0x200;
+        // if (result.L < 0) result.L = 0;
+        // if (result.R < 0) result.R = 0;
+
+        push_sample_callback(result);
+
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 

@@ -20,7 +20,7 @@ void main(string[] args) {
 	nds.load_bios7(load_file_as_bytes("roms/biosnds7.rom"));
 	nds.load_bios9(load_file_as_bytes("roms/biosnds9.rom"));
 	nds.load_rom(load_file_as_bytes(cli_args.rom_path));
-	nds.set_sample_rate(44100);
+	nds.set_sample_rate(48000);
 	nds.direct_boot();
 
 	auto reng = new RengMultimediaDevice(1);

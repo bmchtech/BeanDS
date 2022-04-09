@@ -16,15 +16,20 @@ class RengMultimediaDevice : MultiMediaDevice {
     DSVideo  ds_video;
     AudioStream stream;
 
+    enum SAMPLE_RATE            = 48000;
+    enum SAMPLES_PER_UPDATE     = 4096;
+    enum BUFFER_SIZE_MULTIPLIER = 3;
+    enum NUM_CHANNELS           = 2;
+
     this(int screen_scale) {
-        Core.target_fps = 60;
+        Core.target_fps = 999;
         reng_core = new RengCore(screen_scale);
 
         InitAudioDevice();
-        stream = LoadAudioStream(44100, 16, 1);
+        SetAudioStreamBufferSizeDefault(SAMPLES_PER_UPDATE);
+        stream = LoadAudioStream(SAMPLE_RATE, 16, NUM_CHANNELS);
         PlayAudioStream(stream);
     }
-
 
     override {
         // video stuffs
@@ -51,20 +56,20 @@ class RengMultimediaDevice : MultiMediaDevice {
             raylib.SetWindowTitle(toStringz("FPS: %d".format(fps)));
         }
 
-        int x = 0;
-        void push_sample(Sample s) {
-            audio_buffer[x] = s.L;
-            x++;
 
-            if (x == 44100 / 60) {
-                while (!IsAudioStreamProcessed(stream)) {}
-                UpdateAudioStream(stream, &audio_buffer, 44100 / 60);
-                x = 0;
-            }
+        // 2 cuz stereo
+        short[NUM_CHANNELS * SAMPLES_PER_UPDATE * BUFFER_SIZE_MULTIPLIER] buffer;
+        int buffer_cursor = 0;
+
+        void push_sample(Sample s) {
+            buffer[buffer_cursor + 0] = s.L;
+            buffer[buffer_cursor + 1] = s.R;
+            buffer_cursor += 2;
         }
 
         void update() {
             handle_input();
+            handle_audio();
             reng_core.update_pub();
         }
 
@@ -72,35 +77,27 @@ class RengMultimediaDevice : MultiMediaDevice {
             reng_core.draw_pub();
         }
 
-        void pause() {
-
-        }
-
-        void play() {
-
-        }
-
-        void update_audio_buffer() {
-            
-        }
-
-        uint get_sample_rate() {
-            return 100;
-        }
-
-        uint get_samples_per_callback() {
-            return 44100;
-        }
-
-        size_t get_buffer_size() {
-            return 500;
+        bool should_cycle_nds() {
+            return buffer_cursor < NUM_CHANNELS * BUFFER_SIZE_MULTIPLIER * SAMPLES_PER_UPDATE - (SAMPLE_RATE / 60) * 2;
         }
 
         void handle_input() {
             static foreach (re_key, gba_key; keys) {
                 update_key(gba_key, Input.is_key_down(re_key));
             }
+        }
+    }
 
+    void handle_audio() {
+        if (IsAudioStreamProcessed(stream)) {
+            UpdateAudioStream(stream, cast(void*) buffer, SAMPLES_PER_UPDATE);
+            
+            for (int i = 0; i < NUM_CHANNELS * SAMPLES_PER_UPDATE * (BUFFER_SIZE_MULTIPLIER - 1); i++) {
+                buffer[i] = buffer[i + NUM_CHANNELS * SAMPLES_PER_UPDATE];
+            }
+
+            buffer_cursor -= NUM_CHANNELS * SAMPLES_PER_UPDATE;
+            if (buffer_cursor < 0) buffer_cursor = 0;
         }
     }
 

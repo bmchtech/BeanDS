@@ -13,5 +13,5 @@ configuration "release" {
     targetType "executable"
     versions "release"
     compiler "ldc2"
-    dFlags "-B release" "--boundscheck=off"
+    dflags "-O3"
 }

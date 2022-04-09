@@ -19,6 +19,7 @@ abstract class MultiMediaDevice {
     abstract {
         void update();
         void draw();
+        bool should_cycle_nds();
 
         // video stuffs
         void present_videobuffers(Pixel[192][256], Pixel[192][256] buffer);
@@ -26,12 +27,6 @@ abstract class MultiMediaDevice {
 
         // audio stuffs
         void push_sample(Sample s);
-        void pause();
-        void play();
-        uint get_sample_rate();
-        uint get_samples_per_callback();
-        size_t get_buffer_size();
-        void update_audio_buffer();
 
         // input stuffs
         void handle_input();

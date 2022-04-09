@@ -34,9 +34,6 @@ final class Runner {
 
         this.should_cycle_nds_mutex = new Mutex();
 
-        this.sync_to_audio_lower = frontend.get_samples_per_callback() / 2;
-        this.sync_to_audio_upper = frontend.get_samples_per_callback();
-
         this.frontend = frontend;
 
         this.fast_forward     = false;
@@ -45,12 +42,6 @@ final class Runner {
     }
 
     void tick() {
-        frontend.handle_input();
-
-        auto buffer_size = frontend.get_buffer_size();
-        if (buffer_size > sync_to_audio_upper) set_should_cycle_nds(false);
-        if (buffer_size < sync_to_audio_lower) set_should_cycle_nds(true);
-        
         if (stopwatch.peek.total!"msecs" > 1000) {
             frontend.set_fps(fps);
             stopwatch.reset();
@@ -59,43 +50,18 @@ final class Runner {
 
         frontend.update();
         frontend.draw();
-
-        fps++;
     }
 
     void run() {
         stopwatch = StopWatch(AutoStart.yes);
 
         while (running) {
-            // i separated the ifs so fast fowarding doesn't
-            // incur a mutex call from get_should_cycle_nds
-            if (true) {
-                nds.cycle(33_560_000 / 60);
-            } else {
-                if (get_should_cycle_nds()) {
-                    nds.cycle(33_560_000 / 60);
-                }
+            if (frontend.should_cycle_nds() || fast_forward) {
+                nds.cycle(33_513_982 / 60);
+                fps++;
             }
-
+            
             tick();
         }
-    }
-
-    bool get_should_cycle_nds() {
-        should_cycle_nds_mutex.lock_nothrow();
-        bool temp = should_cycle_nds;
-        should_cycle_nds_mutex.unlock_nothrow();
-
-        return temp;
-    }
-
-    void set_should_cycle_nds(bool value) {
-        should_cycle_nds_mutex.lock_nothrow();
-        should_cycle_nds = value;
-        should_cycle_nds_mutex.unlock_nothrow();
-    }
-
-    void stop() {
-        running = false;
     }
 }

@@ -181,8 +181,6 @@ final class IPC {
             fifo_error = true;
         } else {
             remote.fifo.push(Word(data));
-            if (interrupt == interrupt7) log_ipc("ARM7 PUSHING: %x", data);
-            if (interrupt == interrupt9) log_ipc("ARM9 PUSHING: %x", data);
         }
     }
 
@@ -191,10 +189,7 @@ final class IPC {
             fifo_error = true;
         }
 
-        T sus = cast(T) fifo.pop();
-        if (interrupt == interrupt7) log_ipc("ARM7 POPPING: %x", sus);
-        if (interrupt == interrupt9) log_ipc("ARM9 POPPING: %x", sus);
-        return sus;
+        return fifo.pop();
     }
 
     void request_sync_interrupt() {
