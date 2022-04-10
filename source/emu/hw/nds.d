@@ -19,6 +19,8 @@ final class NDS {
     
     CpuTrace cpu_trace;
 
+    bool booted = false;
+
     this() {
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
@@ -99,6 +101,8 @@ final class NDS {
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
+
+        booted = true;
     }
 
     void cycle(int num_cycles) {
@@ -135,5 +139,9 @@ final class NDS {
     Byte read_HALTCNT(int target_byte) {
         // TODO: whats the point of this useless read
         return Byte(0);
+    }
+
+    Byte read_POSTFLG(int target_byte) {
+        return Byte(booted);
     }
 }

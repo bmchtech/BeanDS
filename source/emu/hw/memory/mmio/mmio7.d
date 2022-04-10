@@ -36,6 +36,7 @@ static const mmio7_registers = [
     MMIORegister("interrupt7",   "IF",            0x0400_0214,  4, READ_WRITE),
     MMIORegister("vram",         "VRAMSTAT",      0x0400_0240,  1, READ),
     MMIORegister("wram",         "WRAMSTAT",      0x0400_0241,  1, READ),
+    MMIORegister("nds",          "POSTFLG",       0x0400_0300,  1, READ),
     MMIORegister("nds",          "HALTCNT",       0x0400_0301,  1, READ_WRITE),
     MMIORegister("n/a",          "POWCNT2",       0x0400_0304,  4, READ_WRITE).unimplemented(),
     MMIORegister("spu",          "SOUNDxCNT",     0x0400_0400,  4, READ_WRITE).repeat(16, 16),
