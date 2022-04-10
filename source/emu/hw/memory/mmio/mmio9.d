@@ -14,6 +14,12 @@ final class MMIO9 {
 static const mmio9_registers = [
     MMIORegister("gpu_engine_a",     "DISPCNT",       0x0400_0000,  4, READ_WRITE),
     MMIORegister("gpu",              "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
+    MMIORegister("gpu_engine_a.ppu", "WININ",         0x0400_0048,  2, READ_WRITE),
+    MMIORegister("gpu_engine_a.ppu", "WINOUT",        0x0400_004A,  2, READ_WRITE),
+    MMIORegister("gpu_engine_a.ppu", "MOSAIC",        0x0400_004C,  2,      WRITE),
+    MMIORegister("gpu_engine_a.ppu", "BLDCNT",        0x0400_0050,  2, READ_WRITE),
+    MMIORegister("gpu_engine_a.ppu", "BLDALPHA",      0x0400_0052,  2, READ_WRITE),
+    MMIORegister("gpu_engine_a.ppu", "BLDY",          0x0400_0054,  2,      WRITE),
     MMIORegister("dma9",             "DMAxSAD",       0x0400_00B0,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma9",             "DMAxDAD",       0x0400_00B4,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma9",             "DMAxCNT_L",     0x0400_00B8,  2, READ_WRITE).repeat(4, 12),
@@ -27,6 +33,7 @@ static const mmio9_registers = [
     MMIORegister("ipc9",             "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc9",             "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
     MMIORegister("auxspi",           "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
+    MMIORegister("slot",             "EXMEMCNT",      0x0400_0204,  2, READ_WRITE),
     MMIORegister("interrupt9",       "IME",           0x0400_0208,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IE",            0x0400_0210,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IF",            0x0400_0214,  4, READ_WRITE),
@@ -45,4 +52,12 @@ static const mmio9_registers = [
     MMIORegister("gpu_engine_b.ppu", "BGxCNT",        0x0400_1008,  2, READ_WRITE).repeat(4, 2),
     MMIORegister("gpu_engine_b.ppu", "BGxHOFS",       0x0400_1010,  2,      WRITE).repeat(4, 4),
     MMIORegister("gpu_engine_b.ppu", "BGxVOFS",       0x0400_1012,  2,      WRITE).repeat(4, 4),
+    MMIORegister("gpu_engine_b.ppu", "WINxH",         0x0400_1040,  2,      WRITE).repeat(2, 2),
+    MMIORegister("gpu_engine_b.ppu", "WINxV",         0x0400_1044,  2,      WRITE).repeat(2, 2),
+    MMIORegister("gpu_engine_b.ppu", "WININ",         0x0400_1048,  2, READ_WRITE),
+    MMIORegister("gpu_engine_b.ppu", "WINOUT",        0x0400_104A,  2, READ_WRITE),
+    MMIORegister("gpu_engine_b.ppu", "MOSAIC",        0x0400_104C,  2,      WRITE),
+    MMIORegister("gpu_engine_b.ppu", "BLDCNT",        0x0400_1050,  2, READ_WRITE),
+    MMIORegister("gpu_engine_b.ppu", "BLDALPHA",      0x0400_1052,  2, READ_WRITE),
+    MMIORegister("gpu_engine_b.ppu", "BLDY",          0x0400_1054,  2,      WRITE)
 ];

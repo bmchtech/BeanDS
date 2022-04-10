@@ -22,7 +22,7 @@ final class Cart {
     }
 
     T read(T)(Word address) {
-        log_cart("stuff: %x %x %x", address, rom.length, rom.read!T(address));
+        // log_cart("stuff: %x %x %x", address, rom.length, rom.read!T(address));
         if (address < rom_size()) {
             return rom.read!T(address);
         }

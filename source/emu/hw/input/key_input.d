@@ -23,19 +23,20 @@ final class KeyInput {
     }
 
     void reset() {
-        keyinput = 0x1FF; // all released
+        keys = 0xCB01FF; // all released
     }
 
-    Half keyinput;
+    Word keys;
     
     void update_key(DSKeyCode key, bool pressed) {
-        keyinput[key] = !pressed;
+        keys[key] = !pressed;
     }
 
     Byte read_KEYINPUT(int target_byte) {
-        final switch (target_byte) {
-            case 0: return cast(Byte) keyinput[0.. 7];
-            case 1: return cast(Byte) keyinput[8..15];
-        }
+        return keys[0..15].get_byte(target_byte);
+    }
+
+    Byte read_EXTKEYIN(int target_byte) {
+        return keys[16..31].get_byte(target_byte);
     }
 }

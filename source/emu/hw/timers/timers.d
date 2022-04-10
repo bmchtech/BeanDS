@@ -54,8 +54,6 @@ final class TimerManager {
     }
 
     void timer_overflow(int x) {
-        log_timers("baka!!! %x %x", x, timers[x].irq_enable);
-
         timers[x].reload_value_buffer = timers[x].reload_value;
         reload_timer(x);
         // TODO: the commented out code is from the GBA. what should i do here instead?

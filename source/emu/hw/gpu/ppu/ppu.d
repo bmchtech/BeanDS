@@ -93,7 +93,6 @@ final class PPU(HwType H) {
                 render_sprites(3);
                 render_background(3);
                 break;
-            
                 
             default: error_ppu("tried to set ppu to invalid mode %x", bg_mode);
         }
