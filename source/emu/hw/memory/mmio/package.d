@@ -29,6 +29,7 @@ struct MMIORegister {
         this.cnt            = -1;
         this.all_at_once    = false;
         this.filter_enabled = false;
+        this.implemented    = true;
     }
 
     MMIORegister repeat(int cnt, int stride) {
@@ -48,6 +49,12 @@ struct MMIORegister {
         this.f = new_f;
         return this;
     }
+
+    MMIORegister unimplemented() {
+        this.implemented = false;
+        this.all_at_once = true;
+        return this;
+    }
     
     string component;
     string name;
@@ -64,6 +71,8 @@ struct MMIORegister {
 
     bool   filter_enabled;
     bool function(int i) f;
+
+    bool   implemented;
 }
 
 final class MMIO(MMIORegister[] mmio_registers) {
@@ -81,7 +90,12 @@ final class MMIO(MMIORegister[] mmio_registers) {
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.readable && mr.all_at_once) {
                 if (address == mr.address) {
-                    mixin("return %s.read_%s!T();".format(mr.component, mr.name));
+                    static if (mr.implemented) {
+                        mixin("return %s.read_%s!T();".format(mr.component, mr.name));
+                    } else {
+                        log_unimplemented("Unimplemented %s read: %s\" (size = %d)", name, mr.name, T.sizeof);
+                        return T(0);
+                    }
                 }
             }
         }
@@ -144,7 +158,12 @@ final class MMIO(MMIORegister[] mmio_registers) {
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {
                 if (address == mr.address) {
-                    mixin("%s.write_%s!T(value); return;".format(mr.component, mr.name));
+                    static if (mr.implemented) {
+                        mixin("%s.write_%s!T(value); return;".format(mr.component, mr.name));
+                    } else {
+                        log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
+                        return;
+                    }
                 }
             }
         }
