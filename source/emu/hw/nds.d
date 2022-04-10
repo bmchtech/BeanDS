@@ -29,7 +29,8 @@ final class NDS {
         Mem9.reset();
         SPU.reset();
         DMA_reset();
-
+        AUXSPI.reset();
+        
         arm7 = new ARM7TDMI(mem7);
         arm9 = new ARM946E_S(mem9);
 

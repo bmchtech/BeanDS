@@ -26,6 +26,7 @@ static const mmio9_registers = [
     MMIORegister("ipc9",             "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc9",             "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc9",             "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
+    MMIORegister("auxspi",           "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IME",           0x0400_0208,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IE",            0x0400_0210,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IF",            0x0400_0214,  4, READ_WRITE),
