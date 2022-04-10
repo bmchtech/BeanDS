@@ -186,7 +186,6 @@ final class VRAM {
 
         result[3..4] = blocks[target_byte].offset;
         result[7] = blocks[target_byte].enabled;
-        log_vram("returning usssy baka %x %x", result, target_byte);
         return result;
     }
 
@@ -246,7 +245,6 @@ final class VRAM {
     void set_vram_C(int mst, int offset) {
         vram_c.mst    = mst;
         vram_c.offset = offset;
-        log_vram("im tired %x %x", mst, offset);
 
         vram_c_in_ram = mst == 2;
         final switch (mst) {
