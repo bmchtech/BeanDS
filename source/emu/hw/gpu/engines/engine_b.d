@@ -24,10 +24,10 @@ final class GPUEngineB {
                 break;
 
             case 1: 
-                backgrounds[0].enabled = value[0];
-                backgrounds[1].enabled = value[1];
-                backgrounds[2].enabled = value[2];
-                backgrounds[3].enabled = value[3];
+                ppu.backgrounds[0].enabled = value[0];
+                ppu.backgrounds[1].enabled = value[1];
+                ppu.backgrounds[2].enabled = value[2];
+                ppu.backgrounds[3].enabled = value[3];
                 break;
 
             case 2:
@@ -83,7 +83,12 @@ final class GPUEngineB {
                 result[0..2] = Byte(bg_mode);
                 break;
 
-            case 1: break;
+            case 1: 
+                result[0] = ppu.backgrounds[0].enabled;
+                result[1] = ppu.backgrounds[1].enabled;
+                result[2] = ppu.backgrounds[2].enabled;
+                result[3] = ppu.backgrounds[3].enabled;
+                break;
 
             case 2:
                 result[0..1] = Byte(display_mode);

@@ -24,7 +24,12 @@ final class GPUEngineA {
                 bg_mode = value[0..2];
                 break;
 
-            case 1: break;
+            case 1: 
+                ppu.backgrounds[0].enabled = value[0];
+                ppu.backgrounds[1].enabled = value[1];
+                ppu.backgrounds[2].enabled = value[2];
+                ppu.backgrounds[3].enabled = value[3];
+                break;
 
             case 2:
                 display_mode = value[0..1];
@@ -32,7 +37,7 @@ final class GPUEngineA {
                 break;
 
             case 3: break; 
-        }    
+        }
     }
 
     Pixel[192][256] videobuffer;
@@ -45,6 +50,7 @@ final class GPUEngineA {
                 break;
                 
             case 1:
+                log_engine_a("im bullying my pp");
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];
@@ -72,6 +78,28 @@ final class GPUEngineA {
     }
 
     Byte read_DISPCNT(int target_byte) {
-        return Byte(0);
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                result[0..2] = Byte(bg_mode);
+                break;
+
+            case 1: 
+                result[0] = ppu.backgrounds[0].enabled;
+                result[1] = ppu.backgrounds[1].enabled;
+                result[2] = ppu.backgrounds[2].enabled;
+                result[3] = ppu.backgrounds[3].enabled;
+                break;
+
+            case 2:
+                result[0..1] = Byte(display_mode);
+                result[2..3] = Byte(vram_block);
+                break;
+
+            case 3: break; 
+        }
+
+        return result;  
     }
 }

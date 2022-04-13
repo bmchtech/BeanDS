@@ -14,6 +14,51 @@ enum AffineParameter {
     D = 3
 }
 
+struct Background {
+    int   id;
+    int   priority;                   // 0 - 3
+    int   character_base_block;      
+    bool  is_mosaic;
+    bool  doesnt_use_color_palettes;  // 0 = 16/16, 1 = 256/1
+    int   screen_base_block;       
+    bool  does_display_area_overflow;
+    int   screen_size;                // 0 - 3
+
+    // these aren't used (except in NDS mode, according to GBATek)
+    // yet, the GBA still saves their value and returns them. therefore
+    // my emulator must do so too.
+    uint  bgcnt_bits_4_and_5;
+
+    ushort x_offset;
+    ushort y_offset;
+    bool   enabled;
+
+    ushort transformation_dx;
+    ushort transformation_dmx;
+    ushort transformation_dy;
+    ushort transformation_dmy;
+    uint   reference_x;
+    uint   reference_y;
+
+    int x_offset_rotation;
+    int y_offset_rotation; 
+
+    long internal_reference_x;
+    long internal_reference_y;
+
+    BackgroundMode mode;
+
+    Layer layer;
+    
+    short[4] p;
+}
+
+enum BackgroundMode {
+    TEXT,
+    ROTATION_SCALING,
+    NONE
+}
+
 final class PPU(HwType H) {
     static assert (H == HwType.NDS9 || H == HwType.NDS7);
 
@@ -21,11 +66,18 @@ final class PPU(HwType H) {
 
     ushort scanline;
 
-    Canvas canvas;
+    Canvas!H canvas;
 
     Pixel[256] scanline_buffer;
 
     Scheduler scheduler;
+
+    Background[] backgrounds = [
+        Background(),
+        Background(),
+        Background(),
+        Background()
+    ];
 
     @property 
     Byte[] bg_vram() {
@@ -44,8 +96,14 @@ final class PPU(HwType H) {
     this() {
         scanline = 0;
 
-        static if (H == HwType.NDS9) canvas = new Canvas(0);
-        static if (H == HwType.NDS7) canvas = new Canvas(0x400);
+        static if (H == HwType.NDS9) canvas = new Canvas!H(this, 0);
+        static if (H == HwType.NDS7) canvas = new Canvas!H(this, 0x400);
+
+        for (int i = 0; i < 4; i++) {
+            backgrounds[i].id = i;
+            backgrounds[i].p[0] = 0x100; 
+            backgrounds[i].p[3] = 0x100; 
+        }
     }
 
     void render(int scanline) {
