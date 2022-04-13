@@ -32,7 +32,7 @@ final class ARM7TDMI : ArmCPU {
         current_mode = MODE_USER;
         
         arm7 = this;
-        cpu_trace = new CpuTrace(this, 10);
+        cpu_trace = new CpuTrace(this, 1000);
         reset();
     }
 
@@ -67,6 +67,7 @@ final class ARM7TDMI : ArmCPU {
 
             T result        = arm_pipeline[0];
             arm_pipeline[0] = arm_pipeline[1];
+            if (pc == 0x2380028) arm7.num_log += 10;
             arm_pipeline[1] = read_word(regs[pc], old_access_type);
             regs[pc] += 4;
 
@@ -110,7 +111,7 @@ final class ARM7TDMI : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
 
-        // cpu_trace.capture();
+        cpu_trace.capture();
 
         if (num_log > 0) {
             num_log--;
@@ -130,7 +131,7 @@ final class ARM7TDMI : ArmCPU {
     void log_state() {
         import std.stdio;
         import std.format;
-        
+    
         if (get_flag(Flag.T)) write("THM ");
         else write("ARM ");
 

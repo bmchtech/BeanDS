@@ -56,11 +56,11 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
         arm7.cpu_trace.print_trace();
         writefln("===== ARM9 TRACE =====");
         arm9.cpu_trace.print_trace();
-    }
 
-    ulong timestamp = scheduler.get_current_time_relative_to_cpu();
-    writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
-    writefln(fmt, args);
+        ulong timestamp = scheduler.get_current_time_relative_to_cpu();
+        writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
+        writefln(fmt, args);
+    }
 
     if (fatal) assert(0);
 }

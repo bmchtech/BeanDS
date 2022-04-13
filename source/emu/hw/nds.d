@@ -128,11 +128,12 @@ final class NDS {
     }
 
     void write_HALTCNT(int target_byte, Byte data) {
+
         final switch (data[6..7]) {
             case 0: break;
-            case 1: error_nds("tried to enable GBA mode"); break;
+            case 1: log_nds("tried to enable GBA mode"); break;
             case 2: arm7.halt(); break;
-            case 3: error_nds("tried to sleep"); break;
+            case 3: log_nds("tried to sleep"); break;
         }
     }
 

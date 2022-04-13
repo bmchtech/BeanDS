@@ -87,13 +87,16 @@ final class MMIO(MMIORegister[] mmio_registers) {
 
     T read(T)(Word address) {
         import std.format;
+
+        log_unimplemented("VERBOSE MMIO: Reading from %x (size = %d)", address, T.sizeof);
+
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.readable && mr.all_at_once) {
                 if (address == mr.address) {
                     static if (mr.implemented) {
                         mixin("return %s.read_%s!T();".format(mr.component, mr.name));
                     } else {
-                        log_unimplemented("Unimplemented %s read: %s\" (size = %d)", name, mr.name, T.sizeof);
+                        log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
                         return T(0);
                     }
                 }
@@ -154,6 +157,8 @@ final class MMIO(MMIORegister[] mmio_registers) {
     }
 
     void write(T)(Word address, T value) {
+        log_unimplemented("VERBOSE MMIO: Writing %x to %x (size = %d)", value, address, T.sizeof);
+
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {

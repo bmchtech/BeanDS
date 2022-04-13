@@ -32,7 +32,7 @@ final class ARM946E_S : ArmCPU {
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 10);
+        cpu_trace = new CpuTrace(this, 1000);
         reset();
     }
 
@@ -113,13 +113,8 @@ final class ARM946E_S : ArmCPU {
         if (!(cast(bool) get_cpsr()[7]) && interrupt9.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
-
-        if (regs[pc] == 0x0200E486) {
-            log_arm9("WHY ARENT YOU TRIGGERING!");
-            num_log = 100;
-        }
-
-        // cpu_trace.capture();
+        
+        cpu_trace.capture();
 
         if (num_log > 0) {
             log_state();

@@ -18,6 +18,8 @@ final class GPU {
     bool hblank_irq_enabled;
     bool vcounter_irq_enabled;
 
+    int vcount_lyc;
+
     void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
 
     this() {
@@ -57,9 +59,9 @@ final class GPU {
         if (scanline == 192) on_vblank_start();
         if (scanline == 263) on_vblank_end();
 
-        // if (vcounter_irq_enabled && scanline == vcount_lyc) {
-        //     raise_interrupt_for_both_cpus(Interrupt.LCD_VCOUNTER_MATCH);
-        // }
+        if (vcounter_irq_enabled && scanline == vcount_lyc) {
+            raise_interrupt_for_both_cpus(Interrupt.LCD_VCOUNT);
+        }
 
         scheduler.add_event_relative_to_self(&on_hblank_start, 256 * 6);
     }
@@ -100,8 +102,7 @@ final class GPU {
                 vcounter_irq_enabled = value[5];
                 break;
             case 1:
-            case 2:
-            case 3:
+                vcount_lyc = value;
                 break;
         }
     }
@@ -118,13 +119,15 @@ final class GPU {
                 result[5] = Byte(vcounter_irq_enabled);
                 break;
 
-            case 1: break;
-
-            case 2: break;
-
-            case 3: break; 
+            case 1:
+                result = vcount_lyc;
+                break;
         }
 
         return result;
+    }
+
+    Byte read_VCOUNT(int target_byte) {
+        return Byte((scanline >> (target_byte * 8)) & 0xFF);
     }
 }

@@ -107,11 +107,13 @@ final class SPU {
                 result[7]    = c.enabled;
                 break;
         }
+        log_spu("read from soundcunt %x %x %x", target_byte, result, 0);
 
         return result;
     }
 
     void write_SOUNDxCNT(int target_byte, Byte value, int x) {
+        log_spu("wrote to soundcunt %x %x %x", target_byte, value, x);
         auto c = &sound_channels[x];
         final switch (target_byte) {
              case 0:
@@ -168,10 +170,12 @@ final class SPU {
                 break;
         }
 
+        log_spu("read from soundCuNT %x %x %x", target_byte, result, 0);
         return result;
     }
     
     void write_SOUNDCNT(int target_byte, Byte value) {
+        log_spu("wrote to soundCuNT %x %x %x", target_byte, value, 0);
         final switch (target_byte) {
             case 0: 
                 master_volume = value[0..6];

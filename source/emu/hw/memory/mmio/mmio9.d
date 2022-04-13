@@ -13,7 +13,11 @@ final class MMIO9 {
 
 static const mmio9_registers = [
     MMIORegister("gpu_engine_a",     "DISPCNT",       0x0400_0000,  4, READ_WRITE),
-    MMIORegister("gpu",              "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
+    MMIORegister("gpu",              "DISPSTAT",      0x0400_0004,  2, READ_WRITE),
+    MMIORegister("gpu",              "VCOUNT",        0x0400_0006,  2, READ),
+    MMIORegister("gpu_engine_a.ppu", "BGxCNT",        0x0400_0008,  2, READ_WRITE).repeat(4, 2),
+    MMIORegister("gpu_engine_a.ppu", "BGxHOFS",       0x0400_0010,  2,      WRITE).repeat(4, 4),
+    MMIORegister("gpu_engine_a.ppu", "BGxVOFS",       0x0400_0012,  2,      WRITE).repeat(4, 4),
     MMIORegister("gpu_engine_a.ppu", "WININ",         0x0400_0048,  2, READ_WRITE),
     MMIORegister("gpu_engine_a.ppu", "WINOUT",        0x0400_004A,  2, READ_WRITE),
     MMIORegister("gpu_engine_a.ppu", "MOSAIC",        0x0400_004C,  2,      WRITE),
@@ -32,7 +36,9 @@ static const mmio9_registers = [
     MMIORegister("ipc9",             "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc9",             "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc9",             "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
-    MMIORegister("auxspi",           "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
+    MMIORegister("cart",             "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
+    MMIORegister("cart",             "ROMDATAOUT",    0x0400_01A8,  8,      WRITE),
+    MMIORegister("cart",             "ROMRESULT",     0x0410_0010,  4, READ      ).dont_decompose_into_bytes(),
     MMIORegister("slot",             "EXMEMCNT",      0x0400_0204,  2, READ_WRITE),
     MMIORegister("interrupt9",       "IME",           0x0400_0208,  4, READ_WRITE),
     MMIORegister("interrupt9",       "IE",            0x0400_0210,  4, READ_WRITE),

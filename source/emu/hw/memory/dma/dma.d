@@ -21,6 +21,9 @@ final class DMA(HwType H) {
         ];
     }
 
+    static if (H == HwType.NDS9) alias mem = mem9;
+    static if (H == HwType.NDS7) alias mem = mem7;
+
     void handle_dma() {
         // get the channel with highest priority that wants to start dma
         int current_channel = -1;
@@ -35,15 +38,15 @@ final class DMA(HwType H) {
 
         auto bytes_to_transfer = dma_channels[current_channel].size_buf;
 
-        // log_dma(
-        //     "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
-        //     current_channel,
-        //     bytes_to_transfer,
-        //     dma_channels[current_channel].transferring_words ? "words" : "halfwords",
-        //     dma_channels[current_channel].source_buf,
-        //     dma_channels[current_channel].dest_buf,
-        //     read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
-        // );
+        log_dma7(
+            "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
+            current_channel,
+            bytes_to_transfer,
+            dma_channels[current_channel].transferring_words ? "words" : "halfwords",
+            dma_channels[current_channel].source_buf,
+            dma_channels[current_channel].dest_buf,
+            read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
+        );
 
         auto source_increment = 0;
         auto dest_increment = 0;
@@ -77,8 +80,9 @@ final class DMA(HwType H) {
                 Word read_address  = dma_channels[current_channel].source_buf + source_offset;
                 Word write_address = dma_channels[current_channel].dest_buf   + dest_offset;
 
-                Word value = mem9.read_word(read_address);
-                mem9.write_word(write_address, value);
+                Word value = mem.read_word(read_address);
+                mem.write_word(write_address, value);
+                log_dma7("    Transferred %08x from %x to %x", value, read_address, write_address);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;
@@ -90,8 +94,9 @@ final class DMA(HwType H) {
                 Word read_address  = dma_channels[current_channel].source_buf + source_offset;
                 Word write_address = dma_channels[current_channel].dest_buf   + dest_offset;
 
-                Half value = mem9.read_half(read_address);
-                mem9.write_half(write_address, value);
+                Half value = mem.read_half(read_address);
+                mem.write_half(write_address, value);
+                log_dma7("    Transferred %04x from %x to %x", value, read_address, write_address);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;

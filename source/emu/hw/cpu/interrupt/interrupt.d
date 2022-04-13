@@ -53,6 +53,8 @@ final class InterruptManager {
     }
 
     bool irq_pending() {
+        import std.stdio;
+        if (master_enable && (enable & status)) writefln("int %x %x %x", master_enable, enable, status);
         return master_enable && (enable & status);
     }
 

@@ -13,7 +13,8 @@ final class MMIO7 {
 
 static const mmio7_registers = [
     MMIORegister("gpu_engine_b", "DISPCNT",       0x0400_0000,  4, READ_WRITE),
-    MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  4, READ_WRITE),
+    MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  2, READ_WRITE),
+    MMIORegister("gpu",          "VCOUNT",        0x0400_0006,  2, READ),
     MMIORegister("dma7",         "DMAxSAD",       0x0400_00B0,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma7",         "DMAxDAD",       0x0400_00B4,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma7",         "DMAxCNT_L",     0x0400_00B8,  2, READ_WRITE).repeat(4, 12),
@@ -27,7 +28,9 @@ static const mmio7_registers = [
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc7",         "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
-    MMIORegister("auxspi",       "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
+    MMIORegister("cart",         "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
+    MMIORegister("cart",         "ROMDATAOUT",    0x0400_01A8,  8,      WRITE),
+    MMIORegister("cart",         "ROMRESULT",     0x0410_0010,  4, READ      ).dont_decompose_into_bytes(),
     MMIORegister("spi",          "SPICNT",        0x0400_01C0,  2, READ_WRITE),
     MMIORegister("spi",          "SPIDATA",       0x0400_01C2,  2, READ_WRITE).dont_decompose_into_bytes(),
     MMIORegister("slot",         "EXMEMSTAT",     0x0400_0204,  2, READ),
