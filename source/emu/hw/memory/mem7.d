@@ -27,7 +27,7 @@ final class Mem7 : Mem {
 
         switch (region) {
             case 0x0: .. case 0x1: return bios.read!T(address);
-            case 0x2:              return main_memory.read!T(address % MAIN_MEMORY_SIZE);
+            case 0x2:              return main_memory.read!T(address);
             case 0x3:              return wram.read7!T(address);
             case 0x4:              return mmio7.read!T(address);
             case 0x6:              return vram.read7!T(address);
@@ -52,7 +52,7 @@ final class Mem7 : Mem {
 
         switch (region) {
             case 0x0: .. case 0x1: log_mem7("Attempt from ARM7 to write %x to BIOS: %x", value, address); break;
-            case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
+            case 0x2:              main_memory.write!T(address, value); break;
             case 0x3:              wram.write7!T(address, value); break;
             case 0x4:              mmio7.write!T(address, value); break;
             case 0x6:              vram.write7!T(address, value); break;

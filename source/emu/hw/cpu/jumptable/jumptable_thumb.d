@@ -148,12 +148,12 @@ template execute_thumb(T : ArmCPU) {
                 access_type = AccessType.SEQUENTIAL;
                 current_address += 4;
 
-                if (is_first_access) cpu.set_reg(base, writeback_value);
+                static if (v4T!T) if (is_first_access) cpu.set_reg(base, writeback_value);
                 is_first_access = false;
             }
         }
 
-        if (v5TE!T) cpu.set_reg(base, writeback_value);
+        static if (v5TE!T) cpu.set_reg(base, writeback_value);
 
         cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
     }
@@ -179,20 +179,9 @@ template execute_thumb(T : ArmCPU) {
             }
         }
 
-        import std.stdio;
         bool base_in_register_list = register_list[base];
-        if (v4T!T && !base_in_register_list) {        
+        if (!base_in_register_list) {
             cpu.set_reg(base, current_address);
-        }
-
-        if (v5TE!T) {
-            if (base_in_register_list) {
-                if (register_list == 1 << base || register_list >> (base + 1) > 0) {
-                    cpu.set_reg(base, current_address);
-                }
-            } else {
-                cpu.set_reg(base, current_address);
-            }
         }
         
         cpu.run_idle_cycle();

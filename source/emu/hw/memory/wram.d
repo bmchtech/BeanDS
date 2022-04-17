@@ -78,9 +78,9 @@ final class WRAM {
     T read7(T)(Word address) {
         T value;
         if (address < 0x0380_0000 && arm7_wram_enabled) {
-            value= (*(arm7_mapping[address[14]])).read!T(address % WRAM_SIZE);
+            value = (*(arm7_mapping[address[14]])).read!T(address % WRAM_SIZE);
         } else {
-            value= arm7_only_wram.read!T(address % ARM7_ONLY_WRAM_SIZE);
+            value = arm7_only_wram.read!T(address % ARM7_ONLY_WRAM_SIZE);
         }        
         // log_wram("arm7 reading from %x in mode %x %x %x", address, mode, arm7_wram_enabled, value);
         return value;

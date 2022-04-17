@@ -9,7 +9,6 @@ final class Cp15 {
     static void reset() {
         cp15 = new Cp15();
     }
-
     bool itcm_absent;
     int  itcm_physical_size;
     int  itcm_virtual_size;
@@ -19,10 +18,17 @@ final class Cp15 {
     int  dtcm_virtual_size;
     int  dtcm_region_base;
 
+    Word control;
+
     Word read(Word opcode, Word cn, Word cm) {
         Word return_value = 0;
 
         // think of a prettier way to decode this stuff
+
+        if (cn == 0 && cm == 0 && opcode == 0) {
+            return_value = 0x41059461;
+        } else
+
         if (cn == 9 && cm == 1 && opcode == 0) {
             return_value[1 .. 5] = dtcm_virtual_size;
             return_value[12..31] = dtcm_region_base;
@@ -44,8 +50,10 @@ final class Cp15 {
             return_value[16] = tcm.dtcm_enabled;
             return_value[17] = tcm.dtcm_load_mode;
             return_value[18] = tcm.itcm_enabled;  
-            return_value[19] = tcm.itcm_load_mode;          
-        } else
+            return_value[19] = tcm.itcm_load_mode;
+
+            return_value |= 0x78;      
+        }
 
         log_coprocessor("Received an unhandled CP15 read: %x %x %x", opcode, cn, cm);
 
@@ -55,6 +63,7 @@ final class Cp15 {
     void write(Word opcode, Word cn, Word cm, Word data) {
 
         // think of a prettier way to decode this stuff
+
         if (cn == 9 && cm == 1 && opcode == 0) {
             dtcm_virtual_size = data[1 .. 5];
             dtcm_region_base  = data[12..31];
@@ -78,8 +87,9 @@ final class Cp15 {
         } else
 
         if (cn == 7 && cm == 0 && opcode == 4 && data == 0) {
+            log_arm9("halt!");
             arm9.halt();
-        } else
+        }
 
         log_coprocessor("Received an unhandled CP15 write: %x %x %x %x", opcode, cn, cm, data);
     }

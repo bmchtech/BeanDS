@@ -21,7 +21,7 @@ final class NDS {
 
     bool booted = false;
 
-    this() {
+    this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
         //       or make nothing.
@@ -33,9 +33,10 @@ final class NDS {
         DMA_reset();
         AUXSPI.reset();
         Slot.reset();
+        SPI.reset();
 
-        arm7 = new ARM7TDMI(mem7);
-        arm9 = new ARM946E_S(mem9);
+        arm7 = new ARM7TDMI(mem7, arm7_ringbuffer_size);
+        arm9 = new ARM946E_S(mem9, arm9_ringbuffer_size);
 
         cpu_trace = new CpuTrace(arm7, 100);
 
@@ -55,6 +56,7 @@ final class NDS {
         new GPUEngineB();
 
         new KeyInput();
+        new MainMemory();
 
         nds = this;
     }
@@ -98,9 +100,13 @@ final class NDS {
             &cart.rom[cart.cart_header.arm9_rom_offset],
             cart.cart_header.arm9_size
         );
+        
+        cart.skip_firmware();
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
+        arm7.set_cpsr(arm7.get_cpsr | (1 << 7));
+        arm9.set_cpsr(arm7.get_cpsr | (1 << 7));
 
         booted = true;
     }

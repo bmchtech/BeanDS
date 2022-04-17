@@ -9,6 +9,7 @@ struct CpuTraceState {
     Word           opcode;
     Word[16]       regs;
     Word           cpsr;
+    Word           spsr;
 }
 
 CpuTraceState get_cpu_trace_state(ArmCPU cpu) {
@@ -17,6 +18,7 @@ CpuTraceState get_cpu_trace_state(ArmCPU cpu) {
     cpu_trace_state.instruction_set = cpu.get_instruction_set();
     cpu_trace_state.opcode          = cpu.get_pipeline_entry(0);
     cpu_trace_state.cpsr            = cpu.get_cpsr();
+    cpu_trace_state.spsr            = cpu.get_spsr();
 
     for (int i = 0; i < 16; i++) {
         cpu_trace_state.regs[i] = cpu.get_reg(i);
@@ -35,7 +37,6 @@ final class CpuTrace {
     }
 
     void capture() {
-        import std.stdio;
         ringbuffer.add(get_cpu_trace_state(cpu));
     }
 
@@ -49,7 +50,7 @@ final class CpuTrace {
             
             if (trace[i].instruction_set == InstructionSet.THUMB) {
                 write("THM ");
-                write(format("%04x || ", trace[i].opcode));
+                write(format("    %04x || ", trace[i].opcode));
             } else {
                 write("ARM ");
                 write(format("%08x || ", trace[i].opcode));
@@ -58,7 +59,8 @@ final class CpuTrace {
             for (int j = 0; j < 16; j++)
                 write(format("%08x ", trace[i].regs[j]));
 
-            write(format("| %08x", trace[i].cpsr));
+            write(format("| %08x ", trace[i].cpsr));
+            write(format("| %08x", trace[i].spsr));
             writeln();
         }
     }

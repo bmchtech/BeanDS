@@ -19,6 +19,13 @@ final class Cart {
         this.cart_header = get_cart_header(rom);
     }
 
+    void skip_firmware() {
+        main_memory.write!Word(Word(0x7FF800), get_cart_id());
+        main_memory.write!Word(Word(0x7FF804), get_cart_id());
+        main_memory.write!Word(Word(0x7FFC00), get_cart_id());
+        main_memory.write!Word(Word(0x7FFC04), get_cart_id());
+    }
+
     @property 
     size_t rom_size() {
         return rom.length;
@@ -48,8 +55,6 @@ final class Cart {
     int data_block_size_index;
 
     Byte read_ROMCTRL(int target_byte) {
-        arm9.num_log = 10;
-
         Byte result = 0;
 
         final switch (target_byte) {
@@ -119,21 +124,25 @@ final class Cart {
         if ((command & 0xFF) == 0xB8) {
             auto length = get_data_block_size(4);
 
-            Word id = 0xC2; // macronix - just pick any manufacturer id it doesnt matter
-            // thanks striker! :)
-            if (rom_size() >= 1024 * 1024 && rom_size() <= 128 * 1024 * 1024) {
-                id.set_byte(1, (rom_size() >> 20) - 1);
-            } else {
-                id.set_byte(1, 0x100 - (rom_size() >> 28));
-            }
-            
             for (int i = 0; i < length / 4; i++) {
-                outbuffer[i] = id;
+                outbuffer[i] = get_cart_id();
             }
 
             outbuffer_length = length / 4;
         }
         
         outbuffer_index  = 0;
+    }
+
+    Word get_cart_id() {
+        Word id = 0xC2; // macronix - just pick any manufacturer id it doesnt matter
+        // thanks striker! :)
+        if (rom_size() >= 1024 * 1024 && rom_size() <= 128 * 1024 * 1024) {
+            id.set_byte(1, (rom_size() >> 20) - 1);
+        } else {
+            id.set_byte(1, 0x100 - (rom_size() >> 28));
+        }
+        
+        return id;
     }
 }

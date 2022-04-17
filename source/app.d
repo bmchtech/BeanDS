@@ -11,7 +11,7 @@ version (gperf) {
 void main(string[] args) {
 	auto cli_args = parse_cli_args(args);
 
-	auto nds = new NDS();
+	auto nds = new NDS(cli_args.arm7_ringbuffer_size, cli_args.arm9_ringbuffer_size);
 	
 	// sure i could put the bios in the cli_args... and i *will*
 	// but right now, im dev'ing the emu, and i dont want to have

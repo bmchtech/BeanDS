@@ -150,7 +150,7 @@ final class DMA(HwType H) {
             dma_channels[dma_id].repeat = false;
             start_dma_channel(dma_id, false);
         } else {
-            error_unimplemented("A non immediate DMA9 was enabled");
+            log_unimplemented("A non immediate DMA9 was enabled");
         }
     }
 

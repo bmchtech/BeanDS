@@ -34,7 +34,7 @@ final class Mem9 : Mem {
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
 
         switch (region) {
-            case 0x2:              return main_memory.read!T(address % MAIN_MEMORY_SIZE);
+            case 0x2:              return main_memory.read!T(address);
             case 0x3:              return wram.read9!T(address);
             case 0x4:              return mmio9.read!T(address);
             case 0x5:              return pram.read!T(address);
@@ -64,7 +64,7 @@ final class Mem9 : Mem {
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);
 
         switch (region) {
-            case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
+            case 0x2:              main_memory.write!T(address, value); break;
             case 0x3:              wram.write9!T(address, value); break;
             case 0x4:              mmio9.write!T(address, value); break;
             case 0x5:              pram.write!T(address, value); break;

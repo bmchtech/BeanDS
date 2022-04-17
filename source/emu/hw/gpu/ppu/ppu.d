@@ -411,8 +411,8 @@ final class PPU(HwType H) {
         uint bg_scanline = background.is_mosaic ? apparent_bg_scanline : scanline;
 
         // relevant addresses for the background's tilemap and screen
-        int screen_base_address = background.screen_base_block * 0x800;
-        int tile_base_address   = background.character_base_block * 0x4000;
+        int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x20000;
+        int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x20000;
 
         // the coordinates at the topleft of the background that we are drawing
         long texture_point_x = background.internal_reference_x;
@@ -617,9 +617,9 @@ final class PPU(HwType H) {
         return (cast(ushort) ((cast(ushort) (input / 1)) << 8)) | ((cast(ushort) ((input % 1) * 256)) & 0xFF);
     }
 
-private:
+
     // DISPCNT
-    public int bg_mode;                             // 0 - 5
+    int bg_mode;                                    // 0 - 5
     int  disp_frame_select;                         // 0 - 1
     bool hblank_interval_free;                      // 1 = OAM can be accessed during h-blank
     bool is_character_vram_mapping_one_dimensional; // 2 = 2-dimensional
@@ -627,6 +627,8 @@ private:
     bool forced_blank;
     bool sprites_enabled;
 
+    int character_base;
+    int screen_base;
 public:
     void write_DISPCNT(int target_byte, Byte data) {
         if (target_byte == 0) {
@@ -662,6 +664,8 @@ public:
     }
 
     void write_BGxHOFS(int target_byte, Byte data, int x) {
+        log_ppu("ofs: %x %x %x", x, target_byte, data);
+
         if (target_byte == 0) {
             backgrounds[x].x_offset = (backgrounds[x].x_offset & 0xFF00) | data;
         } else { // target_byte == 1
@@ -670,6 +674,7 @@ public:
     }
 
     void write_BGxVOFS(int target_byte, Byte data, int x) {
+        log_ppu("yofs: %x %x %x", x, target_byte, data);
         if (target_byte == 0) {
             backgrounds[x].y_offset = (backgrounds[x].y_offset & 0xFF00) | data;
         } else { // target_byte == 1

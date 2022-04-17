@@ -18,25 +18,53 @@ final class GPUEngineA {
     int bg_mode;
     int display_mode;
     int vram_block;
+    int bg0_selection;
+    int tile_obj_mapping;
+    int bitmap_obj_dimension;
+    int bitmap_obj_mapping;
+    int tile_obj_boundary;
+    int bitmap_obj_boundary;
+    int obj_during_hblank;
+    bool bg_extended_palettes;
+    bool obj_extended_palettes;
+    bool forced_blank;
+
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                bg_mode = value[0..2];
+                bg_mode              = value[0..2];
+                bg0_selection        = value[3];
+                tile_obj_mapping     = value[4];
+                bitmap_obj_dimension = value[5];
+                bitmap_obj_mapping   = value[6];
+                forced_blank         = value[7];
                 break;
 
             case 1: 
-                ppu.backgrounds[0].enabled = value[0];
-                ppu.backgrounds[1].enabled = value[1];
-                ppu.backgrounds[2].enabled = value[2];
-                ppu.backgrounds[3].enabled = value[3];
+                ppu.backgrounds[0].enabled    = value[0];
+                ppu.backgrounds[1].enabled    = value[1];
+                ppu.backgrounds[2].enabled    = value[2];
+                ppu.backgrounds[3].enabled    = value[3];
+                ppu.sprites_enabled           = value[4];
+                ppu.canvas.windows[0].enabled = value[5];
+                ppu.canvas.windows[1].enabled = value[6];
+                ppu.canvas.obj_window_enable  = value[7];
                 break;
 
             case 2:
-                display_mode = value[0..1];
-                vram_block   = value[2..3];
+                display_mode        = value[0..1];
+                vram_block          = value[2..3];
+                tile_obj_boundary   = value[4..5];
+                bitmap_obj_boundary = value[6];
+                obj_during_hblank   = value[7];
                 break;
 
-            case 3: break; 
+            case 3: 
+                ppu.character_base    = value[0..2];
+                ppu.screen_base       = value[3..5];
+                bg_extended_palettes  = value[6];
+                obj_extended_palettes = value[7];
+                break; 
         }
     }
 
@@ -50,7 +78,6 @@ final class GPUEngineA {
                 break;
                 
             case 1:
-                log_engine_a("im bullying my pp");
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];
@@ -82,7 +109,12 @@ final class GPUEngineA {
 
         final switch (target_byte) {
             case 0:
-                result[0..2] = Byte(bg_mode);
+                result[0..2] = bg_mode;
+                result[3]    = bg0_selection;
+                result[4]    = tile_obj_mapping;
+                result[5]    = bitmap_obj_dimension;
+                result[6]    = bitmap_obj_mapping;
+                result[7]    = forced_blank;
                 break;
 
             case 1: 
@@ -90,14 +122,26 @@ final class GPUEngineA {
                 result[1] = ppu.backgrounds[1].enabled;
                 result[2] = ppu.backgrounds[2].enabled;
                 result[3] = ppu.backgrounds[3].enabled;
+                result[4] = ppu.sprites_enabled;
+                result[5] = ppu.canvas.windows[0].enabled;
+                result[6] = ppu.canvas.windows[0].enabled;
+                result[7] = ppu.canvas.obj_window_enable;
                 break;
 
             case 2:
                 result[0..1] = Byte(display_mode);
                 result[2..3] = Byte(vram_block);
+                result[4..5] = tile_obj_boundary;
+                result[6]    = bitmap_obj_boundary;
+                result[7]    = obj_during_hblank;
                 break;
 
-            case 3: break; 
+            case 3:
+                result[0..2] = ppu.character_base;
+                result[3..5] = ppu.screen_base;
+                result[6]    = bg_extended_palettes;
+                result[7]    = obj_extended_palettes;
+                break;
         }
 
         return result;  

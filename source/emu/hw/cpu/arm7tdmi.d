@@ -27,12 +27,12 @@ final class ARM7TDMI : ArmCPU {
 
     ulong num_log;
 
-    this(Mem memory) {
+    this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
         current_mode = MODE_USER;
         
         arm7 = this;
-        cpu_trace = new CpuTrace(this, 1000);
+        cpu_trace = new CpuTrace(this, ringbuffer_size);
         reset();
     }
 
@@ -60,6 +60,8 @@ final class ARM7TDMI : ArmCPU {
     }
 
     pragma(inline, true) T fetch(T)() {
+        if (regs[pc] == 0) error_arm7("arm7 branched to 0");
+
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
             AccessType old_access_type = pipeline_access_type;
@@ -67,7 +69,6 @@ final class ARM7TDMI : ArmCPU {
 
             T result        = arm_pipeline[0];
             arm_pipeline[0] = arm_pipeline[1];
-            if (pc == 0x2380028) arm7.num_log += 10;
             arm_pipeline[1] = read_word(regs[pc], old_access_type);
             regs[pc] += 4;
 
@@ -131,6 +132,8 @@ final class ARM7TDMI : ArmCPU {
     void log_state() {
         import std.stdio;
         import std.format;
+
+        writef("[%04d] ", num_log);
     
         if (get_flag(Flag.T)) write("THM ");
         else write("ARM ");
@@ -139,6 +142,9 @@ final class ARM7TDMI : ArmCPU {
         
         for (int j = 0; j < 18; j++)
             write(format("%08x ", regs[j]));
+        
+        writef(" | ");
+        writef(" %08x", get_reg(sp, MODE_SUPERVISOR));
         writeln();
     }
 
@@ -151,11 +157,23 @@ final class ARM7TDMI : ArmCPU {
     }
 
     pragma(inline, true) Word get_reg(Reg id, CpuMode mode) {
-        return get_reg__raw(id, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
+
+        if (!is_banked && (current_mode.REGISTER_UNIQUENESS.bit(id) & 1)) {
+            return get_reg(id);
+        } else {
+            return get_reg__raw(id, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        }
     }
 
     pragma(inline, true) void set_reg(Reg id, Word value, CpuMode mode) {
-        return set_reg__raw(id, value, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
+
+        if (!is_banked && (current_mode.REGISTER_UNIQUENESS.bit(id) & 1)) {
+            set_reg(id, value);
+        } else {
+            set_reg__raw(id, value, cast(Word[18]*) (&register_file[mode.OFFSET]));
+        }
     }
 
     pragma(inline, true) Word get_reg__raw(Reg id, Word[18]* regs) {
@@ -290,7 +308,7 @@ final class ARM7TDMI : ArmCPU {
             case 0xC: return (!get_flag(Flag.Z) && (get_flag(Flag.N) == get_flag(Flag.V)));
             case 0xD: return ( get_flag(Flag.Z) || (get_flag(Flag.N) != get_flag(Flag.V)));
             case 0xE: return true;
-            case 0xF: error_arm7("ARM7 opcode has a conition of 0xF"); return false;
+            case 0xF: error_arm7("ARM7 opcode has a condition of 0xF"); return false;
 
             default: assert(0);
         }
