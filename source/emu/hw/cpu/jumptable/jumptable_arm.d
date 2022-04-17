@@ -11,7 +11,7 @@ template execute_arm(T : ArmCPU) {
     alias JumptableEntry = void function(T cpu, Word opcode);
 
     static void create_undefined_instruction(T cpu, Word opcode) {
-        log_unimplemented("Tried to execute undefined ARM instruction: %08x", opcode);
+        error_unimplemented("Tried to execute undefined ARM instruction: %08x", opcode);
     }
 
     static void create_branch(bool branch_with_link)(T cpu, Word opcode) {
@@ -258,6 +258,7 @@ template execute_arm(T : ArmCPU) {
         }
 
         if (update_flags && is_pc) {
+            log_arm9("set cpsr to spsr %x", cpu.get_spsr());
             cpu.set_cpsr(cpu.get_spsr());
             cpu.update_mode();
         }
@@ -424,6 +425,16 @@ template execute_arm(T : ArmCPU) {
 
         AccessType access_type = AccessType.NONSEQUENTIAL;
 
+        static if (s) {
+            Word old_cpsr = cpu.get_cpsr();
+
+            if (!(load && pc_included)) {
+                Word new_cpsr = old_cpsr;
+                new_cpsr[0..4] = MODE_USER.CPSR_ENCODING;
+                cpu.set_cpsr(new_cpsr);
+            }
+        }
+
         for (int i = 0; i < 16; i++) {
             if (rlist & mask) {
                 static if (s) {
@@ -473,6 +484,12 @@ template execute_arm(T : ArmCPU) {
         static if (load && s) if (pc_loaded) {
             cpu.set_cpsr(cpu.get_spsr());
             cpu.update_mode();
+        }
+
+        static if (s) {
+            if (!(load && pc_included)) {
+                cpu.set_cpsr(old_cpsr);
+            }
         }
 
         static if (writeback && load) {

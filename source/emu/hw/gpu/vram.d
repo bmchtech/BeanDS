@@ -30,16 +30,16 @@ final class VRAM {
             this.size = size;
         }
 
-        bool in_range(Word access_accress) {
-            return enabled && address <= access_accress && access_accress < address + size;
+        bool in_range(Word access_address) {
+            return enabled && address <= access_address && access_address < address + size;
         }
 
-        T read(T)(Word access_accress) {
-            return data.read!T(access_accress - address);
+        T read(T)(Word access_address) {
+            return data.read!T(access_address - address);
         }
 
-        void write(T)(Word access_accress, T value) {
-            data.write!T(access_accress - address, value);
+        void write(T)(Word access_address, T value) {
+            data.write!T(access_address - address, value);
         }
     }
 
@@ -79,8 +79,8 @@ final class VRAM {
         vram_e = blocks[4];
         vram_f = blocks[5];
         vram_g = blocks[6];
-        vram_h = blocks[7];
-        vram_i = blocks[8];
+        vram_h = blocks[8];
+        vram_i = blocks[9];
 
         vram = this;
     }
@@ -105,8 +105,6 @@ final class VRAM {
     }
 
     T read9(T)(Word address) {
-        auto region = get_region(address);
-
         T result = 0;
         bool performed_read = false;
 
@@ -127,8 +125,6 @@ final class VRAM {
     }
 
     void write9(T)(Word address, T value) {
-        auto region = get_region(address);
-
         bool performed_write = false;
 
         for (int i = 0; i < 10; i++) {
@@ -190,6 +186,7 @@ final class VRAM {
     }
 
     void write_VRAMCNT(int target_byte, Byte data) {
+        log_vram("VRAMCUNT: %x %x", target_byte, data);
         auto mst    = vram_bank_uses_bit_2(target_byte) ? data[0..2] : data[0..1];
         auto offset = data[3..4];
         blocks[target_byte].enabled = data[7];
@@ -201,12 +198,12 @@ final class VRAM {
             case 1: set_vram_B(mst, offset); break;
             case 2: set_vram_C(mst, offset); break;
             case 3: set_vram_D(mst, offset); break;
-            case 4: set_vram_E(     offset); break;
+            case 4: set_vram_E(mst        ); break;
             case 5: set_vram_F(mst, offset); break;
             case 6: set_vram_G(mst, offset); break;
             // case 7: assert(0);
-            case 8: set_vram_H(     offset); break;
-            case 9: set_vram_I(     offset); break;
+            case 8: set_vram_H(mst        ); break;
+            case 9: set_vram_I(mst        ); break;
             default: break;
         }
     }
@@ -323,7 +320,7 @@ final class VRAM {
         vram_i.mst = mst;
 
         final switch (mst) {
-            case 0: vram_i.address = 0x068A_8000; break;
+            case 0: vram_i.address = 0x068A_0000; break;
             case 1: vram_i.address = 0x0620_8000;  break;
             case 2: vram_i.address = 0x0660_0000; break;
             case 3: log_unimplemented("i do not know what a slot is (I)");

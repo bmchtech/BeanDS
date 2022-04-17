@@ -8,5 +8,6 @@ public {
     import emu.hw.memory.mem7;
     import emu.hw.memory.mem9;
     import emu.hw.memory.mmio;
+    import emu.hw.memory.slot;
     import emu.hw.memory.wram;
 }

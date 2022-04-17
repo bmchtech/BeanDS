@@ -69,7 +69,7 @@ struct Window {
     bool obj_enable;
 }
 
-final class Canvas {
+final class Canvas(HwType H) {
     
     public:
         PixelData[256][4] bg_scanline;
@@ -110,9 +110,11 @@ final class Canvas {
         int pram_offset;
 
     private:
+        PPU!H ppu;
         Background[4] sorted_backgrounds;
 
-    public this(int pram_offset) {
+    public this(PPU!H ppu, int pram_offset) {
+        this.ppu           = ppu;
         this.bg_scanline   = new PixelData[256][4];
         this.obj_scanline  = new PixelData[256];
         this.pixels_output = new Pixel    [256];
@@ -180,7 +182,7 @@ final class Canvas {
                 }
 
                 for (int bg = 0; bg < 4; bg++) {
-                    if (backgrounds[bg].is_mosaic) bg_scanline[bg][x] = bg_scanline[bg][mosaic_x];
+                    if (ppu.backgrounds[bg].is_mosaic) bg_scanline[bg][x] = bg_scanline[bg][mosaic_x];
                 }
             }
         } 
@@ -204,7 +206,7 @@ final class Canvas {
 
     public void composite(int scanline) {
         // step 1: sort the backgrounds by priority
-        sorted_backgrounds = backgrounds;
+        sorted_backgrounds = ppu.backgrounds;
 
         // insertion sort
         // the important part of insertion sort is that we need two backgrounds of the same priority

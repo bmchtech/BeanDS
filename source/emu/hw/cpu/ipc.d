@@ -10,7 +10,6 @@ final class IPC {
     final class Fifo {
         bool empty   = true;
         bool full    = false;
-        bool enabled = true;
 
         int head = 0;
         int tail = 0;
@@ -27,7 +26,7 @@ final class IPC {
         Word pop() {
             full = false;
 
-            if (!empty && enabled) {
+            if (!empty) {
                 size--;
                 tail++;
                 tail &= 0xF;
@@ -48,15 +47,13 @@ final class IPC {
 
             empty = false;
 
-            if (enabled) {
-                size++;
-                head++;
-                head &= 0xF;
+            size++;
+            head++;
+            head &= 0xF;
 
-                data[head] = value;
+            data[head] = value;
 
-                if (size == 16) full = true;
-            }
+            if (size == 16) full = true;
         }
 
         void clear() {
@@ -77,6 +74,7 @@ final class IPC {
     bool fifo_empty_irq_enable;
     bool fifo_not_empty_irq_enable;
     bool fifo_error;
+    bool enabled;
 
     IPC remote;
 
@@ -128,7 +126,7 @@ final class IPC {
                 result[1] = Byte(fifo.full);
                 result[2] = Byte(fifo_not_empty_irq_enable);
                 result[6] = Byte(fifo_error);
-                result[7] = Byte(fifo.enabled);
+                result[7] = Byte(enabled);
                 break;
         }
 
@@ -139,57 +137,43 @@ final class IPC {
         final switch (target_byte) {
             case 0:
                 fifo_empty_irq_enable = data[2];
-                if (data[3]) remote.fifo.clear();
+                if (data[3]) { remote.fifo.clear(); if (this == ipc7) log_arm7("IPC7 fifo cleared"); else log_arm9("IPC9 fifo cleared"); }
                 if (remote.fifo.empty && fifo_empty_irq_enable)
                     request_send_fifo_interrupt();
                 return;
             case 1:
                 fifo_not_empty_irq_enable =  data[2];
                 fifo_error               &= !data[6];
-                fifo.enabled              =  data[7];
-                if (!fifo.empty && fifo_empty_irq_enable)
+                enabled                   =  data[7];
+                if (!fifo.empty && fifo_not_empty_irq_enable)
                     request_receive_fifo_interrupt();
                 return;
         }
     }
 
-    Byte read_IPCFIFOSEND(int target_byte) {
-        Byte result = 0;
-
-        final switch (target_byte) {
-            case 0:
-                result[0] = remote.fifo.empty;
-                result[1] = remote.fifo.full;
-                result[2] = remote.fifo_empty_irq_enable;
-
-                break;
-
-            case 1:
-                result[0] = fifo.empty;
-                result[1] = fifo.full;
-                result[2] = fifo_not_empty_irq_enable;
-                result[6] = fifo_error;
-                result[7] = fifo.enabled;
-                break;
-        }
-
-        return result;
-    }
-
     void write_IPCFIFOSEND(T)(T data) {
+        if (!enabled) return;
+        
         if (remote.fifo.full) {
             fifo_error = true;
         } else {
             remote.fifo.push(Word(data));
         }
+        if (this == ipc7) log_arm7("ARM7 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
+        if (this == ipc9) log_arm9("ARM9 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
     }
 
+    Word last_read_value;
     T read_IPCFIFORECV(T)() {
-        if (fifo.empty) {
+        if (!fifo.empty && enabled) {
+            last_read_value = fifo.pop();
+            if (this == ipc7) log_arm7("ARM7 receiving %x. %d / %d", last_read_value, fifo.size, 16);
+            if (this == ipc9) log_arm9("ARM9 receiving %x. %d / %d", last_read_value, fifo.size, 16);
+        } else {
             fifo_error = true;
         }
 
-        return cast(T) fifo.pop();
+        return cast(T) last_read_value;
     }
 
     void request_sync_interrupt() {

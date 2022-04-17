@@ -19,7 +19,9 @@ final class NDS {
     
     CpuTrace cpu_trace;
 
-    this() {
+    bool booted = false;
+
+    this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
         //       or make nothing.
@@ -29,9 +31,12 @@ final class NDS {
         Mem9.reset();
         SPU.reset();
         DMA_reset();
+        AUXSPI.reset();
+        Slot.reset();
+        SPI.reset();
 
-        arm7 = new ARM7TDMI(mem7);
-        arm9 = new ARM946E_S(mem9);
+        arm7 = new ARM7TDMI(mem7, arm7_ringbuffer_size);
+        arm9 = new ARM946E_S(mem9, arm9_ringbuffer_size);
 
         cpu_trace = new CpuTrace(arm7, 100);
 
@@ -51,6 +56,7 @@ final class NDS {
         new GPUEngineB();
 
         new KeyInput();
+        new MainMemory();
 
         nds = this;
     }
@@ -94,9 +100,15 @@ final class NDS {
             &cart.rom[cart.cart_header.arm9_rom_offset],
             cart.cart_header.arm9_size
         );
+        
+        cart.skip_firmware();
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
+        arm7.set_cpsr(arm7.get_cpsr | (1 << 7));
+        arm9.set_cpsr(arm7.get_cpsr | (1 << 7));
+
+        booted = true;
     }
 
     void cycle(int num_cycles) {
@@ -122,16 +134,21 @@ final class NDS {
     }
 
     void write_HALTCNT(int target_byte, Byte data) {
+
         final switch (data[6..7]) {
             case 0: break;
-            case 1: error_nds("tried to enable GBA mode"); break;
+            case 1: log_nds("tried to enable GBA mode"); break;
             case 2: arm7.halt(); break;
-            case 3: error_nds("tried to sleep"); break;
+            case 3: log_nds("tried to sleep"); break;
         }
     }
 
     Byte read_HALTCNT(int target_byte) {
         // TODO: whats the point of this useless read
         return Byte(0);
+    }
+
+    Byte read_POSTFLG(int target_byte) {
+        return Byte(booted);
     }
 }

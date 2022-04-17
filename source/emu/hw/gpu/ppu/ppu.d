@@ -14,6 +14,51 @@ enum AffineParameter {
     D = 3
 }
 
+struct Background {
+    int   id;
+    int   priority;                   // 0 - 3
+    int   character_base_block;      
+    bool  is_mosaic;
+    bool  doesnt_use_color_palettes;  // 0 = 16/16, 1 = 256/1
+    int   screen_base_block;       
+    bool  does_display_area_overflow;
+    int   screen_size;                // 0 - 3
+
+    // these aren't used (except in NDS mode, according to GBATek)
+    // yet, the GBA still saves their value and returns them. therefore
+    // my emulator must do so too.
+    uint  bgcnt_bits_4_and_5;
+
+    ushort x_offset;
+    ushort y_offset;
+    bool   enabled;
+
+    ushort transformation_dx;
+    ushort transformation_dmx;
+    ushort transformation_dy;
+    ushort transformation_dmy;
+    uint   reference_x;
+    uint   reference_y;
+
+    int x_offset_rotation;
+    int y_offset_rotation; 
+
+    long internal_reference_x;
+    long internal_reference_y;
+
+    BackgroundMode mode;
+
+    Layer layer;
+    
+    short[4] p;
+}
+
+enum BackgroundMode {
+    TEXT,
+    ROTATION_SCALING,
+    NONE
+}
+
 final class PPU(HwType H) {
     static assert (H == HwType.NDS9 || H == HwType.NDS7);
 
@@ -21,11 +66,18 @@ final class PPU(HwType H) {
 
     ushort scanline;
 
-    Canvas canvas;
+    Canvas!H canvas;
 
     Pixel[256] scanline_buffer;
 
     Scheduler scheduler;
+
+    Background[] backgrounds = [
+        Background(),
+        Background(),
+        Background(),
+        Background()
+    ];
 
     @property 
     Byte[] bg_vram() {
@@ -44,8 +96,14 @@ final class PPU(HwType H) {
     this() {
         scanline = 0;
 
-        static if (H == HwType.NDS9) canvas = new Canvas(0);
-        static if (H == HwType.NDS7) canvas = new Canvas(0x400);
+        static if (H == HwType.NDS9) canvas = new Canvas!H(this, 0);
+        static if (H == HwType.NDS7) canvas = new Canvas!H(this, 0x400);
+
+        for (int i = 0; i < 4; i++) {
+            backgrounds[i].id = i;
+            backgrounds[i].p[0] = 0x100; 
+            backgrounds[i].p[3] = 0x100; 
+        }
     }
 
     void render(int scanline) {
@@ -93,7 +151,6 @@ final class PPU(HwType H) {
                 render_sprites(3);
                 render_background(3);
                 break;
-            
                 
             default: error_ppu("tried to set ppu to invalid mode %x", bg_mode);
         }
@@ -354,8 +411,8 @@ final class PPU(HwType H) {
         uint bg_scanline = background.is_mosaic ? apparent_bg_scanline : scanline;
 
         // relevant addresses for the background's tilemap and screen
-        int screen_base_address = background.screen_base_block * 0x800;
-        int tile_base_address   = background.character_base_block * 0x4000;
+        int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x20000;
+        int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x20000;
 
         // the coordinates at the topleft of the background that we are drawing
         long texture_point_x = background.internal_reference_x;
@@ -560,9 +617,9 @@ final class PPU(HwType H) {
         return (cast(ushort) ((cast(ushort) (input / 1)) << 8)) | ((cast(ushort) ((input % 1) * 256)) & 0xFF);
     }
 
-private:
+
     // DISPCNT
-    public int bg_mode;                             // 0 - 5
+    int bg_mode;                                    // 0 - 5
     int  disp_frame_select;                         // 0 - 1
     bool hblank_interval_free;                      // 1 = OAM can be accessed during h-blank
     bool is_character_vram_mapping_one_dimensional; // 2 = 2-dimensional
@@ -570,6 +627,8 @@ private:
     bool forced_blank;
     bool sprites_enabled;
 
+    int character_base;
+    int screen_base;
 public:
     void write_DISPCNT(int target_byte, Byte data) {
         if (target_byte == 0) {
@@ -605,6 +664,8 @@ public:
     }
 
     void write_BGxHOFS(int target_byte, Byte data, int x) {
+        log_ppu("ofs: %x %x %x", x, target_byte, data);
+
         if (target_byte == 0) {
             backgrounds[x].x_offset = (backgrounds[x].x_offset & 0xFF00) | data;
         } else { // target_byte == 1
@@ -613,6 +674,7 @@ public:
     }
 
     void write_BGxVOFS(int target_byte, Byte data, int x) {
+        log_ppu("yofs: %x %x %x", x, target_byte, data);
         if (target_byte == 0) {
             backgrounds[x].y_offset = (backgrounds[x].y_offset & 0xFF00) | data;
         } else { // target_byte == 1

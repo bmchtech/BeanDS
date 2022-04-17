@@ -44,7 +44,7 @@ final class TimerManager {
 
     void reload_timer_for_the_first_time(int timer_id) {
         if (timer_id != 0 && timers[timer_id].countup) return;
-            log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value,2 + ((0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment));
+            log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value, timers[timer_id].irq_enable);
 
         timers[timer_id].enabled_for_first_time = true;
         timers[timer_id].value = timers[timer_id].reload_value;
@@ -54,8 +54,6 @@ final class TimerManager {
     }
 
     void timer_overflow(int x) {
-        log_timers("baka!!! %x %x", x, timers[x].irq_enable);
-
         timers[x].reload_value_buffer = timers[x].reload_value;
         reload_timer(x);
         // TODO: the commented out code is from the GBA. what should i do here instead?

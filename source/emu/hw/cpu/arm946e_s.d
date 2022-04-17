@@ -27,12 +27,12 @@ final class ARM946E_S : ArmCPU {
 
     ulong num_log;
 
-    this(Mem memory) {
+    this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
         current_mode = MODE_USER;
         arm9 = this;
 
-        cpu_trace = new CpuTrace(this, 999);
+        cpu_trace = new CpuTrace(this, ringbuffer_size);
         reset();
     }
 
@@ -62,6 +62,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) T fetch(T)() {
+        if (regs[pc] == 0) error_arm9("arm9 branched to 0");
         // if (regs[pc] == 0x0200497C) num_log = 200;
 
         static if (is(T == Word)) {
@@ -113,13 +114,8 @@ final class ARM946E_S : ArmCPU {
         if (!(cast(bool) get_cpsr()[7]) && interrupt9.irq_pending()) {
             raise_exception!(CpuException.IRQ);
         }
-
-        if (regs[pc] == 0x0200E486) {
-            log_arm9("WHY ARENT YOU TRIGGERING!");
-            num_log = 100;
-        }
-
-        // cpu_trace.capture();
+        
+        cpu_trace.capture();
 
         if (num_log > 0) {
             log_state();
@@ -163,7 +159,7 @@ final class ARM946E_S : ArmCPU {
     pragma(inline, true) Word get_reg(Reg id, CpuMode mode) {
         bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
 
-        if (!is_banked && current_mode.REGISTER_UNIQUENESS.bit(id) & 1) {
+        if (!is_banked && (current_mode.REGISTER_UNIQUENESS.bit(id) & 1)) {
             return get_reg(id);
         } else {
             return get_reg__raw(id, cast(Word[18]*) (&register_file[mode.OFFSET]));
@@ -173,7 +169,7 @@ final class ARM946E_S : ArmCPU {
     pragma(inline, true) void set_reg(Reg id, Word value, CpuMode mode) {
         bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
 
-        if (!is_banked && current_mode.REGISTER_UNIQUENESS.bit(id) & 1) {
+        if (!is_banked && (current_mode.REGISTER_UNIQUENESS.bit(id) & 1)) {
             set_reg(id, value);
         } else {
             set_reg__raw(id, value, cast(Word[18]*) (&register_file[mode.OFFSET]));
@@ -380,7 +376,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     static string get_exception_name(CpuException exception)() {
-        final switch (exception) {
+        switch (exception) {
             case CpuException.Reset:             return "RESET";
             case CpuException.Undefined:         return "UNDEFINED";
             case CpuException.SoftwareInterrupt: return "SWI";

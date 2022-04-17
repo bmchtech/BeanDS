@@ -10,6 +10,8 @@ final class RingBuffer(T) {
     }
 
     void add(T element) {
+        if (buffer.length == 0) return;
+
         buffer[current_index] = element;
         current_index++;
 
