@@ -186,7 +186,6 @@ final class VRAM {
     }
 
     void write_VRAMCNT(int target_byte, Byte data) {
-        log_vram("VRAMCUNT: %x %x", target_byte, data);
         auto mst    = vram_bank_uses_bit_2(target_byte) ? data[0..2] : data[0..1];
         auto offset = data[3..4];
         blocks[target_byte].enabled = data[7];
