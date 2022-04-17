@@ -411,8 +411,8 @@ final class PPU(HwType H) {
         uint bg_scanline = background.is_mosaic ? apparent_bg_scanline : scanline;
 
         // relevant addresses for the background's tilemap and screen
-        int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x20000;
-        int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x20000;
+        int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x10000;
+        int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x10000;
 
         // the coordinates at the topleft of the background that we are drawing
         long texture_point_x = background.internal_reference_x;
@@ -626,9 +626,9 @@ final class PPU(HwType H) {
     bool obj_character_vram_mapping;
     bool forced_blank;
     bool sprites_enabled;
-
     int character_base;
     int screen_base;
+
 public:
     void write_DISPCNT(int target_byte, Byte data) {
         if (target_byte == 0) {
