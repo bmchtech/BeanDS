@@ -633,26 +633,6 @@ final class PPU(HwType H) {
     int screen_base;
 
 public:
-    void write_DISPCNT(int target_byte, Byte data) {
-        if (target_byte == 0) {
-            bg_mode                    = data[0..2];
-            disp_frame_select          = data[4];
-            hblank_interval_free       = data[5];
-            obj_character_vram_mapping = data[6];
-            forced_blank               = data[7];
-            update_bg_mode();
-        } else { // target_byte == 1
-            backgrounds[0].enabled     = data[0];
-            backgrounds[1].enabled     = data[1];
-            backgrounds[2].enabled     = data[2];
-            backgrounds[3].enabled     = data[3];
-            sprites_enabled            = data[4];
-            canvas.windows[0].enabled  = data[5];
-            canvas.windows[1].enabled  = data[6];
-            canvas.obj_window_enable   = data[7];
-        }
-    }
-
     void write_BGxCNT(int target_byte, Byte data, int x) {
         if (target_byte == 0) {
             backgrounds[x].priority                   = data[0..1];
