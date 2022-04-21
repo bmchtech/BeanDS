@@ -79,18 +79,19 @@ final class PPU(HwType H) {
         Background()
     ];
 
-    @property 
-    Byte[] bg_vram() {
-        static if (H == HwType.NDS9) return vram.vram_a.data;
-        static if (H == HwType.NDS7) return vram.vram_c.data;
-        assert(0);
+    T read_bg_vram(T)(int offset) {
+        static if (H == HwType.NDS9) return vram.read_ppu!T(Word(0x0600_0000) + offset);
+        static if (H == HwType.NDS7) return vram.read_ppu!T(Word(0x0620_0000) + offset);
     }
 
-    @property 
-    Byte[] obj_vram() {
-        static if (H == HwType.NDS9) return vram.vram_b.data;
-        static if (H == HwType.NDS7) return vram.vram_d.data;
-        assert(0);
+    T read_obj_vram(T)(int offset) {
+        static if (H == HwType.NDS9) return vram.read_ppu!T(Word(0x0640_0000) + offset);
+        static if (H == HwType.NDS7) return vram.read_ppu!T(Word(0x0660_0000) + offset);
+    }
+
+    T read_oam(T)(Word address) {
+        static if (H == HwType.NDS9) return oam.read!T(address);
+        static if (H == HwType.NDS7) return oam.read!T(address + 0x400);
     }
 
     this() {
@@ -235,8 +236,11 @@ final class PPU(HwType H) {
                 else                  uint tile_address = tile_base_address + (tile & 0x3ff) * 32 + (y)     * 4;
             }
             
-            Byte[8] tile_data = bg_vram[tile_address .. tile_address + 8];
-
+            Byte[8] tile_data;
+            for (int i = 0; i < 8; i++) {
+                tile_data[i] = read_bg_vram!Byte(tile_address + i);
+            }
+            
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
                 int draw_dx = 0;
@@ -313,7 +317,7 @@ final class PPU(HwType H) {
                     
 
                 static if (bpp8) {
-                    ubyte index = obj_vram.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 64) + ofs_y * 8 + ofs_x));
+                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 64) + ofs_y * 8 + ofs_x));
                     
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
                         canvas.draw_obj_pixel(draw_pos.x, index + 256, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
@@ -322,7 +326,7 @@ final class PPU(HwType H) {
                     }
 
                 } else {
-                    ubyte index = obj_vram.read!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 32) + ofs_y * 4 + (ofs_x / 2)));
+                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 32) + ofs_y * 4 + (ofs_x / 2)));
 
                     index = !(ofs_x % 2) ? index & 0xF : index >> 4;
                     index += texture.palette * 16;
@@ -383,7 +387,7 @@ final class PPU(HwType H) {
             int tile_address = get_tile_address__text(topleft_tile_x + tile_x_offset, topleft_tile_y, 
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][0],
                                                       BG_TEXT_SCREENS_DIMENSIONS[background.screen_size][1]);
-            int tile = bg_vram.read!Half(Word(screen_base_address + tile_address));
+            int tile = read_bg_vram!Half(Word(screen_base_address + tile_address));
             int draw_x = tile_x_offset * 8 - tile_dx;
             int draw_y = bg_scanline;
             bool flipped_x = (tile >> 10) & 1;
@@ -438,9 +442,9 @@ final class PPU(HwType H) {
                 tile_y &= tile_mask;
                 
                 int tile_address = get_tile_address__rotation_scaling(tile_x, tile_y, tiles_per_row);
-                int tile = bg_vram.read!Byte(Word(screen_base_address + tile_address));
+                int tile = read_bg_vram!Byte(Word(screen_base_address + tile_address));
 
-                ubyte color_index = bg_vram.read!Byte(Word(tile_base_address + (tile & 0x3FF) * 64 + fine_y * 8 + fine_x));
+                ubyte color_index = read_bg_vram!Byte(Word(tile_base_address + (tile & 0x3FF) * 64 + fine_y * 8 + fine_x));
                 canvas.draw_bg_pixel(x, background_id, color_index, background.priority, color_index == 0);
             }
 
@@ -486,19 +490,19 @@ final class PPU(HwType H) {
         // Very useful guide for attributes! https://problemkaputt.de/gbatek.htm#lcdobjoamattributes
         for (int sprite = 0; sprite < 128; sprite++) {
 
-            if (oam.read!Half(Word(sprite * 8 + 4))[10..11] != given_priority) continue;
+            if (read_oam!Half(Word(sprite * 8 + 4))[10..11] != given_priority) continue;
 
             // first of all, we need to figure out if we render this sprite in the first place.
             // so, we collect a bunch of info that'll help us figure that out.
-            ushort attribute_0 = oam.read!Half(Word(sprite * 8 + 0));
+            ushort attribute_0 = read_oam!Half(Word(sprite * 8 + 0));
 
             // is this sprite even enabled
             if (bits(attribute_0, 8, 9) == 0b10) continue;
 
             // it is enabled? great. let's get the other two attributes and collect some
             // relevant information.
-            int attribute_1 = oam.read!Half(Word(sprite * 8 + 2));
-            int attribute_2 = oam.read!Half(Word(sprite * 8 + 4));
+            int attribute_1 = read_oam!Half(Word(sprite * 8 + 2));
+            int attribute_2 = read_oam!Half(Word(sprite * 8 + 4));
 
             int size   = attribute_1.bits(14, 15);
             int shape  = attribute_0.bits(14, 15);
@@ -536,12 +540,11 @@ final class PPU(HwType H) {
             // if (!obj_character_vram_mapping && doesnt_use_color_palettes) base_tile_number >>= 1;
 
             PMatrix p_matrix = PMatrix(
-                convert_from_8_8f_to_double(oam.read!Half(Word(0x06 + 0x20 * scaling_number))),
-                convert_from_8_8f_to_double(oam.read!Half(Word(0x0E + 0x20 * scaling_number))),
-                convert_from_8_8f_to_double(oam.read!Half(Word(0x16 + 0x20 * scaling_number))),
-                convert_from_8_8f_to_double(oam.read!Half(Word(0x1E + 0x20 * scaling_number)))
+                convert_from_8_8f_to_double(read_oam!Half(Word(0x06 + 0x20 * scaling_number))),
+                convert_from_8_8f_to_double(read_oam!Half(Word(0x0E + 0x20 * scaling_number))),
+                convert_from_8_8f_to_double(read_oam!Half(Word(0x16 + 0x20 * scaling_number))),
+                convert_from_8_8f_to_double(read_oam!Half(Word(0x1E + 0x20 * scaling_number)))
             );
-
             // for (int tile_x_offset = 0; tile_x_offset < width; tile_x_offset++) {
 
             //     // get the tile address and read it from memory
@@ -553,7 +556,7 @@ final class PPU(HwType H) {
          
             Texture texture = Texture(base_tile_number, width << 3, height << 3, tile_number_increment_per_row, 
                                         scaled, p_matrix, Point(middle_x, middle_y),
-                                        0x10000, 0x200,
+                                        character_base * 0x10000, 0x200 + (H == HwType.NDS7 ? 0x400 : 0),
                                         attribute_2.bits(12, 16),
                                         flipped_x, flipped_y, attribute_0.bit(9));
 
