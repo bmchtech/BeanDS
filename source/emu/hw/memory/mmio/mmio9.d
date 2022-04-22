@@ -13,7 +13,7 @@ final class MMIO9 {
 
 static const mmio9_registers = [
     MMIORegister("gpu_engine_a",     "DISPCNT",       0x0400_0000,  4, READ_WRITE),
-    MMIORegister("gpu",              "DISPSTAT",      0x0400_0004,  2, READ_WRITE),
+    MMIORegister("gpu",              "DISPSTAT9",     0x0400_0004,  2, READ_WRITE),
     MMIORegister("gpu",              "VCOUNT",        0x0400_0006,  2, READ),
     MMIORegister("gpu_engine_a.ppu", "BGxCNT",        0x0400_0008,  2, READ_WRITE).repeat(4, 2),
     MMIORegister("gpu_engine_a.ppu", "BGxHOFS",       0x0400_0010,  2,      WRITE).repeat(4, 4),

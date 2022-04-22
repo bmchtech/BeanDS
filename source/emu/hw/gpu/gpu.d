@@ -14,9 +14,12 @@ final class GPU {
     bool vblank;
     bool hblank;
 
-    bool vblank_irq_enabled;
-    bool hblank_irq_enabled;
-    bool vcounter_irq_enabled;
+    bool vblank_irq_enabled7;
+    bool hblank_irq_enabled7;
+    bool vcounter_irq_enabled7;
+    bool vblank_irq_enabled9;
+    bool hblank_irq_enabled9;
+    bool vcounter_irq_enabled9;
 
     int vcount_lyc;
 
@@ -42,7 +45,8 @@ final class GPU {
     // }
 
     void on_hblank_start() {
-        if (hblank_irq_enabled) raise_interrupt_for_both_cpus(Interrupt.LCD_HBLANK);
+        if (hblank_irq_enabled9) interrupt9.raise_interrupt(Interrupt.LCD_HBLANK);
+        if (hblank_irq_enabled7) interrupt7.raise_interrupt(Interrupt.LCD_HBLANK);
 
         if (scanline >= 0 && scanline < 192) {
             render();
@@ -59,8 +63,9 @@ final class GPU {
         if (scanline == 192) on_vblank_start();
         if (scanline == 263) on_vblank_end();
 
-        if (vcounter_irq_enabled && scanline == vcount_lyc) {
-            raise_interrupt_for_both_cpus(Interrupt.LCD_VCOUNT);
+        if (scanline == vcount_lyc) {
+            if (vcounter_irq_enabled9) interrupt9.raise_interrupt(Interrupt.LCD_VCOUNT);
+            if (vcounter_irq_enabled7) interrupt7.raise_interrupt(Interrupt.LCD_VCOUNT);
         }
 
         scheduler.add_event_relative_to_self(&on_hblank_start, 256 * 6);
@@ -68,6 +73,8 @@ final class GPU {
 
     void set_hblank_flag() {
         hblank = true;
+        dma9.on_hblank(scanline);
+        dma7.on_hblank(scanline);
     }
 
     void on_vblank_start() {
@@ -75,7 +82,8 @@ final class GPU {
         // gpu_engine_a.ppu.vblank();
         gpu_engine_b.ppu.vblank();
 
-        if (vblank_irq_enabled) raise_interrupt_for_both_cpus(Interrupt.LCD_VBLANK);
+        if (vblank_irq_enabled9) interrupt9.raise_interrupt(Interrupt.LCD_VBLANK);
+        if (vblank_irq_enabled7) interrupt7.raise_interrupt(Interrupt.LCD_VBLANK);
     }
 
     void on_vblank_end() {
@@ -94,12 +102,12 @@ final class GPU {
         this.present_videobuffers = present_videobuffers;
     }
 
-    void write_DISPSTAT(int target_byte, Byte value) {
+    void write_DISPSTAT7(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                vblank_irq_enabled   = value[3];
-                hblank_irq_enabled   = value[4];
-                vcounter_irq_enabled = value[5];
+                vblank_irq_enabled7   = value[3];
+                hblank_irq_enabled7   = value[4];
+                vcounter_irq_enabled7 = value[5];
                 break;
             case 1:
                 vcount_lyc = value;
@@ -107,16 +115,49 @@ final class GPU {
         }
     }
 
-    Byte read_DISPSTAT(int target_byte) {
+    Byte read_DISPSTAT7(int target_byte) {
         Byte result = 0;
 
         final switch (target_byte) {
             case 0:
                 result[0] = Byte(vblank);
                 result[1] = Byte(hblank);
-                result[3] = Byte(vblank_irq_enabled);
-                result[4] = Byte(hblank_irq_enabled);
-                result[5] = Byte(vcounter_irq_enabled);
+                result[3] = Byte(vblank_irq_enabled7);
+                result[4] = Byte(hblank_irq_enabled7);
+                result[5] = Byte(vcounter_irq_enabled7);
+                break;
+
+            case 1:
+                result = vcount_lyc;
+                break;
+        }
+
+        return result;
+    }
+
+    void write_DISPSTAT9(int target_byte, Byte value) {
+        final switch (target_byte) {
+            case 0:
+                vblank_irq_enabled9   = value[3];
+                hblank_irq_enabled9   = value[4];
+                vcounter_irq_enabled9 = value[5];
+                break;
+            case 1:
+                vcount_lyc = value;
+                break;
+        }
+    }
+
+    Byte read_DISPSTAT9(int target_byte) {
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                result[0] = Byte(vblank);
+                result[1] = Byte(hblank);
+                result[3] = Byte(vblank_irq_enabled9);
+                result[4] = Byte(hblank_irq_enabled9);
+                result[5] = Byte(vcounter_irq_enabled9);
                 break;
 
             case 1:

@@ -19,10 +19,8 @@ final class GPUEngineA {
     int display_mode;
     int vram_block;
     int bg0_selection;
-    int tile_obj_mapping;
     int bitmap_obj_dimension;
     int bitmap_obj_mapping;
-    int tile_obj_boundary;
     int bitmap_obj_boundary;
     int obj_during_hblank;
     bool bg_extended_palettes;
@@ -32,12 +30,12 @@ final class GPUEngineA {
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                bg_mode              = value[0..2];
-                bg0_selection        = value[3];
-                tile_obj_mapping     = value[4];
-                bitmap_obj_dimension = value[5];
-                bitmap_obj_mapping   = value[6];
-                forced_blank         = value[7];
+                bg_mode                        = value[0..2];
+                bg0_selection                  = value[3];
+                ppu.obj_character_vram_mapping = value[4];
+                bitmap_obj_dimension           = value[5];
+                bitmap_obj_mapping             = value[6];
+                forced_blank                   = value[7];
                 break;
 
             case 1: 
@@ -52,11 +50,11 @@ final class GPUEngineA {
                 break;
 
             case 2:
-                display_mode        = value[0..1];
-                vram_block          = value[2..3];
-                tile_obj_boundary   = value[4..5];
-                bitmap_obj_boundary = value[6];
-                obj_during_hblank   = value[7];
+                display_mode          = value[0..1];
+                vram_block            = value[2..3];
+                ppu.tile_obj_boundary = value[4..5];
+                bitmap_obj_boundary   = value[6];
+                obj_during_hblank     = value[7];
                 break;
 
             case 3: 
@@ -111,7 +109,7 @@ final class GPUEngineA {
             case 0:
                 result[0..2] = bg_mode;
                 result[3]    = bg0_selection;
-                result[4]    = tile_obj_mapping;
+                result[4]    = ppu.obj_character_vram_mapping;
                 result[5]    = bitmap_obj_dimension;
                 result[6]    = bitmap_obj_mapping;
                 result[7]    = forced_blank;
@@ -131,7 +129,7 @@ final class GPUEngineA {
             case 2:
                 result[0..1] = Byte(display_mode);
                 result[2..3] = Byte(vram_block);
-                result[4..5] = tile_obj_boundary;
+                result[4..5] = ppu.tile_obj_boundary;
                 result[6]    = bitmap_obj_boundary;
                 result[7]    = obj_during_hblank;
                 break;

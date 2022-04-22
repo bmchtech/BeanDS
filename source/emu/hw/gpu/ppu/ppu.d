@@ -309,15 +309,20 @@ final class PPU(HwType H) {
                 int tile_number;
                 if (!obj_character_vram_mapping) {
                     if (bpp8) tile_number = (2 * tile_x + texture.increment_per_row * tile_y + texture.base_tile_number) >> 1;
-                    else tile_number = tile_x + texture.increment_per_row * tile_y + texture.base_tile_number;
+                    else tile_number = tile_x * 2 + texture.increment_per_row * tile_y + texture.base_tile_number;
 
                 } else {
-                    tile_number = tile_x + texture.increment_per_row * tile_y + texture.base_tile_number;
+                    tile_number = tile_x * 2 + texture.increment_per_row * tile_y + texture.base_tile_number;
                 }
-                    
+
+                int boundary_value = (obj_character_vram_mapping ? (1 << (5 + tile_obj_boundary)) : 32);
+                // static if (!bpp8) boundary_value /= 2;
+                // tile_number = 0xC0;
+                
+                if (texture.base_tile_number == 0xC0 && tile_number == texture.base_tile_number) log_ppu("THING: %x %x %x", boundary_value, tile_number, texture.tile_base_address + ((tile_number & 0x3ff) * boundary_value));
 
                 static if (bpp8) {
-                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 64) + ofs_y * 8 + ofs_x));
+                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * boundary_value) + ofs_y * 8 + ofs_x));
                     
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
                         canvas.draw_obj_pixel(draw_pos.x, index + 256, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
@@ -326,7 +331,7 @@ final class PPU(HwType H) {
                     }
 
                 } else {
-                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * 32) + ofs_y * 4 + (ofs_x / 2)));
+                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number & 0x3ff) * boundary_value) + ofs_y * 4 + (ofs_x / 2)));
 
                     index = !(ofs_x % 2) ? index & 0xF : index >> 4;
                     index += texture.palette * 16;
@@ -556,7 +561,7 @@ final class PPU(HwType H) {
          
             Texture texture = Texture(base_tile_number, width << 3, height << 3, tile_number_increment_per_row, 
                                         scaled, p_matrix, Point(middle_x, middle_y),
-                                        character_base * 0x10000, 0x200 + (H == HwType.NDS7 ? 0x400 : 0),
+                                        character_base * 0x10000, 0x200,
                                         attribute_2.bits(12, 16),
                                         flipped_x, flipped_y, attribute_0.bit(9));
 
@@ -631,6 +636,7 @@ final class PPU(HwType H) {
     bool sprites_enabled;
     int character_base;
     int screen_base;
+    int tile_obj_boundary;
 
 public:
     void write_BGxCNT(int target_byte, Byte data, int x) {
@@ -647,7 +653,6 @@ public:
     }
 
     void write_BGxHOFS(int target_byte, Byte data, int x) {
-        log_ppu("ofs: %x %x %x", x, target_byte, data);
 
         if (target_byte == 0) {
             backgrounds[x].x_offset = (backgrounds[x].x_offset & 0xFF00) | data;
@@ -657,7 +662,6 @@ public:
     }
 
     void write_BGxVOFS(int target_byte, Byte data, int x) {
-        log_ppu("yofs: %x %x %x", x, target_byte, data);
         if (target_byte == 0) {
             backgrounds[x].y_offset = (backgrounds[x].y_offset & 0xFF00) | data;
         } else { // target_byte == 1
@@ -835,22 +839,6 @@ public:
                 break;
             case 0b1:
                 break;
-        }
-    }
-
-    Byte read_DISPCNT(int target_byte) {
-        if (target_byte == 0) {
-            return cast(Byte) ((bg_mode                    << 0) |
-                               (disp_frame_select          << 4) |
-                               (hblank_interval_free       << 5) |
-                               (obj_character_vram_mapping << 6) |
-                               (forced_blank               << 7));
-        } else { // target_byte == 1
-            return cast(Byte) (backgrounds[0].enabled << 0) |
-                              (backgrounds[1].enabled << 1) |
-                              (backgrounds[2].enabled << 2) |
-                              (backgrounds[3].enabled << 3) |
-                              (sprites_enabled        << 4);
         }
     }
 

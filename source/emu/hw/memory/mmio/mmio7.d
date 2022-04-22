@@ -12,8 +12,7 @@ final class MMIO7 {
 }
 
 static const mmio7_registers = [
-    MMIORegister("gpu_engine_b", "DISPCNT",       0x0400_0000,  4, READ_WRITE),
-    MMIORegister("gpu",          "DISPSTAT",      0x0400_0004,  2, READ_WRITE),
+    MMIORegister("gpu",          "DISPSTAT7",     0x0400_0004,  2, READ_WRITE),
     MMIORegister("gpu",          "VCOUNT",        0x0400_0006,  2, READ),
     MMIORegister("dma7",         "DMAxSAD",       0x0400_00B0,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma7",         "DMAxDAD",       0x0400_00B4,  4, READ_WRITE).repeat(4, 12),

@@ -149,8 +149,6 @@ final class DMA(HwType H) {
         if (dma_channels[dma_id].dma_start_timing == DMAStartTiming.Immediately) {
             dma_channels[dma_id].repeat = false;
             start_dma_channel(dma_id, false);
-        } else {
-            log_unimplemented("A non immediate DMA9 was enabled");
         }
     }
 
