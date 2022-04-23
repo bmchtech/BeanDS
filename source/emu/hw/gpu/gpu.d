@@ -21,6 +21,8 @@ final class GPU {
     bool hblank_irq_enabled9;
     bool vcounter_irq_enabled9;
 
+    bool display_swap;
+
     int vcount_lyc;
 
     void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
@@ -89,8 +91,12 @@ final class GPU {
     void on_vblank_end() {
         vblank = false;
         scanline = 0;
-
-        present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
+        
+        if (display_swap) {
+            present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
+        } else {
+            present_videobuffers(gpu_engine_b.videobuffer, gpu_engine_a.videobuffer);
+        }
     }
 
     void render() {
@@ -170,5 +176,31 @@ final class GPU {
 
     Byte read_VCOUNT(int target_byte) {
         return Byte((scanline >> (target_byte * 8)) & 0xFF);
+    }
+
+
+    Byte read_POWCNT1(int target_byte) {
+        Byte result = 0;
+
+        final switch (target_byte) {
+            case 0:
+                break;
+
+            case 1:
+                result[7] = display_swap;
+                break;
+        }
+
+        return result;
+    }
+
+    void write_POWCNT1(int target_byte, Byte value) {
+        final switch (target_byte) {
+            case 0:
+                break;
+            case 1:
+                display_swap = value[7];
+                break;
+        }
     }
 }

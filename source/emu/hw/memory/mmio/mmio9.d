@@ -54,7 +54,7 @@ static const mmio9_registers = [
     MMIORegister("math_sqrt",        "SQRT_RESULT",   0x0400_02B4,  4, READ),
     MMIORegister("math_sqrt",        "SQRT_PARAM",    0x0400_02B8,  8, READ_WRITE),
     MMIORegister("nds",              "POSTFLG",       0x0400_0300,  4, READ),
-    MMIORegister("n/a",              "POWCNT1",       0x0400_0304,  4, READ_WRITE).unimplemented(),
+    MMIORegister("gpu",              "POWCNT1",       0x0400_0304,  2, READ_WRITE),
     MMIORegister("gpu_engine_b",     "DISPCNT",       0x0400_1000,  4, READ_WRITE),
     MMIORegister("gpu_engine_b.ppu", "BGxCNT",        0x0400_1008,  2, READ_WRITE).repeat(4, 2),
     MMIORegister("gpu_engine_b.ppu", "BGxHOFS",       0x0400_1010,  2,      WRITE).repeat(4, 4),
