@@ -53,8 +53,6 @@ final class InterruptManager {
     }
 
     bool irq_pending() {
-        import std.stdio;
-         if (this == interrupt7) if (master_enable && (enable & status)) log_interrupt("IRQ BAKA %x %x %x", master_enable, enable, status);
         return master_enable && (enable & status);
     }
 

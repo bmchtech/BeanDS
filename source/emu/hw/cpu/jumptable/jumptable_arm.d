@@ -258,7 +258,6 @@ template execute_arm(T : ArmCPU) {
         }
 
         if (update_flags && is_pc) {
-            log_arm9("set cpsr to spsr %x", cpu.get_spsr());
             cpu.set_cpsr(cpu.get_spsr());
             cpu.update_mode();
         }
