@@ -69,7 +69,7 @@ final class SPI {
         }
     }
 
-    T read_SPIDATA(T)() {
+    T read_SPIDATA(T)(int offset) {
         if (device == SPIDevice.INVALID) {
             error_spi("Tried to write to an invalid SPI device!");
         }
@@ -83,7 +83,7 @@ final class SPI {
         // return cast(Byte) spi_devices[device].read(data);
     }
 
-    void write_SPIDATA(T)(T data) {
+    void write_SPIDATA(T)(T data, int offset) {
         if (!bus_enable) return;
         
         if (!busy) {

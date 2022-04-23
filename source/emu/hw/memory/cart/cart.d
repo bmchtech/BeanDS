@@ -84,7 +84,7 @@ final class Cart {
         command |=  ((cast(u64) value) << cast(u64) (target_byte * 8));
     }
 
-    T read_ROMRESULT(T)() {
+    T read_ROMRESULT(T)(int offset) {
         if (!transfer_ongoing) error_cart("tried to read from ROMRESULT when no transfer was ongoing");
 
         T result = cast(T) outbuffer[outbuffer_index];
@@ -96,7 +96,7 @@ final class Cart {
             log_cart("transfer ended!");
         }
 
-        return result;
+        return cast(T) (result >> (8 * offset));
     }
 
     int get_data_block_size(int default_size) {

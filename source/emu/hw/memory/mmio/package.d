@@ -94,7 +94,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
             static if (mr.readable && mr.all_at_once) {
                 if (address == mr.address) {
                     static if (mr.implemented) {
-                        mixin("return %s.read_%s!T();".format(mr.component, mr.name));
+                        mixin("return %s.read_%s!T(address %% %d);".format(mr.component, mr.name, mr.size));
                     } else {
                         log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
                         return T(0);
@@ -164,7 +164,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {
                 if (address == mr.address) {
                     static if (mr.implemented) {
-                        mixin("%s.write_%s!T(value); return;".format(mr.component, mr.name));
+                        mixin("%s.write_%s!T(value, address %% %d); return;".format(mr.component, mr.name, mr.size));
                     } else {
                         log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
                         return;

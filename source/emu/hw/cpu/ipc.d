@@ -151,8 +151,10 @@ final class IPC {
         }
     }
 
-    void write_IPCFIFOSEND(T)(T data) {
+    void write_IPCFIFOSEND(T)(T data, int offset) {
         if (!enabled) return;
+
+        data <<= offset * 8;
         
         if (remote.fifo.full) {
             fifo_error = true;
@@ -164,7 +166,7 @@ final class IPC {
     }
 
     Word last_read_value;
-    T read_IPCFIFORECV(T)() {
+    T read_IPCFIFORECV(T)(int offset) {
         if (!fifo.empty && enabled) {
             last_read_value = fifo.pop();
             if (this == ipc7) log_arm7("ARM7 receiving %x. %d / %d", last_read_value, fifo.size, 16);
@@ -173,7 +175,7 @@ final class IPC {
             fifo_error = true;
         }
 
-        return cast(T) last_read_value;
+        return cast(T) (last_read_value >> (8 * offset));
     }
 
     void request_sync_interrupt() {
