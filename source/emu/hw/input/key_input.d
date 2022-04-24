@@ -23,7 +23,7 @@ final class KeyInput {
     }
 
     void reset() {
-        keys = 0xCB01FF; // all released
+        keys = 0x7F01FF; // all released
     }
 
     Word keys;
