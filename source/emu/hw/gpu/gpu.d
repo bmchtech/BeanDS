@@ -184,6 +184,7 @@ final class GPU {
 
         final switch (target_byte) {
             case 0:
+                result[0] = true; // TODO: what to actually return here?
                 break;
 
             case 1:
