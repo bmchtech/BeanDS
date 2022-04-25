@@ -16,6 +16,8 @@ final class VRAM {
     enum VRAM_H_SIZE = 1 << 15;
     enum VRAM_I_SIZE = 1 << 14;
 
+    enum SLOT_SIZE   = 1 << 13;
+
     final class VRAMBlock {
         Word address;
         size_t size;
@@ -25,9 +27,15 @@ final class VRAM {
         Byte offset;
         bool enabled;
 
+        bool slot_mapped;
+        int  slot;
+
         this(size_t size) {
             data = new Byte[size];
             this.size = size;
+
+            this.slot_mapped = false;
+            this.slot = 0; // TODO: is the start behavior predictable at all? and more importantly, does it matter?
         }
 
         bool in_range(Word access_address) {
@@ -85,6 +93,26 @@ final class VRAM {
         vram = this;
     }
 
+    T read_bg_slot(EngineType E, T)(int slot, Word address) {
+        return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+    }
+
+    T read_obj_slot(EngineType E, T)(int slot, Word address) {
+        final switch (E) {
+            case EngineType.A:
+                if (vram_f.slot_mapped) return vram_f.data.read!T(address);
+                if (vram_g.slot_mapped) return vram_g.data.read!T(address);
+                break;
+
+            case EngineType.B:
+                if (vram_i.slot_mapped) return vram_i.data.read!T(address);
+                break;
+        }
+
+        error_vram("Tried to draw from obj slot but no slots were mapped!");
+        return T(0);
+    }
+
     T read_ppu(T)(Word address) {
         T result = 0;
         bool performed_read = false;
@@ -114,6 +142,8 @@ final class VRAM {
 
             VRAMBlock block = blocks[i];
 
+            if (block.slot_mapped) continue;
+
             if (block.in_range(address)) {
                 result |= block.read!T(address);
                 performed_read = true;
@@ -132,6 +162,8 @@ final class VRAM {
             if (i == 3 && vram_d_in_ram) continue;
             
             VRAMBlock block = blocks[i];
+
+            if (block.slot_mapped) continue;
 
             if (block.in_range(address)) {
                 block.write!T(address, value);
@@ -215,114 +247,124 @@ final class VRAM {
     }
 
     void set_vram_A(int mst, int offset) {
-        vram_a.mst    = mst;
-        vram_a.offset = offset;
+        vram_a.mst         = mst;
+        vram_a.offset      = offset;
+        vram_a.slot_mapped = mst == 3;
 
         final switch (mst) {
             case 0: vram_a.address = 0x0680_0000; break;
             case 1: vram_a.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_a.address = 0x0640_0000 + offset.bit(0) * 0x20000; break;
-            case 3: log_unimplemented("i do not know what a slot is (A)"); break;
+            case 3: vram_a.slot    = offset; break;
         }
     }
 
     void set_vram_B(int mst, int offset) {
-        vram_b.mst    = mst;
-        vram_b.offset = offset;
+        vram_b.mst         = mst;
+        vram_b.offset      = offset;
+        vram_b.slot_mapped = mst == 3;
 
         final switch (mst) {
             case 0: vram_b.address = 0x0682_0000; break;
             case 1: vram_b.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_b.address = 0x0640_0000 + offset.bit(0) * 0x20000; break;
-            case 3: log_unimplemented("i do not know what a slot is (B)"); break;
+            case 3: vram_b.slot    = offset; break;
         }
     }
 
     void set_vram_C(int mst, int offset) {
-        vram_c.mst    = mst;
-        vram_c.offset = offset;
+        vram_c.mst         = mst;
+        vram_c.offset      = offset;
+        vram_c.slot_mapped = mst == 3;
 
         vram_c_in_ram = mst == 2;
         final switch (mst) {
             case 0: vram_c.address = 0x0684_0000; break;
             case 1: vram_c.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_c.address = 0x0600_0000 + offset.bit(0) * 0x20000; break;
-            case 3: log_unimplemented("i do not know what a slot is (C)"); break;
+            case 3: vram_c.slot    = offset; break;
             case 4: vram_c.address = 0x0620_0000; break;
         }
     }
 
     void set_vram_D(int mst, int offset) {
-        vram_d.mst    = mst;
-        vram_d.offset = offset;
+        vram_d.mst         = mst;
+        vram_d.offset      = offset;
+        vram_d.slot_mapped = mst == 3;
 
         vram_d_in_ram = mst == 2;
         final switch (mst) {
             case 0: vram_d.address = 0x0686_0000; break;
             case 1: vram_d.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_d.address = 0x0600_0000 + offset.bit(0) * 0x20000; break;
-            case 3: log_unimplemented("i do not know what a slot is (D)"); break;
+            case 3: vram_d.slot    = offset; break;
             case 4: vram_d.address = 0x0660_0000; break;
         }
     }
 
     void set_vram_E(int mst) {
-        vram_e.mst = mst;
+        vram_e.mst         = mst;
+        vram_e.slot_mapped = mst > 2;
 
         final switch (mst) {
             case 0: vram_e.address = 0x0688_0000; break;
             case 1: vram_e.address = 0x0600_0000; break;
             case 2: vram_e.address = 0x0640_0000; break;
-            case 3: log_unimplemented("i do not know what a slot is (E)"); break;
-            case 4: log_unimplemented("i do not know what a slot is (E)"); break;
+            case 3: log_unimplemented("i do not understand what to do here"); break;
+            case 4: log_unimplemented("help me oh slot gods"); break;
         }
     }
 
     void set_vram_F(int mst, int offset) {
-        vram_f.mst    = mst;
-        vram_f.offset = offset;
+        vram_f.mst         = mst;
+        vram_f.offset      = offset;
+        vram_f.slot_mapped = mst > 2;
 
         final switch (mst) {
             case 0: vram_f.address = 0x0689_0000; break;
             case 1: vram_f.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_f.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: log_unimplemented("i do not know what a slot is (F)"); break;
-            case 4: log_unimplemented("i do not know what a slot is (F)"); break;
-            case 5: log_unimplemented("i do not know what a slot is (F)"); break;
+            case 3: vram_f.slot    = offset.bit(0) + offset.bit(1) * 4; break;
+            case 4: log_unimplemented("i do not understand what to do here"); break;
+            case 5: log_unimplemented("i do not understand what to do here"); break;
         }
     }
 
     void set_vram_G(int mst, int offset) {
-        vram_g.mst    = mst;
-        vram_g.offset = offset;
+        vram_g.mst         = mst;
+        vram_g.offset      = offset;
+        vram_g.slot_mapped = mst > 2;
 
         final switch (mst) {
             case 0: vram_g.address = 0x0689_4000; break;
             case 1: vram_g.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_g.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: log_unimplemented("i do not know what a slot is (G)"); break;
-            case 4: log_unimplemented("i do not know what a slot is (G)"); break;
-            case 5: log_unimplemented("i do not know what a slot is (G)"); break;
+            case 3: vram_g.slot    = offset.bit(0) + offset.bit(1) * 4; break;
+            case 4: log_unimplemented("i do not understand what to do here"); break;
+            case 5: log_unimplemented("i do not understand what to do here"); break;
         }
     }
 
     void set_vram_H(int mst) {
-        vram_h.mst = mst;
+        vram_h.mst         = mst;
+        vram_h.slot_mapped = mst == 2;
+
         final switch (mst) {
             case 0: vram_h.address = 0x0689_8000; break;
             case 1: vram_h.address = 0x0620_0000; break;
-            case 2: log_unimplemented("i do not know what a slot is (H)");
+            case 2: log_unimplemented("i do not understand what to do here"); break;
         }
     }
 
     void set_vram_I(int mst) {
-        vram_i.mst = mst;
+        vram_i.mst         = mst;
+        vram_i.slot_mapped = mst == 3;
 
         final switch (mst) {
             case 0: vram_i.address = 0x068A_0000; break;
-            case 1: vram_i.address = 0x0620_8000;  break;
+            case 1: vram_i.address = 0x0620_8000; break;
             case 2: vram_i.address = 0x0660_0000; break;
-            case 3: log_unimplemented("i do not know what a slot is (I)");
+            case 3: vram_i.slot    = 0; break;
         }
     }
 

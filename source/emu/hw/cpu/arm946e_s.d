@@ -95,6 +95,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
+
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {

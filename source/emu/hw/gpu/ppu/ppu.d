@@ -59,14 +59,14 @@ enum BackgroundMode {
     NONE
 }
 
-final class PPU(HwType H) {
-    static assert (H == HwType.NDS9 || H == HwType.NDS7);
+final class PPU(EngineType E) {
+    static assert (E == EngineType.A || E == EngineType.B);
 
     enum Pixel RESET_PIXEL = Pixel(Half(0));
 
     ushort scanline;
 
-    Canvas!H canvas;
+    Canvas!E canvas;
 
     Pixel[256] scanline_buffer;
 
@@ -80,25 +80,25 @@ final class PPU(HwType H) {
     ];
 
     T read_bg_vram(T)(int offset) {
-        static if (H == HwType.NDS9) return vram.read_ppu!T(Word(0x0600_0000) + offset);
-        static if (H == HwType.NDS7) return vram.read_ppu!T(Word(0x0620_0000) + offset);
+        static if (E == EngineType.A) return vram.read_ppu!T(Word(0x0600_0000) + offset);
+        static if (E == EngineType.B) return vram.read_ppu!T(Word(0x0620_0000) + offset);
     }
 
     T read_obj_vram(T)(int offset) {
-        static if (H == HwType.NDS9) return vram.read_ppu!T(Word(0x0640_0000) + offset);
-        static if (H == HwType.NDS7) return vram.read_ppu!T(Word(0x0660_0000) + offset);
+        static if (E == EngineType.A) return vram.read_ppu!T(Word(0x0640_0000) + offset);
+        static if (E == EngineType.B) return vram.read_ppu!T(Word(0x0660_0000) + offset);
     }
 
     T read_oam(T)(Word address) {
-        static if (H == HwType.NDS9) return oam.read!T(address);
-        static if (H == HwType.NDS7) return oam.read!T(address + 0x400);
+        static if (E == EngineType.A) return oam.read!T(address);
+        static if (E == EngineType.B) return oam.read!T(address + 0x400);
     }
 
     this() {
         scanline = 0;
 
-        static if (H == HwType.NDS9) canvas = new Canvas!H(this, 0);
-        static if (H == HwType.NDS7) canvas = new Canvas!H(this, 0x400);
+        static if (E == EngineType.A) canvas = new Canvas!E(this, 0);
+        static if (E == EngineType.B) canvas = new Canvas!E(this, 0x400);
 
         for (int i = 0; i < 4; i++) {
             backgrounds[i].id = i;
@@ -240,6 +240,8 @@ final class PPU(HwType H) {
             for (int i = 0; i < 8; i++) {
                 tile_data[i] = read_bg_vram!Byte(tile_address + i);
             }
+
+            int slot = bg_extended_palettes ? bg : -1;
             
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
@@ -248,14 +250,14 @@ final class PPU(HwType H) {
                 static if (bpp8) {
                     for (int tile_dx = 7; tile_dx >= 0; tile_dx--) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + draw_dx, bg, index, priority, index == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx, bg, slot, index, priority, index == 0);
                         draw_dx++;
                     }
                 } else {
                     for (int tile_dx = 3; tile_dx >= 0; tile_dx--) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + draw_dx * 2 + 1, bg, cast(ubyte) ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
-                        canvas.draw_bg_pixel(left_x + draw_dx * 2,     bg, cast(ubyte) ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx * 2 + 1, bg, -1, ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx * 2,     bg, -1, ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
                         draw_dx++;
                     }
                 }
@@ -263,13 +265,13 @@ final class PPU(HwType H) {
                 static if (bpp8) {
                     for (int tile_dx = 0; tile_dx < 8; tile_dx++) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + tile_dx, bg, index, priority, index == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx, bg, slot, index, priority, index == 0);
                     }
                 } else {
                     for (int tile_dx = 0; tile_dx < 4; tile_dx++) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + tile_dx * 2,     bg, cast(ubyte) ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
-                        canvas.draw_bg_pixel(left_x + tile_dx * 2 + 1, bg, cast(ubyte) ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx * 2,     bg, -1, ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx * 2 + 1, bg, -1, ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
                     }
                 }
             } 
@@ -280,8 +282,8 @@ final class PPU(HwType H) {
             int texture_bound_y_upper = texture.double_sized ? texture.height >> 1 : texture.height;
             int texture_bound_x_lower = 0;
             int texture_bound_y_lower = 0;
-            
-            if (obj_character_vram_mapping && bpp8) texture.base_tile_number >>= 1;
+
+            int index_offset = obj_extended_palettes ? 0 : 256;
 
             if (texture.double_sized) {
                 topleft_texture_pos.x += texture.width  >> 2;
@@ -318,25 +320,25 @@ final class PPU(HwType H) {
                     int tile_size = bpp8 ? 64 : 32;
                     tile_number = (tile_x + texture.increment_per_row * tile_y) * tile_size + texture.base_tile_number * boundary_value;
                 }
-                if (tile_x == 0 && tile_y == 0) log_ppu("SUSSY BAKA %04x %04x %04x %x %x %x %x %x %x %x", texture.increment_per_row, topleft_texture_pos.x, topleft_texture_pos.y, tile_number, tile_x, tile_y, texture.base_tile_number, boundary_value, obj_character_vram_mapping, 0);
 
                 static if (bpp8) {
-                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number)) + ofs_y * 8 + ofs_x));
-                    
+                    int index = read_obj_vram!Byte(Word(texture.tile_base_address + tile_number + ofs_y * 8 + ofs_x));
+                    if (obj_extended_palettes) index += texture.palette * 256;
+
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
-                        canvas.draw_obj_pixel(draw_pos.x, index + 256, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
+                        canvas.draw_obj_pixel(draw_pos.x, obj_slot, index + index_offset, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
                     } else {
                         if (index != 0) canvas.set_obj_window(draw_pos.x);
                     }
 
                 } else {
-                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + ((tile_number)) + ofs_y * 4 + (ofs_x / 2)));
+                    ubyte index = read_obj_vram!Byte(Word(texture.tile_base_address + tile_number + ofs_y * 4 + (ofs_x / 2)));
 
                     index = !(ofs_x % 2) ? index & 0xF : index >> 4;
                     index += texture.palette * 16;
 
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
-                        canvas.draw_obj_pixel(draw_pos.x, index + 256, priority, (index & 0xF) == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
+                        canvas.draw_obj_pixel(draw_pos.x, -1, index + 256, priority, (index & 0xF) == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
                     } else {
                         if ((index & 0xF) != 0) canvas.set_obj_window(draw_pos.x);
                     }
@@ -449,7 +451,7 @@ final class PPU(HwType H) {
                 int tile = read_bg_vram!Byte(Word(screen_base_address + tile_address));
 
                 ubyte color_index = read_bg_vram!Byte(Word(tile_base_address + (tile & 0x3FF) * 64 + fine_y * 8 + fine_x));
-                canvas.draw_bg_pixel(x, background_id, color_index, background.priority, color_index == 0);
+                canvas.draw_bg_pixel(x, background_id, -1, color_index, background.priority, color_index == 0);
             }
 
             texture_point_x += background.p[AffineParameter.A];
@@ -560,7 +562,7 @@ final class PPU(HwType H) {
          
             Texture texture = Texture(base_tile_number, width << 3, height << 3, tile_number_increment_per_row, 
                                         scaled, p_matrix, Point(middle_x, middle_y),
-                                        character_base * 0x10000, 0x200 + (H == HwType.NDS7 ? 0x400 : 0),
+                                        character_base * 0x10000, 0x200 + (E == EngineType.B ? 0x400 : 0),
                                         attribute_2.bits(12, 16),
                                         flipped_x, flipped_y, attribute_0.bit(9));
 
@@ -636,6 +638,21 @@ final class PPU(HwType H) {
     int character_base;
     int screen_base;
     int tile_obj_boundary;
+    bool bg_extended_palettes;
+    bool _obj_extended_palettes;
+
+    int obj_slot;
+
+    @property
+    void obj_extended_palettes(bool value) {
+        this._obj_extended_palettes = value;
+        this.obj_slot = value ? 0 : -1;
+    }
+
+    @property
+    bool obj_extended_palettes() {
+        return _obj_extended_palettes;
+    }
 
 public:
     void write_BGxCNT(int target_byte, Byte data, int x) {

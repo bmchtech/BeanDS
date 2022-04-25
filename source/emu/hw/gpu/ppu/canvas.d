@@ -29,10 +29,24 @@ import core.stdc.string;
 // is double_a and a layer b pixel comes in, then we set the pixel type to
 // DOUBLE_AB.
 
+struct PaletteIndex {
+    int slot;
+    int index;
+    bool is_obj;
+
+    Pixel resolve(EngineType E)(int pram_offset) {
+        if (slot == -1) return Pixel(pram.read!Half(Word(pram_offset + index * 2)));
+        else {
+            if (is_obj) return Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
+            else        return Pixel(vram.read_bg_slot !(E, Half)(slot, Word(index * 2)));
+        }
+    }
+}
+
 struct PixelData {
-    bool   transparent;
-    ushort index;
-    uint   priority;
+    bool         transparent;
+    PaletteIndex index;
+    uint         priority;
 }
 
 enum WindowType {
@@ -69,7 +83,7 @@ struct Window {
     bool obj_enable;
 }
 
-final class Canvas(HwType H) {
+final class Canvas(EngineType E) {
     
     public:
         PixelData[256][4] bg_scanline;
@@ -110,10 +124,10 @@ final class Canvas(HwType H) {
         int pram_offset;
 
     private:
-        PPU!H ppu;
+        PPU!E ppu;
         Background[4] sorted_backgrounds;
 
-    public this(PPU!H ppu, int pram_offset) {
+    public this(PPU!E ppu, int pram_offset) {
         this.ppu           = ppu;
         this.bg_scanline   = new PixelData[256][4];
         this.obj_scanline  = new PixelData[256];
@@ -141,15 +155,15 @@ final class Canvas(HwType H) {
         obj_window[x] = true;
     }
 
-    public pragma(inline, true) void draw_bg_pixel(uint x, int bg, ushort index, int priority, bool transparent) {
+    public pragma(inline, true) void draw_bg_pixel(uint x, int bg, int slot, int index, int priority, bool transparent) {
         if (x >= 256) return;
 
         bg_scanline[bg][x].transparent = transparent;
-        bg_scanline[bg][x].index       = index;
+        bg_scanline[bg][x].index       = PaletteIndex(slot, index, false);
         bg_scanline[bg][x].priority    = priority;
     }
 
-    public pragma(inline, true) void draw_obj_pixel(uint x, ushort index, int priority, bool transparent, bool semi_transparent) {
+    public pragma(inline, true) void draw_obj_pixel(uint x, int slot, int index, int priority, bool transparent, bool semi_transparent) {
         if (x >= 256) return;
         
         // obj rendeWindowTypering on the gba has a weird bug where if there are two overlapping obj pixels
@@ -161,7 +175,7 @@ final class Canvas(HwType H) {
         if (obj_scanline[x].transparent ||
             priority < obj_scanline[x].priority) {
             obj_scanline[x].transparent = transparent;
-            obj_scanline[x].index       = index;
+            obj_scanline[x].index       = PaletteIndex(slot, index, true);
             obj_scanline[x].priority    = priority;
             obj_semitransparent[x]      = semi_transparent;
         }
@@ -247,8 +261,8 @@ final class Canvas(HwType H) {
 
             // now that we know which window type we're in, let's calculate the color index for this pixel
 
-            int[2] index    = [0, 0];
-            int    priority = 4;
+            PaletteIndex[2] index;
+            int priority = 4;
 
             int blendable_pixels = 0;
             int total_pixels     = 0;
@@ -320,15 +334,15 @@ final class Canvas(HwType H) {
     }
 
     // blends the two colors together based on blending type
-    private pragma(inline, true) Pixel blend(int[] index, int blendable_pixels, Blending effective_blending_type) {
+    private pragma(inline, true) Pixel blend(PaletteIndex[] index, int blendable_pixels, Blending effective_blending_type) {
         final switch (effective_blending_type) {
             case Blending.NONE:
-                return Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
+                return index[0].resolve!E(pram_offset);
 
             case Blending.BRIGHTNESS_INCREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
+                Pixel output = index[0].resolve!E(pram_offset);
 
                 output.r += cast(ubyte) (((31 - output.r) * evy_coeff) >> 4);
                 output.g += cast(ubyte) (((31 - output.g) * evy_coeff) >> 4);
@@ -338,7 +352,7 @@ final class Canvas(HwType H) {
             case Blending.BRIGHTNESS_DECREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
+                Pixel output = index[0].resolve!E(pram_offset);
 
                 output.r -= cast(ubyte) (((output.r) * evy_coeff) >> 4);
                 output.g -= cast(ubyte) (((output.g) * evy_coeff) >> 4);
@@ -348,8 +362,8 @@ final class Canvas(HwType H) {
             case Blending.ALPHA:
                 if (blendable_pixels < 2) goto case Blending.NONE;
 
-                Pixel input_A = Pixel(pram.read!Half(Word(pram_offset + index[0] * 2)));
-                Pixel input_B = Pixel(pram.read!Half(Word(pram_offset + index[1] * 2)));
+                Pixel input_A = index[0].resolve!E(pram_offset);
+                Pixel input_B = index[1].resolve!E(pram_offset);
                 Pixel output;
 
                 output.r = min(31, (blend_a * input_A.r + blend_b * input_B.r) >> 4);

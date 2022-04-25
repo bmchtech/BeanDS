@@ -6,10 +6,10 @@ import util;
 
 __gshared GPUEngineB gpu_engine_b;
 final class GPUEngineB {
-    PPU!(HwType.NDS7) ppu;
+    PPU!(EngineType.B) ppu;
 
     this() {
-        ppu = new PPU!(HwType.NDS7);
+        ppu = new PPU!(EngineType.B);
         videobuffer = new Pixel[192][256];
         gpu_engine_b = this;
     }
@@ -24,8 +24,6 @@ final class GPUEngineB {
     int tile_obj_boundary;
     int bitmap_obj_boundary;
     int obj_during_hblank;
-    bool bg_extended_palettes;
-    bool obj_extended_palettes;
     bool forced_blank;
 
     void write_DISPCNT(int target_byte, Byte value) {
@@ -56,8 +54,10 @@ final class GPUEngineB {
                 break;
 
             case 3: 
-                ppu.character_base    = value[0..2];
-                ppu.screen_base       = value[3..5];
+                ppu.character_base        = value[0..2];
+                ppu.screen_base           = value[3..5];
+                ppu.bg_extended_palettes  = value[6];
+                ppu.obj_extended_palettes = value[7];
                 break; 
         }
     }
@@ -128,8 +128,8 @@ final class GPUEngineB {
                 break;
 
             case 3:
-                result[6]    = bg_extended_palettes;
-                result[7]    = obj_extended_palettes;
+                result[6] = ppu.bg_extended_palettes;
+                result[7] = ppu.obj_extended_palettes;
                 break;
         }
 
