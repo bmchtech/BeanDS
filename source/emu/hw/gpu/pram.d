@@ -19,6 +19,7 @@ final class PRAM {
     }
 
     void write(T)(Word address, T value) {
+        log_pram("wrote to the sussy baka, %x %x", address, value);
         data.write!T(address % PRAM_SIZE, value);
     }
 }

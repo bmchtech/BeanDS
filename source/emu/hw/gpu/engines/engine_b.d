@@ -31,11 +31,11 @@ final class GPUEngineB {
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                bg_mode              = value[0..2];
-                tile_obj_mapping     = value[4];
-                bitmap_obj_dimension = value[5];
-                bitmap_obj_mapping   = value[6];
-                forced_blank         = value[7];
+                bg_mode                        = value[0..2];
+                ppu.obj_character_vram_mapping = value[4];
+                bitmap_obj_dimension           = value[5];
+                bitmap_obj_mapping             = value[6];
+                forced_blank                   = value[7];
                 break;
 
             case 1: 
@@ -50,9 +50,9 @@ final class GPUEngineB {
                 break;
 
             case 2:
-                display_mode        = value[0..1];
-                tile_obj_boundary   = value[4..5];
-                obj_during_hblank   = value[7];
+                display_mode          = value[0..1];
+                ppu.tile_obj_boundary = value[4..5];
+                obj_during_hblank     = value[7];
                 break;
 
             case 3: 
@@ -104,7 +104,7 @@ final class GPUEngineB {
         final switch (target_byte) {
             case 0:
                 result[0..2] = bg_mode;
-                result[4]    = tile_obj_mapping;
+                result[4]    = ppu.obj_character_vram_mapping;
                 result[5]    = bitmap_obj_dimension;
                 result[6]    = bitmap_obj_mapping;
                 result[7]    = forced_blank;
@@ -123,7 +123,7 @@ final class GPUEngineB {
 
             case 2:
                 result[0..1] = Byte(display_mode);
-                result[4..5] = tile_obj_boundary;
+                result[4..5] = ppu.tile_obj_boundary;
                 result[7]    = obj_during_hblank;
                 break;
 
