@@ -161,16 +161,16 @@ final class IPC {
         } else {
             remote.fifo.push(Word(data));
         }
-        if (this == ipc7) log_arm7("ARM7 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
-        if (this == ipc9) log_arm9("ARM9 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
+        // if (this == ipc7) log_arm7("ARM7 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
+        // if (this == ipc9) log_arm9("ARM9 sending %x. %d / %d %x", data, remote.fifo.size, 16, enabled);
     }
 
     Word last_read_value;
     T read_IPCFIFORECV(T)(int offset) {
         if (!fifo.empty && enabled) {
             last_read_value = fifo.pop();
-            if (this == ipc7) log_arm7("ARM7 receiving %x. %d / %d", last_read_value, fifo.size, 16);
-            if (this == ipc9) log_arm9("ARM9 receiving %x. %d / %d", last_read_value, fifo.size, 16);
+            // if (this == ipc7) log_arm7("ARM7 receiving %x. %d / %d", last_read_value, fifo.size, 16);
+            // if (this == ipc9) log_arm9("ARM9 receiving %x. %d / %d", last_read_value, fifo.size, 16);
         } else {
             fifo_error = true;
         }

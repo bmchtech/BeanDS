@@ -55,7 +55,7 @@ final class Cp15 {
             return_value |= 0x78;      
         }
 
-        log_coprocessor("Received an unhandled CP15 read: %x %x %x", opcode, cn, cm);
+        // log_coprocessor("Received a CP15 read: %x %x %x", opcode, cn, cm);
 
         return return_value;
     }
@@ -87,11 +87,10 @@ final class Cp15 {
         } else
 
         if (cn == 7 && cm == 0 && opcode == 4 && data == 0) {
-            log_arm9("halt!");
             arm9.halt();
         }
 
-        log_coprocessor("Received an unhandled CP15 write: %x %x %x %x", opcode, cn, cm, data);
+        // log_coprocessor("Received a CP15 write: %x %x %x %x", opcode, cn, cm, data);
     }
 
     Word get_data_tcm_size() { return Word(512 << 0); }
