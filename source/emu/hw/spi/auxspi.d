@@ -1,5 +1,6 @@
 module emu.hw.spi.auxspi;
 
+import emu;
 import util;
 
 __gshared AUXSPI auxspi;
@@ -11,15 +12,28 @@ final class AUXSPI {
         auxspi = new AUXSPI();
     }
 
-    // i do not understand romctrl for now.
-    // so let's start out with a very crude implementation.
-    Word romctrl;
+    bool transfer_completion_irq7_enable;
+    bool transfer_completion_irq9_enable;
 
-    void write_ROMCTRL(int target_byte, Byte value) {
-        romctrl.set_byte(target_byte, value);
+    void write_AUXSPICNT7(int target_byte, Byte data) {
+        if (target_byte == 1) transfer_completion_irq7_enable = data[6];
+        if (transfer_completion_irq7_enable) {
+            log_auxspi("sussy baka!");
+            interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+        }
     }
 
-    Byte read_ROMCTRL(int target_byte) {
-        return romctrl.get_byte(target_byte);
+    void write_AUXSPICNT9(int target_byte, Byte data) {
+        if (target_byte == 1) transfer_completion_irq9_enable = data[6];
+        if (transfer_completion_irq9_enable) {
+            log_auxspi("sussy baka!");
+            interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+        }
+    }
+
+    void write_AUXSPIDATA7(int target_byte, Byte data) {
+    }
+
+    void write_AUXSPIDATA9(int target_byte, Byte data) {
     }
 }

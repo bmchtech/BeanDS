@@ -36,6 +36,8 @@ static const mmio9_registers = [
     MMIORegister("ipc9",             "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc9",             "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc9",             "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
+    MMIORegister("auxspi",           "AUXSPICNT9",    0x0400_01A0,  2,      WRITE),
+    MMIORegister("auxspi",           "AUXSPIDATA9",   0x0400_01A2,  2,      WRITE),
     MMIORegister("cart",             "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
     MMIORegister("cart",             "ROMDATAOUT",    0x0400_01A8,  8,      WRITE),
     MMIORegister("cart",             "ROMRESULT",     0x0410_0010,  4, READ      ).dont_decompose_into_bytes(),
