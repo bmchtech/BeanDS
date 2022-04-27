@@ -5,22 +5,21 @@ import util;
 
 __gshared SPI spi;
 final class SPI {
-    enum SPIDevice {
-        FIRMWARE    = 0,
-        TOUCHSCREEN = 1,
-        POWERMAN    = 2,
-        INVALID     = 3
-    }
-
     int baudrate; // we don't really care about you but we need to save your value anyway
-    SPIDevice device;
+    int selected_device_index;
+    SPIDevice selected_device;
     bool busy;
     bool transfer_size; // 0 = 8bit, 1 = 16bit. tho its bugged and unused on the DS so we don't care about it either
     bool chipselect_hold;
     bool irq_enable;
     bool bus_enable;
 
-    // SPIDevice[3] spi_devices;
+    SPIDevice[4] spi_devices = [
+        null,
+        null,
+        new TouchScreen(),
+        null
+    ];
 
     private this() {
         // spi_devices = [
@@ -42,7 +41,7 @@ final class SPI {
                 break;
             
             case 1:
-                result[0..1] = device;
+                result[0..1] = selected_device_index;
                 result[2]    = transfer_size;
                 result[3]    = chipselect_hold;
                 result[6]    = irq_enable;
@@ -60,27 +59,29 @@ final class SPI {
                 break;
             
             case 1:
-                device          = cast(SPIDevice) data[0..1];
-                transfer_size   = data[2];
-                chipselect_hold = data[3];
-                irq_enable      = data[6];
-                bus_enable      = data[7];
+                selected_device_index = data[0..1];
+                selected_device       = spi_devices[selected_device_index];
+                transfer_size         = data[2];
+                chipselect_hold       = data[3];
+                irq_enable            = data[6];
+                bus_enable            = data[7];
                 break;
         }
     }
 
     T read_SPIDATA(T)(int offset) {
-        if (device == SPIDevice.INVALID) {
-            error_spi("Tried to write to an invalid SPI device!");
+        if (selected_device_index == 3) {
+            error_spi("Tried to read from an invalid SPI device!");
         }
 
-        if (device != SPIDevice.POWERMAN) {
-            log_spi("Tried to write to an unimplemented SPI device: %d!", device);
+        if (selected_device_index != 2) {
+            log_spi("Tried to read from an unimplemented SPI device: %x", selected_device_index);
             return T(0);
         }
 
-        return T(0);
-        // return cast(Byte) spi_devices[device].read(data);
+        return T(255);
+
+        // return cast(T) selected_device.read();
     }
 
     void write_SPIDATA(T)(T data, int offset) {
@@ -95,6 +96,15 @@ final class SPI {
             busy = false;
         }
 
-        // spi_devices[device].write(cast(Byte) data);
+        if (selected_device_index == 3) {
+            error_spi("Tried to write to an invalid SPI device!");
+        }
+
+        if (selected_device_index != 2) {
+            log_spi("Tried to read from an unimplemented SPI device: %x", selected_device_index);
+            return;
+        }
+
+        selected_device.write(cast(Byte) (data >> 8 * offset));
     }
 }

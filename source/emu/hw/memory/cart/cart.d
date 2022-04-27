@@ -119,7 +119,7 @@ final class Cart {
             memcpy(&outbuffer, &rom[address], length);
             log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
             outbuffer_length = length / 4;
-        }
+        } else
 
         if ((command & 0xFF) == 0xB8) {
             auto length = get_data_block_size(4);
@@ -129,7 +129,9 @@ final class Cart {
             }
 
             outbuffer_length = length / 4;
-        }
+        } else
+
+        error_cart("tried to issue an invalid cart command: %x", command);
         
         outbuffer_index  = 0;
     }

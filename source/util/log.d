@@ -27,7 +27,8 @@ enum LogSource {
     SPU,
     IPC,
     CART,
-    SPI
+    SPI,
+    TOUCHSCREEN
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

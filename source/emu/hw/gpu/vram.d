@@ -150,7 +150,7 @@ final class VRAM {
             }
         }
 
-        if (!performed_read) error_vram("Read from VRAM from an unmapped region: %x", address);
+        // if (!performed_read) log_vram("Read from VRAM from an unmapped region: %x", address);
         return result;
     }
 
@@ -171,7 +171,7 @@ final class VRAM {
             }
         }
 
-        if (!performed_write) error_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
+        // if (!performed_write) log_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
     }
 
     T read7(T)(Word address) {

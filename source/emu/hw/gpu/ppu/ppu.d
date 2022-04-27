@@ -669,8 +669,6 @@ public:
     }
 
     void write_BGxHOFS(int target_byte, Byte data, int x) {
-        log_ppu("ofs: %x %x %x", x, target_byte, data);
-
         if (target_byte == 0) {
             backgrounds[x].x_offset = (backgrounds[x].x_offset & 0xFF00) | data;
         } else { // target_byte == 1
@@ -679,7 +677,6 @@ public:
     }
 
     void write_BGxVOFS(int target_byte, Byte data, int x) {
-        log_ppu("yofs: %x %x %x", x, target_byte, data);
         if (target_byte == 0) {
             backgrounds[x].y_offset = (backgrounds[x].y_offset & 0xFF00) | data;
         } else { // target_byte == 1
