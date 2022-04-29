@@ -28,7 +28,7 @@ static const mmio7_registers = [
     MMIORegister("ipc7",         "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc7",         "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
     MMIORegister("auxspi",       "AUXSPICNT7",    0x0400_01A0,  2,      WRITE),
-    MMIORegister("auxspi",       "AUXSPIDATA7",   0x0400_01A2,  2,      WRITE),
+    MMIORegister("auxspi",       "AUXSPIDATA7",   0x0400_01A2,  2, READ_WRITE),
     MMIORegister("cart",         "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
     MMIORegister("cart",         "ROMDATAOUT",    0x0400_01A8,  8,      WRITE),
     MMIORegister("cart",         "ROMRESULT",     0x0410_0010,  4, READ      ).dont_decompose_into_bytes(),
