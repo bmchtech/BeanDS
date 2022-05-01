@@ -19,11 +19,21 @@ final class Cart {
         this.cart_header = get_cart_header(rom);
     }
 
-    void skip_firmware() {
+    void direct_boot() {
         main_memory.write!Word(Word(0x7FF800), get_cart_id());
         main_memory.write!Word(Word(0x7FF804), get_cart_id());
         main_memory.write!Word(Word(0x7FFC00), get_cart_id());
         main_memory.write!Word(Word(0x7FFC04), get_cart_id());
+        main_memory.write!Word(Word(0x7FFC3C), Word(0x00000332));
+        main_memory.write!Word(Word(0x7FFC40), Word(1)); // boot flag
+
+        // obtained from the no$gba emulator
+        main_memory.write!Half(Word(0x7FFCD8), Half(0x02DF));
+        main_memory.write!Half(Word(0x7FFCDA), Half(0x032C));
+        main_memory.write!Half(Word(0x7FFCDC), Half(0x2020));
+        main_memory.write!Half(Word(0x7FFCDE), Half(0x0D3B));
+        main_memory.write!Half(Word(0x7FFCE0), Half(0x0CE7));
+        main_memory.write!Half(Word(0x7FFCE2), Half(0xA0E0));
     }
 
     @property 
@@ -89,11 +99,11 @@ final class Cart {
 
         T result = cast(T) outbuffer[outbuffer_index];
         outbuffer_index++;
-        log_cart("reading from romresult: %x, %d / %d", result, outbuffer_index, outbuffer_length);
+        // log_cart("reading from romresult: %x, %d / %d", result, outbuffer_index, outbuffer_length);
 
         if (outbuffer_index == outbuffer_length) {
             transfer_ongoing = false;
-            log_cart("transfer ended!");
+            // log_cart("transfer ended!");
         }
 
         return cast(T) (result >> (8 * offset));
@@ -106,7 +116,7 @@ final class Cart {
     }
 
     void start_transfer() {
-        log_cart("Starting a transfer with command %x", command);
+        // log_cart("Starting a transfer with command %x", command);
         
         if ((command & 0xFF) == 0xB7) {
             // KEY2 data read
@@ -117,7 +127,7 @@ final class Cart {
             if (address + length >= rom_size()) error_cart("Tried to initiate a B7 transfer at an out of bounds region!");
             
             memcpy(&outbuffer, &rom[address], length);
-            log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
+            // log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
             outbuffer_length = length / 4;
         } else
 

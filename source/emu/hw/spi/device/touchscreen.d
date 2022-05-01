@@ -3,8 +3,12 @@ module emu.hw.spi.device.touchscreen;
 import emu;
 import util;
 
+__gshared TouchScreen touchscreen;
 final class TouchScreen : SPIDevice {
-    this() {}
+    this() {
+        touchscreen = this;
+        state = State.WAITING_FOR_CHIPSELECT;
+    }
 
     // placeholder names because i really
     // dont understand how this works
@@ -36,61 +40,111 @@ final class TouchScreen : SPIDevice {
         TEMPERATURE_1   = 7
     }
 
+    enum State {
+        WAITING_FOR_COMMAND,
+        WAITING_FOR_CHIPSELECT,
+        CALCULATING_COMMAND_RESPONSE
+    }
+
+    State state;
+
     PowerDownMode   power_down_mode;
     ReferenceSelect reference_select;
     ConversionMode  conversion_mode;
     ChannelSelect   channel_select;
 
-    override void write(Byte b) {
-        // bit 7 must be set in order for this command to be valid
-        // it's the first bit thats received on the SPI bus (which
-        // im not emulating bit by bit). and the first bit must be 1,
-        // so we check that bit 7 here is 1 before continuing.
-        if (!b[7]) {
-            log_touchscreen("received malformed touchscreen command: %x %x", b, arm7.regs[pc]);
-            return;
+    int x_position;
+    int y_position;
+    bool pen_down;
+
+    override Half write(Byte b) {
+        Half result = 0;
+
+        final switch (state) {
+            case State.WAITING_FOR_COMMAND:
+                // bit 7 must be set in order for this command to be valid
+                // it's the first bit thats received on the SPI bus (which
+                // im not emulating bit by bit). and the first bit must be 1,
+                // so we check that bit 7 here is 1 before continuing.
+                if (!b[7]) {
+                    log_touchscreen("received malformed touchscreen command: %x %x", b, arm7.regs[pc]);
+                    result = 0;
+                }
+
+                power_down_mode  = cast(PowerDownMode)   b[0..1];
+                reference_select = cast(ReferenceSelect) b[2];
+                conversion_mode  = cast(ConversionMode)  b[3];
+                channel_select   = cast(ChannelSelect)   b[4..6];
+                state = State.CALCULATING_COMMAND_RESPONSE;
+                break;
+            
+            case State.WAITING_FOR_CHIPSELECT:
+                break;
+            
+            case State.CALCULATING_COMMAND_RESPONSE:
+                final switch (channel_select) {
+                    case ChannelSelect.TEMPERATURE_0:
+                        // log_touchscreen("tried to read temperature 0");
+                        result = 0x2F8;
+                        break;
+                    
+                    case ChannelSelect.TOUCHSCREEN_Y:
+                        result = input.keys[22] ? 0 : (y_position * (0xa0 - 0x20)) / 192;
+                        // log_touchscreen("tried to read touchscreen pos y: %x", result);
+                        break;
+                    
+                    case ChannelSelect.BATTERY_VOLTAGE:
+                        result = 0;
+                        break;
+
+                    case ChannelSelect.TOUCHSCREEN_Z1:
+                        // log_touchscreen("tried to read touchscreen z1");
+                        result = 0;
+                        break;
+
+                    case ChannelSelect.TOUCHSCREEN_Z2:
+                        // log_touchscreen("tried to read touchscreen z2");
+                        result = 0;
+                        break;
+                    
+                    case ChannelSelect.TOUCHSCREEN_X:
+                        result = input.keys[22] ? 0 : (x_position * (0xa0 - 0x20)) / 256;
+                        // log_touchscreen("tried to read touchscreen pos x: %x", result);
+                        break;
+                    
+                    case ChannelSelect.AUX_INPUT:
+                        // log_touchscreen("tried to read mic (auxinput)");
+                        result = 0;
+                        break;
+                    
+                    case ChannelSelect.TEMPERATURE_1:
+                        // log_touchscreen("tried to read temperature 1");
+                        result = 0x384;
+                        break;
+                }
+
+                // result is encoded as a 12 bit value (ConversionMode.BIT_12).
+                // so we convert to an 8 bit value by rightshifting by 4.
+                if (conversion_mode == ConversionMode.BIT_8) {
+                    result >>= 4;
+                }
+
+                break;
         }
 
-        power_down_mode  = cast(PowerDownMode)   b[0..1];
-        reference_select = cast(ReferenceSelect) b[2];
-        conversion_mode  = cast(ConversionMode)  b[3];
-        channel_select   = cast(ChannelSelect)   b[4..6];
-
-        log_touchscreen("received the sussy baka: %x", b);
+        return result;
     }
 
-    override Half read() {
-        final switch (channel_select) {
-            case ChannelSelect.TEMPERATURE_0:
-                log_touchscreen("tried to read temperature 0");
-                return Half(0);
-            
-            case ChannelSelect.TOUCHSCREEN_Y:
-                log_touchscreen("tried to read touchscreen y");
-                return Half(0xFFF);
-            
-            case ChannelSelect.BATTERY_VOLTAGE:
-                return Half(0);
+    override void chipselect_rise() {
+        state = State.WAITING_FOR_COMMAND;
+    }
 
-            case ChannelSelect.TOUCHSCREEN_Z1:
-                log_touchscreen("tried to read touchscreen z1");
-                return Half(0);
+    override void chipselect_fall() {
+        state = State.WAITING_FOR_CHIPSELECT;
+    }
 
-            case ChannelSelect.TOUCHSCREEN_Z2:
-                log_touchscreen("tried to read touchscreen z2");
-                return Half(0);
-            
-            case ChannelSelect.TOUCHSCREEN_X:
-                log_touchscreen("tried to read touchscreen x");
-                return Half(0);
-            
-            case ChannelSelect.AUX_INPUT:
-                log_touchscreen("tried to read mic (auxinput)");
-                return Half(0);
-            
-            case ChannelSelect.TEMPERATURE_1:
-                log_touchscreen("tried to read temperature 1");
-                return Half(0);
-        }
+    void update_touchscreen_position(int x_position, int y_position) {
+        this.x_position = x_position;
+        this.y_position = y_position;
     }
 }

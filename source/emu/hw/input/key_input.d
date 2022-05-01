@@ -1,18 +1,20 @@
 module emu.hw.input.key_input;
 
+import emu;
 import util;
 
 enum DSKeyCode {
-    A      = 0,
-    B      = 1,
-    SELECT = 2,
-    START  = 3,
-    RIGHT  = 4,
-    LEFT   = 5,
-    UP     = 6,
-    DOWN   = 7,
-    R      = 8,
-    L      = 9
+    A        = 0,
+    B        = 1,
+    SELECT   = 2,
+    START    = 3,
+    RIGHT    = 4,
+    LEFT     = 5,
+    UP       = 6,
+    DOWN     = 7,
+    R        = 8,
+    L        = 9,
+    PEN_DOWN = 22
 }
 
 __gshared KeyInput input;
@@ -23,7 +25,7 @@ final class KeyInput {
     }
 
     void reset() {
-        keys = 0x7F01FF; // all released
+        keys = 0xAB6901FF; // all released
     }
 
     Word keys;

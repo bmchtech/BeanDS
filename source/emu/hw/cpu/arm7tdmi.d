@@ -48,7 +48,7 @@ final class ARM7TDMI : ArmCPU {
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
     }
 
-    void skip_firmware() {
+    void direct_boot() {
         register_file[MODE_USER      .OFFSET + sp] = 0x0380_FD80;
         register_file[MODE_IRQ       .OFFSET + sp] = 0x0380_FF80;
         register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x0380_FFC0;
@@ -133,7 +133,7 @@ final class ARM7TDMI : ArmCPU {
         import std.stdio;
         import std.format;
 
-        writef("[%04d] ", num_log);
+        writef("LOG_ARM7 [%04d] ", num_log);
     
         if (get_flag(Flag.T)) write("THM ");
         else write("ARM ");

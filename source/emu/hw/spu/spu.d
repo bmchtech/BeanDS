@@ -129,7 +129,7 @@ final class SPU {
                 c.format      = value[5..6];
                 c.enabled     = value[7];
 
-                if (c.enabled) c.reset();
+                if (c.enabled) { c.reset(); log_spu("CHANNEL ENABLED: %x", x); }
                 break;
         }
     }

@@ -38,13 +38,14 @@ final class TimerManager {
         ulong timestamp = scheduler.get_current_time_relative_to_self();
         timers[timer_id].timer_event = scheduler.add_event_relative_to_self(() => timer_overflow(timer_id), (0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment);
 
+        // log_timers("starting timer %x, %x %x", timer_id, timers[timer_id].reload_value, timestamp);
         timers[timer_id].timestamp = scheduler.get_current_time_relative_to_self();
     }
 
 
     void reload_timer_for_the_first_time(int timer_id) {
         if (timer_id != 0 && timers[timer_id].countup) return;
-            log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value, timers[timer_id].irq_enable);
+        // log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value, 2 + ((0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment));
 
         timers[timer_id].enabled_for_first_time = true;
         timers[timer_id].value = timers[timer_id].reload_value;
@@ -157,9 +158,10 @@ final class TimerManager {
     }
 
     Byte read_TMxCNT_L(int target_byte, int x) {
-        if (timers[x].enabled) timers[x].value = calculate_timer_value(x);
+        if (timers[x].enabled) 
+            timers[x].value = calculate_timer_value(x);
 
-        return Half(timers[x].value).get_byte(x);
+        return Half(timers[x].value).get_byte(target_byte);
     }
 
     Byte read_TMxCNT_H(int target_byte, int x) {

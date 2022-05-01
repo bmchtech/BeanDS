@@ -58,6 +58,8 @@ final class NDS {
         new KeyInput();
         new MainMemory();
 
+        new SIO();
+
         nds = this;
     }
 
@@ -79,10 +81,11 @@ final class NDS {
     }
 
     void direct_boot() {
-        arm7.skip_firmware();
-        arm9.skip_firmware();
-        mem9.skip_firmware();
-        wram.skip_firmware();
+        arm7.direct_boot();
+        arm9.direct_boot();
+        mem9.direct_boot();
+        wram.direct_boot();
+        firmware.direct_boot();
 
         if (cart.cart_header.arm7_rom_offset + cart.cart_header.arm7_size > cart.rom_size ||
             cart.cart_header.arm9_rom_offset + cart.cart_header.arm9_size > cart.rom_size) {
@@ -101,7 +104,7 @@ final class NDS {
             cart.cart_header.arm9_size
         );
         
-        cart.skip_firmware();
+        cart.direct_boot();
 
         arm7.set_reg(pc, cart.cart_header.arm7_entry_address);
         arm9.set_reg(pc, cart.cart_header.arm9_entry_address);
@@ -126,6 +129,7 @@ final class NDS {
     void set_multimedia_device(MultiMediaDevice device) {
         gpu.set_present_videobuffers_callback(&device.present_videobuffers);
         device.set_update_key_callback(&input.update_key);
+        device.set_update_touchscreen_position(&touchscreen.update_touchscreen_position);
         spu.set_push_sample_callback(&device.push_sample);
     }
 
@@ -134,12 +138,11 @@ final class NDS {
     }
 
     void write_HALTCNT(int target_byte, Byte data) {
-
         final switch (data[6..7]) {
             case 0: break;
-            case 1: log_nds("tried to enable GBA mode"); break;
+            case 1: error_nds("tried to enable GBA mode"); break;
             case 2: arm7.halt(); break;
-            case 3: log_nds("tried to sleep"); break;
+            case 3: error_nds("tried to sleep"); break;
         }
     }
 

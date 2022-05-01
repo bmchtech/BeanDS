@@ -27,14 +27,14 @@ static const mmio7_registers = [
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("ipc7",         "IPCFIFORECV",   0x0410_0000,  4, READ      ).dont_decompose_into_bytes(),
-    MMIORegister("auxspi",       "AUXSPICNT7",    0x0400_01A0,  2,      WRITE),
+    MMIORegister("auxspi",       "AUXSPICNT7",    0x0400_01A0,  2, READ_WRITE),
     MMIORegister("auxspi",       "AUXSPIDATA7",   0x0400_01A2,  2, READ_WRITE),
     MMIORegister("cart",         "ROMCTRL",       0x0400_01A4,  4, READ_WRITE),
     MMIORegister("cart",         "ROMDATAOUT",    0x0400_01A8,  8,      WRITE),
     MMIORegister("cart",         "ROMRESULT",     0x0410_0010,  4, READ      ).dont_decompose_into_bytes(),
     MMIORegister("spi",          "SPICNT",        0x0400_01C0,  2, READ_WRITE),
     MMIORegister("spi",          "SPIDATA",       0x0400_01C2,  2, READ_WRITE).dont_decompose_into_bytes(),
-    MMIORegister("slot",         "EXMEMSTAT",     0x0400_0204,  2, READ),
+    MMIORegister("slot",         "EXMEMSTAT",     0x0400_0204,  2, READ_WRITE),
     MMIORegister("interrupt7",   "IME",           0x0400_0208,  4, READ_WRITE),
     MMIORegister("interrupt7",   "IE",            0x0400_0210,  4, READ_WRITE),
     MMIORegister("interrupt7",   "IF",            0x0400_0214,  4, READ_WRITE),
@@ -50,4 +50,5 @@ static const mmio7_registers = [
     MMIORegister("spu",          "SOUNDxLEN",     0x0400_040C,  2,      WRITE).repeat(16, 16),
     MMIORegister("spu",          "SOUNDCNT",      0x0400_0500,  2, READ_WRITE),
     MMIORegister("spu",          "SOUNDBIAS",     0x0400_0504,  2, READ_WRITE),
+    MMIORegister("sio",          "RCNT",          0x0400_0134,  2, READ_WRITE)
 ];

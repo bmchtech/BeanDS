@@ -396,6 +396,20 @@ template execute_thumb(T : ArmCPU) {
                 jumptable[entry] = &create_swi;
             } else
 
+            if ((entry & 0b1111_0000) == 0b1101_0000) {
+                enum cond = static_opcode[0..3];
+                jumptable[entry] = &create_conditional_branch!cond;
+            } else
+
+            if (v5TE!T && (entry & 0b1111_1000) == 0b1110_1000) {
+                jumptable[entry] = &create_branch_exchange_with_link;
+            } else
+
+            if ((entry & 0b1111_0000) == 0b1111_0000) {
+                enum is_first_instruction = !static_opcode[3];
+                jumptable[entry] = &create_branch_with_link!is_first_instruction;
+            } else
+
             if ((entry & 0b1110_0000) == 0b0010_0000) {
                 enum op = static_opcode[3..4];
                 enum rd = static_opcode[0..2];
@@ -407,11 +421,6 @@ template execute_thumb(T : ArmCPU) {
                 jumptable[entry] = &create_add_sub!op;
             } else
 
-            if ((entry & 0b1111_0000) == 0b1101_0000) {
-                enum cond = static_opcode[0..3];
-                jumptable[entry] = &create_conditional_branch!cond;
-            } else
-
             if ((entry & 0b1111_1111) == 0b0100_0111) {
                 jumptable[entry] = &create_branch_exchange;
             } else
@@ -419,15 +428,6 @@ template execute_thumb(T : ArmCPU) {
             if ((entry & 0b1111_1000) == 0b0100_1000) {
                 enum reg = static_opcode[0..2];
                 jumptable[entry] = &create_pc_relative_load!reg;
-            } else
-
-            if ((entry & 0b1111_0000) == 0b1111_0000) {
-                enum is_first_instruction = !static_opcode[3];
-                jumptable[entry] = &create_branch_with_link!is_first_instruction;
-            } else
-
-            if (v5TE!T && (entry & 0b1111_1000) == 0b1110_1000) {
-                jumptable[entry] = &create_branch_exchange_with_link;
             } else
 
             if ((entry & 0b1111_1100) == 0b0100_0000) {

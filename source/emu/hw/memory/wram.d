@@ -24,7 +24,7 @@ final class WRAM {
         arm7_only_wram = new Byte[ARM7_ONLY_WRAM_SIZE];
     }
 
-    void skip_firmware() {
+    void direct_boot() {
         set_mode(3);
     }
 

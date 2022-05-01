@@ -50,7 +50,7 @@ final class ARM946E_S : ArmCPU {
         Cp15.reset();
     }
 
-    void skip_firmware() {
+    void direct_boot() {
         register_file[MODE_USER      .OFFSET + sp] = 0x0300_2F7C;
         register_file[MODE_IRQ       .OFFSET + sp] = 0x0300_3F7C;
         register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x0300_3FC0;
@@ -63,7 +63,7 @@ final class ARM946E_S : ArmCPU {
 
     pragma(inline, true) T fetch(T)() {
         if (regs[pc] == 0) error_arm9("arm9 branched to 0");
-        // if (regs[pc] == 0x0200497C) num_log = 200;
+        if (regs[pc] == 0x2001dd8) num_log = 200;
 
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
@@ -137,7 +137,7 @@ final class ARM946E_S : ArmCPU {
         import std.stdio;
         import std.format;
 
-        writef("[%04d] ", num_log);
+        writef("LOG_ARM9 [%04d] ", num_log);
         
         if (get_flag(Flag.T)) write("THM ");
         else write("ARM ");

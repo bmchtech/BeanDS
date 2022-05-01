@@ -30,6 +30,9 @@ enum LogSource {
     SPI,
     TOUCHSCREEN,
     AUXSPI,
+    EEPROM,
+    MAIN_MEMORY,
+    FIRMWARE
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();

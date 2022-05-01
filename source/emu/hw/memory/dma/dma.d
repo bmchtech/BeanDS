@@ -150,6 +150,12 @@ final class DMA(HwType H) {
             dma_channels[dma_id].repeat = false;
             start_dma_channel(dma_id, false);
         }
+
+        if (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
+            dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank &&
+            dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank) {
+                error_dma9("tried to do a dma i dont do");
+            }
     }
 
     pragma(inline, true) void start_dma_channel(int dma_id, bool last) {

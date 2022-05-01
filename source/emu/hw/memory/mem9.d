@@ -18,8 +18,8 @@ final class Mem9 : Mem {
         mem9 = new Mem9();
     }
 
-    void skip_firmware() {
-        tcm.skip_firmware();
+    void direct_boot() {
+        tcm.direct_boot();
     }
 
     T read(T)(Word address) {

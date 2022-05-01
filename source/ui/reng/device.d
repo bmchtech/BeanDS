@@ -82,6 +82,17 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         void handle_input() {
+            import std.algorithm.comparison;
+
+            update_key(DSKeyCode.PEN_DOWN, Input.is_mouse_down(MOUSE_LEFT_BUTTON));
+
+            auto mouse_position = Input.mouse_position();
+
+            update_touchscreen_position(
+                clamp(cast(int) mouse_position.x,       0, 256),
+                clamp(cast(int) mouse_position.y - 192, 0, 192)
+            );
+            
             static foreach (re_key, gba_key; keys) {
                 update_key(gba_key, Input.is_key_down(re_key));
             }

@@ -261,7 +261,7 @@ final class Canvas(EngineType E) {
 
             // now that we know which window type we're in, let's calculate the color index for this pixel
 
-            PaletteIndex[2] index;
+            PaletteIndex[2] index = [PaletteIndex(-1, 0, false), PaletteIndex(-1, 0, false)];
             int priority = 4;
 
             int blendable_pixels = 0;

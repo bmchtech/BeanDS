@@ -39,6 +39,11 @@ final class Slot {
         return result;
     }
 
+    void write_EXMEMSTAT(int target_byte, Byte data) {
+        // writing exmemstat only changes gba slot access timings which i dont
+        // really care about implementing sooooo
+    }
+
     Byte read_EXMEMSTAT(int target_byte) {
         return read_EXMEMCNT(target_byte);
     }
