@@ -151,9 +151,22 @@ final class DMA(HwType H) {
             start_dma_channel(dma_id, false);
         }
 
+        if (dma_channels[dma_id].dma_start_timing == DMAStartTiming.DSCartSlot) {
+            Word address = dma_channels[dma_id].dest_buf;
+
+            cart.transfer_ongoing = true;
+            cart.start_transfer();
+            while (cart.transfer_ongoing) {
+                Word val = cart.read_ROMRESULT!Word(0);
+                mem.write_word(address, val);
+                address += 4;
+            }
+        }
+
         if (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
             dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank &&
-            dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank) {
+            dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
+            dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot) {
                 error_dma9("tried to do a dma i dont do");
             }
     }
