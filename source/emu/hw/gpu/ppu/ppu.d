@@ -744,24 +744,24 @@ public:
     void write_BGxX(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0b00:
-                backgrounds[x].x_offset_rotation &= 0xFFFFFF00;
-                backgrounds[x].x_offset_rotation |= data;
+                backgrounds[x + 2].x_offset_rotation &= 0xFFFFFF00;
+                backgrounds[x + 2].x_offset_rotation |= data;
                 break;
             case 0b01:
-                backgrounds[x].x_offset_rotation &= 0xFFFF00FF;
-                backgrounds[x].x_offset_rotation |= data << 8;
+                backgrounds[x + 2].x_offset_rotation &= 0xFFFF00FF;
+                backgrounds[x + 2].x_offset_rotation |= data << 8;
                 break;
             case 0b10:
-                backgrounds[x].x_offset_rotation &= 0xFF00FFFF;
-                backgrounds[x].x_offset_rotation |= data << 16;
+                backgrounds[x + 2].x_offset_rotation &= 0xFF00FFFF;
+                backgrounds[x + 2].x_offset_rotation |= data << 16;
                 break;
             case 0b11:
-                backgrounds[x].x_offset_rotation &= 0x00FFFFFF;
-                backgrounds[x].x_offset_rotation |= data << 24;
-                backgrounds[x].x_offset_rotation &= 0x0FFFFFFF;
+                backgrounds[x + 2].x_offset_rotation &= 0x00FFFFFF;
+                backgrounds[x + 2].x_offset_rotation |= data << 24;
+                backgrounds[x + 2].x_offset_rotation &= 0x0FFFFFFF;
 
                 // sign extension. bit 27 is the sign bit.
-                backgrounds[x].x_offset_rotation |= (((data >> 3) & 1) ? 0xF000_0000 : 0x0000_0000);
+                backgrounds[x + 2].x_offset_rotation |= (((data >> 3) & 1) ? 0xF000_0000 : 0x0000_0000);
                 break;
         }
     }
@@ -769,42 +769,50 @@ public:
     void write_BGxY(int target_byte, Byte data, int x) {
         final switch (target_byte) {
             case 0b00:
-                backgrounds[x].y_offset_rotation &= 0xFFFFFF00;
-                backgrounds[x].y_offset_rotation |= data;
+                backgrounds[x + 2].y_offset_rotation &= 0xFFFFFF00;
+                backgrounds[x + 2].y_offset_rotation |= data;
                 break;
             case 0b01:
-                backgrounds[x].y_offset_rotation &= 0xFFFF00FF;
-                backgrounds[x].y_offset_rotation |= data << 8;
+                backgrounds[x + 2].y_offset_rotation &= 0xFFFF00FF;
+                backgrounds[x + 2].y_offset_rotation |= data << 8;
                 break;
             case 0b10:
-                backgrounds[x].y_offset_rotation &= 0xFF00FFFF;
-                backgrounds[x].y_offset_rotation |= data << 16;
+                backgrounds[x + 2].y_offset_rotation &= 0xFF00FFFF;
+                backgrounds[x + 2].y_offset_rotation |= data << 16;
                 break;
             case 0b11:
-                backgrounds[x].y_offset_rotation &= 0x00FFFFFF;
-                backgrounds[x].y_offset_rotation |= data << 24;
-                backgrounds[x].y_offset_rotation &= 0x0FFFFFFF;
+                backgrounds[x + 2].y_offset_rotation &= 0x00FFFFFF;
+                backgrounds[x + 2].y_offset_rotation |= data << 24;
+                backgrounds[x + 2].y_offset_rotation &= 0x0FFFFFFF;
 
                 // sign extension. bit 27 is the sign bit.
-                backgrounds[x].y_offset_rotation |= (((data >> 3) & 1) ? 0xF000_0000 : 0x0000_0000);
+                backgrounds[x + 2].y_offset_rotation |= (((data >> 3) & 1) ? 0xF000_0000 : 0x0000_0000);
                 break;
         }
 
         reload_background_internal_affine_registers(x);
     }
 
-    void write_BGxPy(int target_byte, Byte data, int x, AffineParameter y) {
-        final switch (target_byte) {
-            case 0b0:
-                backgrounds[x].p[cast(int) y] &= 0xFF00;
-                backgrounds[x].p[cast(int) y] |= data;
-                break;
-            case 0b1:
-                backgrounds[x].p[cast(int) y] &= 0x00FF;
-                backgrounds[x].p[cast(int) y] |= data << 8;
-                break;
-        }
+    void write_BGxPA(int target_byte, Byte data, int x) {
+        backgrounds[x + 2].p[0] &= ~(0xFF << (target_byte * 8));
+        backgrounds[x + 2].p[0] |=  (data << (target_byte * 8));
     }
+
+    void write_BGxPB(int target_byte, Byte data, int x) {
+        backgrounds[x + 2].p[1] &= ~(0xFF << (target_byte * 8));
+        backgrounds[x + 2].p[1] |=  (data << (target_byte * 8));
+    }
+
+    void write_BGxPC(int target_byte, Byte data, int x) {
+        backgrounds[x + 2].p[2] &= ~(0xFF << (target_byte * 8));
+        backgrounds[x + 2].p[2] |=  (data << (target_byte * 8));
+    }
+
+    void write_BGxPD(int target_byte, Byte data, int x) {
+        backgrounds[x + 2].p[3] &= ~(0xFF << (target_byte * 8));
+        backgrounds[x + 2].p[3] |=  (data << (target_byte * 8));
+    }
+
 
     void write_BLDCNT(int target_byte, Byte data) {
         final switch (target_byte) {

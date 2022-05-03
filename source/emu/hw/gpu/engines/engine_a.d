@@ -25,6 +25,7 @@ final class GPUEngineA {
     int obj_during_hblank;
     bool bg_extended_palettes;
     bool forced_blank;
+    bool bg0_enable;
 
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
@@ -38,7 +39,7 @@ final class GPUEngineA {
                 break;
 
             case 1: 
-                ppu.backgrounds[0].enabled    = value[0];
+                bg0_enable                    = value[0];
                 ppu.backgrounds[1].enabled    = value[1];
                 ppu.backgrounds[2].enabled    = value[2];
                 ppu.backgrounds[3].enabled    = value[3];
@@ -46,6 +47,7 @@ final class GPUEngineA {
                 ppu.canvas.windows[0].enabled = value[5];
                 ppu.canvas.windows[1].enabled = value[6];
                 ppu.canvas.obj_window_enable  = value[7];
+
                 break;
 
             case 2:
@@ -63,6 +65,8 @@ final class GPUEngineA {
                 ppu.obj_extended_palettes = value[7];
                 break; 
         }
+
+        ppu.backgrounds[0].enabled = bg0_enable & ~bg0_selection;
     }
 
     Pixel[192][256] videobuffer;
@@ -115,7 +119,7 @@ final class GPUEngineA {
                 break;
 
             case 1: 
-                result[0] = ppu.backgrounds[0].enabled;
+                result[0] = bg0_enable;
                 result[1] = ppu.backgrounds[1].enabled;
                 result[2] = ppu.backgrounds[2].enabled;
                 result[3] = ppu.backgrounds[3].enabled;

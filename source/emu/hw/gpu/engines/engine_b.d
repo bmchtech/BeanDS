@@ -17,7 +17,6 @@ final class GPUEngineB {
     int bg_mode;
     int display_mode;
     int vram_block;
-    int bg0_selection;
     int tile_obj_mapping;
     int bitmap_obj_dimension;
     int bitmap_obj_mapping;
