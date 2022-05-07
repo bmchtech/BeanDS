@@ -328,7 +328,7 @@ final class PPU(EngineType E) {
                     if (obj_extended_palettes) index += texture.palette * 256;
 
                     if (obj_mode != OBJMode.OBJ_WINDOW) {
-                        canvas.draw_obj_pixel(draw_pos.x, obj_slot, index + index_offset, priority, index == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
+                        canvas.draw_obj_pixel(draw_pos.x, obj_slot, index + index_offset, priority, (index & 0xFF) == 0, obj_mode == OBJMode.SEMI_TRANSPARENT);
                     } else {
                         if (index != 0) canvas.set_obj_window(draw_pos.x);
                     }
