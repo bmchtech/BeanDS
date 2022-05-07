@@ -76,6 +76,7 @@ final class WRAM {
     }
 
     T read7(T)(Word address) {
+        if (address == 0x3807954) { log_arm7("SUK!");}
         T value;
         if (address < 0x0380_0000 && arm7_wram_enabled) {
             value = (*(arm7_mapping[address[14]])).read!T(address % WRAM_SIZE);
@@ -87,6 +88,7 @@ final class WRAM {
     }
 
     void write7(T)(Word address, T value) {
+        if (address == 0x3807954) { log_arm7("FUK! %x", value);}
         // log_wram("arm7 writing %x to %x in mode %x %x", value, address, mode, arm7_wram_enabled);
         if (address < 0x0380_0000 && arm7_wram_enabled) {
             (*(arm7_mapping[address[14]])).write!T(address % WRAM_SIZE, value);

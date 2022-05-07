@@ -19,3 +19,8 @@ configuration "release" {
     compiler "ldc2"
     dflags "-O3"
 }
+
+configuration "quiet" {
+    targetType "executable"
+    versions "quiet"
+}

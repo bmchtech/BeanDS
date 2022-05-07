@@ -6,7 +6,7 @@ import util;
 __gshared Firmware firmware;
 final class Firmware : SPIDevice {
     enum State {
-        WAITING_FOR_CHIPSELECT,
+        WAITING_FOR_CHIPSELECT = 0,
         WAITING_FOR_COMMAND,
         CALCULATING_COMMAND_RESPONSE
     }
@@ -41,8 +41,8 @@ final class Firmware : SPIDevice {
     void direct_boot() {
         power_on = true;
 
-        data.write!Byte(Word(0x1D), Byte(0xFF));   // console type = nintendo DS
-        data.write!Half(Word(0x20), Half(0x7FC0)); // offset to user settings area
+        data.write!Byte(Word(0x0001D), Byte(0xFF));   // console type = nintendo DS
+        data.write!Half(Word(0x00020), Half(0x7FC0)); // offset to user settings area
 
         // user settings
         data.write!Half(Word(0x3FE00), Half(5)); // apparently this address is just 5 for some reason
@@ -56,10 +56,15 @@ final class Firmware : SPIDevice {
         data.write!Half(Word(0x3FE62), Half(0xA0E0)); // touch screen px x2/y2
         data.write!Half(Word(0x3FE64), Half(1)); // english language
         data.write!Half(Word(0x3FE66), Half(2000)); // the year
+
+        // wifi stuffs
+        data.write!Half(Word(0x00036), Half(0x0009)); // mac address pt 1
+        data.write!Word(Word(0x00038), Word(0xBF000000)); // mac address pt 2
+        data.write!Word(Word(0x0003C), Word(0x00003FFE)); // enabled weefee channels
     }
 
     override Half write(Byte b) {
-        log_firmware("write! %x %x", b, arm9.regs[pc]);
+        // arm7.num_log = 20000;
         Half value = 0;
 
         final switch (state) {
@@ -84,11 +89,11 @@ final class Firmware : SPIDevice {
         return value;
     }
 
-    override void chipselect_rise() {
+    override void chipselect_fall() {
         state = State.WAITING_FOR_COMMAND;
     }
 
-    override void chipselect_fall() {
+    override void chipselect_rise() {
         state = State.WAITING_FOR_CHIPSELECT;
     }
 
@@ -120,7 +125,6 @@ final class Firmware : SPIDevice {
                     return Half(0);
                 } else {
                     if (address >= data.length) error_firmware("tried to read out of bounds: %x", address);
-                    log_firmware("reading from %x, %x", address, data[address]);
                     Half value = Half(data[address]);
                     address++;
                     return value;
@@ -136,37 +140,35 @@ final class Firmware : SPIDevice {
                     return Half(0);
                 } else {
                     if (address >= data.length) error_firmware("tried to read out of bounds: %x", address);
-                    log_firmware("fastreading from %x, %x", address, data[address]);
                     Half value = Half(data[address]);
                     address++;
                     return value;
                 }
             
-            // case Command.PageWrite:
-            //     // TODO: im not sure this is actually how this command works but
-            //     //       i hope it's right? check this
+            case Command.PageWrite:
+                // TODO: im not sure this is actually how this command works but
+                //       i hope it's right? check this
 
-            //     if (access_number < 3) {
-            //         // 3 - access_number because address is set in MSB -> LSB order
-            //         address.set_byte(3 - access_number, b);
-            //         return Half(0);
-            //     } else if (access_number < 259) {
-            //         Half value = Half(data[address]);
-            //         data[address] = b;
-            //         address++;
+                if (access_number < 3) {
+                    // 3 - access_number because address is set in MSB -> LSB order
+                    address.set_byte(2 - access_number, b);
+                    return Half(0);
+                } else if (access_number < 259) {
+                    if (address >= data.length) error_firmware("tried to read out of bounds: %x", address);
+                    Half value = Half(data[address]);
+                    data[address] = b;
+                    address++;
 
-            //         if (access_number == 258) state = State.WAITING_FOR_CHIPSELECT;
-            //         return value;
-            //     } else {
-            //         error_firmware("this is an unreachable state, something really went wrong");
-            //         return Half(0);
-            //     }
+                    if (access_number == 258) state = State.WAITING_FOR_CHIPSELECT;
+                    return value;
+                } else {
+                    return Half(0);
+                }
             
             // case Command.PageProgram:
 
             // yknow what ill do the rest of the commands later
             default:
-                error_firmware("Unimplemented command");
                 return Half(0);
 
         }

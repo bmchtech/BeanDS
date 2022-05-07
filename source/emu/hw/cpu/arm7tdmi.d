@@ -93,6 +93,7 @@ final class ARM7TDMI : ArmCPU {
 
     pragma(inline, true) void execute(T)(T opcode) {
         static if (is(T == Word)) {
+            if (((regs[pc] - 16) & 0xFFFFFF00) == 0x037F8400) num_log = 5;
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {
                 auto entry = opcode[4..7] | (opcode[20..27] << 4);
@@ -130,22 +131,26 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void log_state() {
-        import std.stdio;
-        import std.format;
+        version (quiet) {
+            return;
+        } else {
+            import std.stdio;
+            import std.format;
 
-        writef("LOG_ARM7 [%04d] ", num_log);
-    
-        if (get_flag(Flag.T)) write("THM ");
-        else write("ARM ");
+            writef("LOG_ARM7 [%04d] ", num_log);
+        
+            if (get_flag(Flag.T)) write("THM ");
+            else write("ARM ");
 
-        write(format("0x%08x ", instruction_set == InstructionSet.ARM ? arm_pipeline[0] : thumb_pipeline[0]));
-        
-        for (int j = 0; j < 18; j++)
-            write(format("%08x ", regs[j]));
-        
-        writef(" | ");
-        writef(" %08x", get_reg(sp, MODE_SUPERVISOR));
-        writeln();
+            write(format("0x%08x ", instruction_set == InstructionSet.ARM ? arm_pipeline[0] : thumb_pipeline[0]));
+            
+            for (int j = 0; j < 18; j++)
+                write(format("%08x ", regs[j]));
+            
+            writef(" | ");
+            writef(" %08x", get_reg(sp, MODE_SUPERVISOR));
+            writeln();
+        }
     }
 
     pragma(inline, true) Word get_reg(Reg id) {

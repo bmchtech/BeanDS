@@ -10,6 +10,6 @@ import util;
 
 abstract class SPIDevice {
     Half write(Byte b);
-    void chipselect_rise();
     void chipselect_fall();
+    void chipselect_rise();
 }

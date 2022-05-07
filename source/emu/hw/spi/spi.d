@@ -59,14 +59,23 @@ final class SPI {
                 break;
             
             case 1: 
-                selected_device_index = data[0..1];
-                selected_device = spi_devices[selected_device_index];
+                if (selected_device_index != data[0..1]) {
+                    if (selected_device !is null) selected_device.chipselect_rise();
 
-                if (data[3] && !chipselect_hold) {
-                    if (selected_device is null) {
-                        log_unimplemented("tried to chipselect an unimplemented chip");
-                    } else {
-                        selected_device.chipselect_rise();
+                    selected_device_index = data[0..1];
+                    selected_device = spi_devices[selected_device_index];
+                    
+                    if (data[3] && selected_device !is null) selected_device.chipselect_fall();
+                } else {
+                    selected_device_index = data[0..1];
+                    selected_device = spi_devices[selected_device_index];
+
+                    if (data[3] && !chipselect_hold) {
+                        if (selected_device is null) {
+                            log_unimplemented("tried to chipselect an unimplemented chip");
+                        } else {
+                            selected_device.chipselect_fall();
+                        }
                     }
                 }
 
@@ -74,24 +83,13 @@ final class SPI {
                 chipselect_hold = data[3];
                 irq_enable      = data[6];
                 bus_enable      = data[7];
+
                 break;
         }
     }
 
     T read_SPIDATA(T)(int offset) {
-        // if (selected_device_index == 3) {
-        //     error_spi("Tried to read from an invalid SPI device!");
-        // }
-
-        // if (selected_device_index != 2) {
-        //     log_spi("Tried to read from an unimplemented SPI device: %x", selected_device_index);
-        //     return T(0);
-        // }
-
-        // return T(255);
-
-        // return cast(T) selected_device.read();
-        log_spi("touchscreen pos?: %x", result);
+        log_firmware("spidata?: %x %x", selected_device_index, result);
 
         return T(result);
     }
@@ -110,7 +108,7 @@ final class SPI {
 
         if (offset == 0) {
             result = selected_device.write(Byte(data));
-            if (!chipselect_hold) selected_device.chipselect_fall();
+             if (!chipselect_hold) selected_device.chipselect_fall();
         }
 
         if (!chipselect_hold) {

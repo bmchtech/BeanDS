@@ -26,9 +26,6 @@ final class Mem9 : Mem {
         check_memory_unit!T;
         scheduler.tick(1);
 
-        if (tcm.can_read_itcm(address)) return tcm.read_itcm!T(address);
-        if (tcm.can_read_dtcm(address)) return tcm.read_dtcm!T(address);
-
         auto region = get_region(address);
 
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
@@ -55,9 +52,6 @@ final class Mem9 : Mem {
     void write(T)(Word address, T value) {
         check_memory_unit!T;
         scheduler.tick(1);
-
-        if (tcm.can_write_itcm(address)) { tcm.write_itcm!T(address, value); return; }
-        if (tcm.can_write_dtcm(address)) { tcm.write_dtcm!T(address, value); return; }
 
         auto region = get_region(address);
 

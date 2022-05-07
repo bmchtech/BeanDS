@@ -63,7 +63,9 @@ final class ARM946E_S : ArmCPU {
 
     pragma(inline, true) T fetch(T)() {
         if (regs[pc] == 0) error_arm9("arm9 branched to 0");
-        if (regs[pc] == 0x2001dd8) num_log = 200;
+        // if (regs[pc] > 0x0200_0c00 && regs[pc] < 0x200_0dce) num_log = 100000;
+        // if ((regs[pc] & ~0xF) == 0x02095600) num_log = 10000000;
+        if (num_log == 1) assert(0);
 
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
@@ -134,19 +136,26 @@ final class ARM946E_S : ArmCPU {
     }
 
     void log_state() {
-        import std.stdio;
-        import std.format;
+        version (quiet) {
+            return;
+        } else {
+            import std.stdio;
+            import std.format;
 
-        writef("LOG_ARM9 [%04d] ", num_log);
+            writef("LOG_ARM9 [%04d] ", num_log);
         
-        if (get_flag(Flag.T)) write("THM ");
-        else write("ARM ");
+            if (get_flag(Flag.T)) write("THM ");
+            else write("ARM ");
 
-        write(format("0x%08x ", instruction_set == InstructionSet.ARM ? arm_pipeline[0] : thumb_pipeline[0]));
-        
-        for (int j = 0; j < 18; j++)
-            write(format("%08x ", regs[j]));
-        writeln();
+            write(format("0x%08x ", instruction_set == InstructionSet.ARM ? arm_pipeline[0] : thumb_pipeline[0]));
+            
+            for (int j = 0; j < 18; j++)
+                write(format("%08x ", regs[j]));
+            
+            writef(" | ");
+            writef(" %08x", get_reg(sp, MODE_SUPERVISOR));
+            writeln();
+        }
     }
 
     pragma(inline, true) Word get_reg(Reg id) {
@@ -438,11 +447,33 @@ final class ARM946E_S : ArmCPU {
         return !(current_mode == MODE_USER || current_mode == MODE_SYSTEM);
     }
 
-    Word read_word(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_word(address); }
-    Half read_half(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_half(address); }
-    Byte read_byte(Word address, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; return memory.read_byte(address); }
+    T internal_read(T)(Word address) {
+        pipeline_access_type = AccessType.NONSEQUENTIAL;
 
-    void write_word(Word address, Word value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_word(address, value); }
-    void write_half(Word address, Half value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_half(address, value); }
-    void write_byte(Word address, Byte value, AccessType access_type) { pipeline_access_type = AccessType.NONSEQUENTIAL; memory.write_byte(address, value); }
+        if (tcm.can_read_itcm(address)) { scheduler.tick(1); return tcm.read_itcm!T(address); }
+        if (tcm.can_read_dtcm(address)) { scheduler.tick(1); return tcm.read_dtcm!T(address); }
+        
+        static if (is (T == Word)) return memory.read_word(address);
+        static if (is (T == Half)) return memory.read_half(address);
+        static if (is (T == Byte)) return memory.read_byte(address);
+    }
+
+    void internal_write(T)(Word address, T value) {
+        pipeline_access_type = AccessType.NONSEQUENTIAL;
+
+        if (tcm.can_write_itcm(address)) { scheduler.tick(1); tcm.write_itcm!T(address, value); return; }
+        if (tcm.can_write_dtcm(address)) { scheduler.tick(1); tcm.write_dtcm!T(address, value); return; }
+        
+        static if (is (T == Word)) memory.write_word(address, value);
+        static if (is (T == Half)) memory.write_half(address, value);
+        static if (is (T == Byte)) memory.write_byte(address, value);
+    }
+
+    Word read_word(Word address, AccessType access_type) { return internal_read!Word(address); }
+    Half read_half(Word address, AccessType access_type) { return internal_read!Half(address); }
+    Byte read_byte(Word address, AccessType access_type) { return internal_read!Byte(address); }
+
+    void write_word(Word address, Word value, AccessType access_type) { internal_write!Word(address, value); }
+    void write_half(Word address, Half value, AccessType access_type) { internal_write!Half(address, value); }
+    void write_byte(Word address, Byte value, AccessType access_type) { internal_write!Byte(address, value); }
 }
