@@ -94,7 +94,12 @@ final class VRAM {
     }
 
     T read_bg_slot(EngineType E, T)(int slot, Word address) {
-        return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+        final switch (E) {
+            case EngineType.A:
+                return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+            case EngineType.B:
+                return vram_h.data.read!T(Word(SLOT_SIZE * slot + address));
+        }
     }
 
     T read_obj_slot(EngineType E, T)(int slot, Word address) {
