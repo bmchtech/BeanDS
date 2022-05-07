@@ -34,7 +34,7 @@ final class Mem7 : Mem {
             case 0x8: .. case 0x9: return cart.read!T(address & 0xFF_FFFF, HwType.NDS7);
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to read from GBA Slot RAM: %x", address); break;
         
-            default: error_unimplemented("Attempt from ARM7 to read from an invalid region of memory: %x", address); break;
+            default: log_unimplemented("Attempt from ARM7 to read from an invalid region of memory: %x", address); break;
         }
 
         // should never happen
@@ -59,7 +59,7 @@ final class Mem7 : Mem {
             case 0x8: .. case 0x9: log_unimplemented("Attempt from ARM7 to write %x to GBA Slot ROM: %x", value, address); break;
             case 0xA: .. case 0xB: error_unimplemented("Attempt from ARM7 to write %x to GBA Slot RAM: %x", value, address); break;
         
-            default: error_unimplemented("Attempt from ARM7 to write %x to an invalid region of memory: %x", value, address); break;
+            default: log_unimplemented("Attempt from ARM7 to write %x to an invalid region of memory: %x", value, address); break;
         }
     }
 

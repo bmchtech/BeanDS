@@ -131,6 +131,8 @@ final class PPU(EngineType E) {
         backgrounds[2].internal_reference_y += backgrounds[2].p[AffineParameter.D];
         backgrounds[3].internal_reference_x += backgrounds[3].p[AffineParameter.B];
         backgrounds[3].internal_reference_y += backgrounds[3].p[AffineParameter.D];
+
+        // log_ppu("mem at : 0x06210380", mem9.read!Word(Word(0x06210380)));
     }
 
     void vblank() {
