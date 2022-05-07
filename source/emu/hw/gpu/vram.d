@@ -96,10 +96,22 @@ final class VRAM {
     T read_bg_slot(EngineType E, T)(int slot, Word address) {
         final switch (E) {
             case EngineType.A:
-                return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+                if (vram_e.slot_mapped) return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+                if (vram_f.slot_mapped) {
+                    if (slot <  2 && vram_f.offset == 0) return vram_f.data.read!T(Word(SLOT_SIZE * slot + address));
+                    if (slot >= 2 && vram_f.offset == 1) return vram_f.data.read!T(Word(SLOT_SIZE * (slot - 2) + address));
+                }
+                if (vram_g.slot_mapped) {
+                    if (slot <  2 && vram_g.offset == 0) return vram_g.data.read!T(Word(SLOT_SIZE * slot + address));
+                    if (slot >= 2 && vram_g.offset == 1) return vram_g.data.read!T(Word(SLOT_SIZE * (slot - 2) + address));
+                }
+                break;
             case EngineType.B:
                 return vram_h.data.read!T(Word(SLOT_SIZE * slot + address));
         }
+
+        error_vram("Tried to draw from bg slot but no slots were mapped!");
+        return T(0);
     }
 
     T read_obj_slot(EngineType E, T)(int slot, Word address) {
@@ -309,7 +321,7 @@ final class VRAM {
 
     void set_vram_E(int mst) {
         vram_e.mst         = mst;
-        vram_e.slot_mapped = mst > 2;
+        vram_e.slot_mapped = mst == 4;
 
         final switch (mst) {
             case 0: vram_e.address = 0x0688_0000; break;
