@@ -54,6 +54,7 @@ final class NDS {
         new GPU();
         new GPUEngineA();
         new GPUEngineB();
+        new GPU3D();
 
         new KeyInput();
         new MainMemory();
