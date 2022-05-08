@@ -131,8 +131,6 @@ final class PPU(EngineType E) {
         backgrounds[2].internal_reference_y += backgrounds[2].p[AffineParameter.D];
         backgrounds[3].internal_reference_x += backgrounds[3].p[AffineParameter.B];
         backgrounds[3].internal_reference_y += backgrounds[3].p[AffineParameter.D];
-
-        log_ppu("mem at : 0x06210380 : %x", mem9.read!Word(Word(0x06210380)));
     }
 
     void vblank() {
@@ -274,6 +272,7 @@ final class PPU(EngineType E) {
                         ubyte index = tile_data[tile_dx];
                         canvas.draw_bg_pixel(left_x + tile_dx * 2,     bg, -1, ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
                         canvas.draw_bg_pixel(left_x + tile_dx * 2 + 1, bg, -1, ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
+
                     }
                 }
             } 
@@ -368,6 +367,7 @@ final class PPU(EngineType E) {
         // relevant addresses for the background's tilemap and screen
         int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x10000;
         int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x10000;
+        if (E == EngineType.A && background_id == 2) log_ppu("tile base address: %d %x %x %x", tile_base_address, tile_base_address, background.character_base_block, character_base);
 
         // the coordinates at the topleft of the background that we are drawing
         int topleft_x      = background.x_offset;
@@ -689,6 +689,7 @@ public:
     void write_WINxH(int target_byte, Byte data, int x) {
         if (target_byte == 0) {
             canvas.windows[x].right = data;
+            if (data == 0) canvas.windows[x].right = 0xFF;
         } else { // target_byte == 1
             canvas.windows[x].left = data;
         }

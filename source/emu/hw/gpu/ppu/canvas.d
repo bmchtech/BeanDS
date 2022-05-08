@@ -158,6 +158,9 @@ final class Canvas(EngineType E) {
     public pragma(inline, true) void draw_bg_pixel(uint x, int bg, int slot, int index, int priority, bool transparent) {
         if (x >= 256) return;
 
+        if (bg == 2 && E == EngineType.A) {
+            log_ppu("THE FUCK????? %x %x %x %x %x %x", slot, index, transparent, priority, x, transparent);
+        }
         bg_scanline[bg][x].transparent = transparent;
         bg_scanline[bg][x].index       = PaletteIndex(slot, index, false);
         bg_scanline[bg][x].priority    = priority;
