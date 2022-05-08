@@ -689,7 +689,7 @@ public:
     void write_WINxH(int target_byte, Byte data, int x) {
         if (target_byte == 0) {
             canvas.windows[x].right = data;
-            if (data == 0) canvas.windows[x].right = 0xFF;
+            if (data == 0) canvas.windows[x].right = 0x100;
         } else { // target_byte == 1
             canvas.windows[x].left = data;
         }
