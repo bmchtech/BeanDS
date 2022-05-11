@@ -114,6 +114,7 @@ final class GPU3DCommandManager {
                 }
 
                 if (command_parameters_remaining == 0) {
+                       log_gpu3d("Received well-formed command: %s", command_buffer[current_command_index].name);
                     current_command_index++;
 
                     if (current_command_index == command_buffer_length) {
