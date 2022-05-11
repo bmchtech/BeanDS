@@ -19,12 +19,12 @@ final class GPU3D {
     bool polygon_vertex_ram_overflow;
     bool rear_plane_mode;
 
-    GPU3DCommandManager command_manager;
+    GeometryEngine geometry_engine;
 
     this() {
         gpu3d = this;
 
-        command_manager = new GPU3DCommandManager();
+        geometry_engine = new GeometryEngine();
     }
 
     Byte read_DISP3DCNT(int target_byte) {
