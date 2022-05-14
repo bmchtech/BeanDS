@@ -79,6 +79,8 @@ final class GPUEngineA {
                 break;
                 
             case 1:
+                ppu.reset_canvas();
+                if (bg0_selection) gpu3d.rendering_engine.render(scanline);
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];

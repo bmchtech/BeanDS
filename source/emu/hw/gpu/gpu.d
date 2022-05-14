@@ -81,8 +81,9 @@ final class GPU {
 
     void on_vblank_start() {
         vblank = true;
-        // gpu_engine_a.ppu.vblank();
+        gpu_engine_a.ppu.vblank();
         gpu_engine_b.ppu.vblank();
+        gpu3d.vblank();
 
         if (vblank_irq_enabled9) interrupt9.raise_interrupt(Interrupt.LCD_VBLANK);
         if (vblank_irq_enabled7) interrupt7.raise_interrupt(Interrupt.LCD_VBLANK);

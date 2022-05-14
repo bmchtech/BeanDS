@@ -20,11 +20,47 @@ final class GPU3D {
     bool rear_plane_mode;
 
     GeometryEngine geometry_engine;
+    RenderingEngine rendering_engine;
+
+    int viewport_x1;
+    int viewport_y1;
+    int viewport_x2;
+    int viewport_y2;
+
+    // TODO: how big is this really?
+    Polygon[0x1000] polygon_ram_1;
+    Polygon[0x1000] polygon_ram_2;
+    Polygon* geometry_buffer;
+    Polygon* rendering_buffer;
 
     this() {
         gpu3d = this;
 
-        geometry_engine = new GeometryEngine();
+        geometry_engine = new GeometryEngine(this);
+        rendering_engine = new RenderingEngine(this);
+
+        geometry_buffer  = cast(Polygon*) &polygon_ram_1;
+        rendering_buffer = cast(Polygon*) &polygon_ram_2;
+    }
+
+    void vblank() {
+        rendering_engine.vblank();
+    }
+
+    Mat4x4 get_modelview_matrix() {
+        return geometry_engine.position_vector_stack.peek();
+    }
+
+    Mat4x4 get_projection_matrix() {
+        return geometry_engine.projection_stack.peek();
+    }
+
+    void swap_buffers(int num_polygons) {
+        auto temp = geometry_buffer;
+        geometry_buffer = rendering_buffer;
+        rendering_buffer = temp;
+
+        rendering_engine.num_polygons = num_polygons;
     }
 
     Byte read_DISP3DCNT(int target_byte) {

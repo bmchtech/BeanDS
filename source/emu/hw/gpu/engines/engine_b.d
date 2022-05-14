@@ -71,6 +71,7 @@ final class GPUEngineB {
                 break;
 
             case 1:
+                ppu.reset_canvas();
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];

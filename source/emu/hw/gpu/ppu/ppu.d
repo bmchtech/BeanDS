@@ -107,10 +107,12 @@ final class PPU(EngineType E) {
         }
     }
 
+    void reset_canvas() {
+        canvas.reset();
+    }
+
     void render(int scanline) {
         this.scanline = cast(ushort) scanline;
-
-        canvas.reset();
 
         // horizontal mosaic is a post processing effect done on the canvas
         // whereas vertical mosaic is a pre processing effect done on the

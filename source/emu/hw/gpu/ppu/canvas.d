@@ -33,8 +33,20 @@ struct PaletteIndex {
     int slot;
     int index;
     bool is_obj;
+    bool is_3d;
+    int r;
+    int g;
+    int b;
 
     Pixel resolve(EngineType E)(int pram_offset) {
+        if (is_3d) {
+            Pixel p;
+            p.r = r;
+            p.g = g;
+            p.b = b;
+            return p;
+        }
+
         if (slot == -1) return Pixel(pram.read!Half(Word(pram_offset + index * 2)));
         else {
             if (is_obj) return Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
@@ -155,11 +167,20 @@ final class Canvas(EngineType E) {
         obj_window[x] = true;
     }
 
+    static if (E == EngineType.A) {
+        public pragma(inline, true) void draw_3d_pixel(uint x, int r, int g, int b) {
+            if (x >= 256) return;
+            bg_scanline[0][x].transparent = false;
+            bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, r, g, b);
+            bg_scanline[0][x].priority    = 0; // TODO: this whole canvas system needs a refactor.
+        }
+    }
+
     public pragma(inline, true) void draw_bg_pixel(uint x, int bg, int slot, int index, int priority, bool transparent) {
         if (x >= 256) return;
 
         bg_scanline[bg][x].transparent = transparent;
-        bg_scanline[bg][x].index       = PaletteIndex(slot, index, false);
+        bg_scanline[bg][x].index       = PaletteIndex(slot, index, false, false, 0, 0, 0);
         bg_scanline[bg][x].priority    = priority;
     }
 
@@ -175,7 +196,7 @@ final class Canvas(EngineType E) {
         if (obj_scanline[x].transparent ||
             priority < obj_scanline[x].priority) {
             obj_scanline[x].transparent = transparent;
-            obj_scanline[x].index       = PaletteIndex(slot, index, true);
+            obj_scanline[x].index       = PaletteIndex(slot, index, true, false, 0, 0, 0);
             obj_scanline[x].priority    = priority;
             obj_semitransparent[x]      = semi_transparent;
         }
@@ -261,7 +282,7 @@ final class Canvas(EngineType E) {
 
             // now that we know which window type we're in, let's calculate the color index for this pixel
 
-            PaletteIndex[2] index = [PaletteIndex(-1, 0, false), PaletteIndex(-1, 0, false)];
+            PaletteIndex[2] index = [PaletteIndex(-1, 0, false, false, 0, 0, 0), PaletteIndex(-1, 0, false, false, 0, 0, 0)];
             int priority = 4;
 
             int blendable_pixels = 0;
