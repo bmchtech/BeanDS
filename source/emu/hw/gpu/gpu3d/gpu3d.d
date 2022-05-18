@@ -47,14 +47,6 @@ final class GPU3D {
         rendering_engine.vblank();
     }
 
-    Mat4x4 get_modelview_matrix() {
-        return geometry_engine.position_vector_stack.peek();
-    }
-
-    Mat4x4 get_projection_matrix() {
-        return geometry_engine.projection_stack.peek();
-    }
-
     void swap_buffers(int num_polygons) {
         auto temp = geometry_buffer;
         geometry_buffer = rendering_buffer;

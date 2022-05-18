@@ -149,6 +149,22 @@ final class VRAM {
         return result;
     }
 
+    T read_texture(T)(Word address) {
+        T result = 0;
+
+        int slot = address[17..18];
+        for (int i = 0; i < 10; i++) {
+            VRAMBlock block = blocks[i];
+
+            if (block.slot_mapped && block.slot == slot) {
+                log_gpu3d("texture sussy: %x", address[0..16]);
+                result |= block.data.read!T(address[0..16]);
+            }    
+        }
+
+        return result;
+    }
+
     T read9(T)(Word address) {
         T result = 0;
         bool performed_read = false;

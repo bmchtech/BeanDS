@@ -323,7 +323,17 @@ template execute_arm(T : ArmCPU) {
 
                 // i love arm
                 // "better than no comments i suppose" - Mesi
-                cpu.ldrd(rd, address);
+
+                // ADDENDUM: i wrote this comment 2-3 months ago when i was
+                // first working on v5TE. i have since learned that not only
+                // did i completely forget to implement STRD, but LDRD/STRD
+                // are differentiated using the HALF bit! if the half bit is
+                // 0, it's LDRD. if it's 1, it's STRD. animals.
+                static if (half) {
+                    cpu.strd(rd, address);
+                } else {
+                    cpu.ldrd(rd, address);
+                }
             } else {
                 cpu.strh(rd, address);
             }

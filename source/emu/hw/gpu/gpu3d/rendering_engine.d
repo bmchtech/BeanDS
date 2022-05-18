@@ -3,21 +3,22 @@ module emu.hw.gpu.gpu3d.rendering_engine;
 import emu;
 import util;
 
+struct AnnotatedPolygon {
+    Polygon orig;
+    float high_y;
+    float mid_y;
+    float low_y;
+    float high_y_x;
+    float mid_y_x;
+    float low_y_x;
+    float high_mid_slope;
+    float mid_low_slope;
+    float high_low_slope;
+    bool mid_on_left;
+    Vertex[3] viewport_coords;
+}
+
 final class RenderingEngine {
-    struct AnnotatedPolygon {
-        Polygon orig;
-        float high_y;
-        float mid_y;
-        float low_y;
-        float high_y_x;
-        float mid_y_x;
-        float low_y_x;
-        float high_mid_slope;
-        float mid_low_slope;
-        float high_low_slope;
-        bool mid_on_left;
-        Vertex[3] viewport_coords;
-    }
 
     GPU3D parent;
 
@@ -46,9 +47,13 @@ final class RenderingEngine {
         return ((y + w) * (parent.viewport_y2 - parent.viewport_y1) / (cast(float) (2 * w)) + cast(float) parent.viewport_y1);
     }
 
-    void annotate_polygons() {
-        import std.algorithm.sorting;
+    float get_slope(float dy, float dx) {
+        if (dx == 0) return 256.0f;
+        if (dy == 0) return 0.0001f;
+        return dy / dx;
+    }
 
+    void annotate_polygons() {
         for (int i = 0; i < num_polygons; i++) {
             auto p = parent.rendering_buffer[i];
             Vertex[3] sorted_vertices;
@@ -77,20 +82,30 @@ final class RenderingEngine {
                     }
                 }
             }
-        
             
+            auto high_y  = sorted_vertices[2].pos[1];
+            auto mid_y   = sorted_vertices[1].pos[1];
+            auto low_y   = sorted_vertices[0].pos[1];
+            auto high_yx = sorted_vertices[2].pos[0];
+            auto mid_yx  = sorted_vertices[1].pos[0];
+            auto low_yx  = sorted_vertices[0].pos[0];
+
+            auto high_mid_slope = get_slope(high_y - mid_y, high_yx - mid_yx);
+            auto mid_low_slope  = get_slope(mid_y  - low_y, mid_yx  - low_yx);
+            auto high_low_slope = get_slope(high_y - low_y, high_yx - low_yx);
+
             annotated_polygons[i] = AnnotatedPolygon(
                 p,
-                sorted_vertices[2].pos[1],
-                sorted_vertices[1].pos[1],
-                sorted_vertices[0].pos[1],
-                sorted_vertices[2].pos[0],
-                sorted_vertices[1].pos[0],
-                sorted_vertices[0].pos[0],
-                (sorted_vertices[2].pos[1] - sorted_vertices[1].pos[1]) / (sorted_vertices[2].pos[0] - sorted_vertices[1].pos[0]),
-                (sorted_vertices[1].pos[1] - sorted_vertices[0].pos[1]) / (sorted_vertices[1].pos[0] - sorted_vertices[0].pos[0]),
-                (sorted_vertices[2].pos[1] - sorted_vertices[0].pos[1]) / (sorted_vertices[2].pos[0] - sorted_vertices[0].pos[0]),
-                sorted_vertices[1].pos[0] < sorted_vertices[0].pos[0] && sorted_vertices[1].pos[0] < sorted_vertices[2].pos[0],
+                high_y,
+                mid_y,
+                low_y,
+                high_yx,
+                mid_yx,
+                low_yx,
+                high_mid_slope,
+                mid_low_slope,
+                high_low_slope,
+                (mid_y - low_y) * get_slope(high_yx - low_yx, high_y - low_y) + low_yx > mid_yx,
                 sorted_vertices
             );
         }
@@ -137,6 +152,11 @@ final class RenderingEngine {
                     }
                 }
 
+                if (start_x < 0)   start_x = 0;
+                if (start_x > 256) start_x = 256;
+                if (end_x < 0)     end_x = 0;
+                if (end_x > 256)   end_x = 256;
+
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
                     auto interpolation_weights = get_interpolation_weights(
                         p.viewport_coords[0].pos[0],
@@ -149,26 +169,52 @@ final class RenderingEngine {
                         effective_scanline
                     );
 
-                    auto r = interpolate(
-                        interpolation_weights,
-                        p.viewport_coords[0].r,
-                        p.viewport_coords[1].r,
-                        p.viewport_coords[2].r,
-                    );
+                    int r, g, b, a;
+                    
+                    if (p.orig.uses_textures) {
+                        auto s = interpolate(
+                            interpolation_weights,
+                            p.orig.vertices[0].texcoord[0],
+                            p.orig.vertices[1].texcoord[0],
+                            p.orig.vertices[2].texcoord[0],
+                        );
 
-                    auto g = interpolate(
-                        interpolation_weights,
-                        p.viewport_coords[0].g,
-                        p.viewport_coords[1].g,
-                        p.viewport_coords[2].g,
-                    );
+                        auto t = interpolate(
+                            interpolation_weights,
+                            p.orig.vertices[0].texcoord[1],
+                            p.orig.vertices[1].texcoord[1],
+                            p.orig.vertices[2].texcoord[1],
+                        );
 
-                    auto b = interpolate(
-                        interpolation_weights,
-                        p.viewport_coords[0].b,
-                        p.viewport_coords[1].b,
-                        p.viewport_coords[2].b,
-                    );
+                        auto color = get_color_from_texture(cast(int) s, cast(int) t, p);
+                        r = cast(int) color[0];
+                        g = cast(int) color[1];
+                        b = cast(int) color[2];
+                        a = cast(int) color[3];
+                    } else {
+                        r = cast(int) interpolate(
+                            interpolation_weights,
+                            p.viewport_coords[0].r,
+                            p.viewport_coords[1].r,
+                            p.viewport_coords[2].r,
+                        );
+
+                        g = cast(int) interpolate(
+                            interpolation_weights,
+                            p.viewport_coords[0].g,
+                            p.viewport_coords[1].g,
+                            p.viewport_coords[2].g,
+                        );
+
+                        b = cast(int) interpolate(
+                            interpolation_weights,
+                            p.viewport_coords[0].b,
+                            p.viewport_coords[1].b,
+                            p.viewport_coords[2].b,
+                        );
+
+                        a = 31;
+                    }
 
                     gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
                 }
@@ -181,7 +227,7 @@ final class RenderingEngine {
             //     int screen_y = cast(int) ((sus[1] + sus[3]) * (parent.viewport_y2 - parent.viewport_y1) / (cast(float) (2 * sus[3])) + cast(float) parent.viewport_y1);
             //     log_gpu3d("stinky render: %f %f %f %f %f %f %f %f -> %f %f", sus[0], sus[1], sus[2], sus[3], parent.viewport_x2, parent.viewport_x1, parent.viewport_y2, parent.viewport_y1, screen_x, screen_y);
             //     if (cast(int) (192 - screen_y) == scanline) {
-            //         gpu_engine_a.ppu.canvas.draw_3d_pixel(cast(int) screen_x, 31, 31, 31);
+            //         gpu_engine_a.ppu.canvas.draw_3d_pixel(cast(int) screen_x, 0, 0, 0);
             //     }
             // }
         }

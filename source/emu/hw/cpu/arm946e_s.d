@@ -65,7 +65,6 @@ final class ARM946E_S : ArmCPU {
         if (regs[pc] == 0) error_arm9("arm9 branched to 0");
         // if (regs[pc] > 0x0200_0c00 && regs[pc] < 0x200_0dce) num_log = 100000;
         // if ((regs[pc] & ~0xF) == 0x02095600) num_log = 10000000;
-        if (num_log == 1) assert(0);
 
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access

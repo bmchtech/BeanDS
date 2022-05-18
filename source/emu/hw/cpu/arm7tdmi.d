@@ -93,7 +93,6 @@ final class ARM7TDMI : ArmCPU {
 
     pragma(inline, true) void execute(T)(T opcode) {
         static if (is(T == Word)) {
-            if (((regs[pc] - 16) & 0xFFFFFF00) == 0x037F8400) num_log = 5;
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {
                 auto entry = opcode[4..7] | (opcode[20..27] << 4);

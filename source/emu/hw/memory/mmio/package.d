@@ -92,7 +92,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
 
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.readable && mr.all_at_once) {
-                if (address == mr.address) {
+                if (address >= mr.address && address < mr.address + mr.size) {
                     static if (mr.implemented) {
                         mixin("return %s.read_%s!T(address %% %d);".format(mr.component, mr.name, mr.size));
                     } else {
@@ -162,7 +162,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {
-                if (address == mr.address) {
+                if (address >= mr.address && address < mr.address + mr.size) {
                     static if (mr.implemented) {
                         mixin("%s.write_%s!T(value, address %% %d); return;".format(mr.component, mr.name, mr.size));
                     } else {

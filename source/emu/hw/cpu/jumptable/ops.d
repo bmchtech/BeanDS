@@ -299,6 +299,14 @@ void strb(T : ArmCPU)(T cpu, Reg rd, Word address) {
     cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
 }
 
+void strd(T : ArmCPU)(T cpu, Reg rd, Word address) {
+    if (rd & 1) error_arm9("STRD with an odd numbered RD was attempted.");
+
+    cpu.str(rd,     address);
+    cpu.str(rd + 1, address + 4);
+}
+
+
 void swi(T : ArmCPU)(T cpu) {
     cpu.raise_exception!(CpuException.SoftwareInterrupt);
 }

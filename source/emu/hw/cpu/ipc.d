@@ -137,7 +137,7 @@ final class IPC {
         final switch (target_byte) {
             case 0:
                 fifo_empty_irq_enable = data[2];
-                if (data[3]) { remote.fifo.clear(); if (this == ipc7) log_arm7("IPC7 fifo cleared"); else log_arm9("IPC9 fifo cleared"); }
+                // if (data[3]) { remote.fifo.clear(); if (this == ipc7) log_arm7("IPC7 fifo cleared"); else log_arm9("IPC9 fifo cleared"); }
                 if (remote.fifo.empty && fifo_empty_irq_enable)
                     request_send_fifo_interrupt();
                 return;
