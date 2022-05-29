@@ -203,20 +203,19 @@ final class GeometryEngine {
                 texcoord_prime
             )
         )) {
-            auto vertices = assembler.get_vertices();
-            parent.geometry_buffer[polygon_index] = Polygon(
-                vertices,
-                texture_mapped,
-                texture_vram_offset,
-                texture_repeat_s_direction,
-                texture_repeat_t_direction,
-                texture_flip_s_direction,
-                texture_flip_t_direction,
-                texture_s_size,
-                texture_t_size,
-                texture_format,
-                texture_color_0_transparent
-            );
+            auto polygon = assembler.get_polygon();
+            polygon.uses_textures               = texture_mapped;
+            polygon.texture_vram_offset         = texture_vram_offset;
+            polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
+            polygon.texture_repeat_t_direction  = texture_repeat_t_direction;
+            polygon.texture_flip_s_direction    = texture_flip_s_direction;
+            polygon.texture_flip_t_direction    = texture_flip_t_direction;
+            polygon.texture_s_size              = texture_s_size;
+            polygon.texture_t_size              = texture_t_size;
+            polygon.texture_format              = texture_format;
+            polygon.texture_color_0_transparent = texture_color_0_transparent;
+
+            parent.geometry_buffer[polygon_index] = polygon;
             polygon_index++;
         }
     }

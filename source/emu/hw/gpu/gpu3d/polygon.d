@@ -12,7 +12,8 @@ struct Vertex {
 }
 
 struct Polygon {
-    Vertex[4] vertices;
+    Vertex[10] vertices; // max-gon is ten-gon
+    int num_vertices;
 
     bool uses_textures;
 
@@ -29,7 +30,7 @@ struct Polygon {
 
 interface PolygonAssembler {
     bool submit_vertex(Vertex vertex);
-    Vertex[4] get_vertices();
+    Polygon get_polygon();
     void reset();
 }
 
@@ -49,8 +50,11 @@ final class TriangleAssembler : PolygonAssembler {
         return false;
     }
 
-    Vertex[4] get_vertices() {
-        return vertices;
+    Polygon get_polygon() {
+        Polygon p;
+        p.vertices[0..3] = vertices[0..3];
+        p.num_vertices = 3;
+        return p;
     }
 
     void reset() {
@@ -63,21 +67,23 @@ final class QuadAssembler : PolygonAssembler {
     Vertex[4] vertices;
 
     override bool submit_vertex(Vertex vertex) {
-        bool new_triangle_created = index >= 2;
+        bool new_triangle_created = index >= 3;
 
-        if (index < 3) {
+        if (index < 4) {
             vertices[index] = vertex;
             index++;
         } else {
-            vertices[1] = vertex;
             index = 0;
         }
 
         return new_triangle_created;
     }
 
-    Vertex[4] get_vertices() {
-        return vertices;
+    Polygon get_polygon() {
+        Polygon p;
+        p.vertices[0..4] = vertices[0..4];
+        p.num_vertices = 4;
+        return p;
     }
 
     void reset() {
@@ -100,8 +106,11 @@ final class TriangleStripsAssembler : PolygonAssembler {
         return num_vertices >= 3;
     }
 
-    Vertex[4] get_vertices() {
-        return vertices;
+    Polygon get_polygon() {
+        Polygon p;
+        p.vertices[0..3] = vertices[0..3];
+        p.num_vertices = 3;
+        return p;
     }
 
     void reset() {
@@ -125,8 +134,11 @@ final class QuadStripsAssembler : PolygonAssembler {
         return num_vertices >= 3;
     }
 
-    Vertex[4] get_vertices() {
-        return vertices;
+    Polygon get_polygon() {
+        Polygon p;
+        p.vertices[0..4] = vertices[0..4];
+        p.num_vertices = 4;
+        return p;
     }
 
     void reset() {

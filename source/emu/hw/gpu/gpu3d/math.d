@@ -2,7 +2,10 @@ module emu.hw.gpu.gpu3d.math;
 
 import util;
 
+alias Vec2 = Vec!2;
+alias Vec3 = Vec!3;
 alias Vec4 = Vec!4;
+
 alias Mat4x4 = SquareMatrix!4;
 
 struct Vec(int N) {
