@@ -241,15 +241,8 @@ final class RenderingEngine {
                 );
 
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
-
                     auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], 1-factor_l);
                     auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], 1-factor_r);
-                    auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r << 4, p.orig.vertices[p.left_index].r << 4, factor_l);
-                    auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r << 4, p.orig.vertices[p.right_index].r << 4, factor_r);
-                    auto g_l = interpolate(p.orig.vertices[p.previous_left_index].g << 4, p.orig.vertices[p.left_index].g << 4, factor_l);
-                    auto g_r = interpolate(p.orig.vertices[p.previous_right_index].g << 4, p.orig.vertices[p.right_index].g << 4, factor_r);
-                    auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
-                    auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
 
                     auto factor_scanline = get_interpolation_factor(
                         cast(int) end_x - cast(int) start_x,
@@ -258,11 +251,37 @@ final class RenderingEngine {
                         w_r
                     );
 
-                    log_gpu3d("The result of interpolation: %f %f %d %f %f %f", end_x, start_x, x, w_l, w_r, factor_scanline);
+                    int r;
+                    int g;
+                    int b;
 
-                    auto r = cast(int) interpolate(r_l, r_r, 1-factor_scanline) >> 3;
-                    auto g = cast(int) interpolate(g_l, g_r, 1-factor_scanline) >> 3;
-                    auto b = cast(int) interpolate(b_l, b_r, 1-factor_scanline) >> 3;
+                    if (p.orig.uses_textures) {
+                        auto texcoord_s_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[0], p.orig.vertices[p.left_index].texcoord[0], factor_l);
+                        auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0], p.orig.vertices[p.right_index].texcoord[0], factor_l);
+                        auto texcoord_t_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[1], p.orig.vertices[p.left_index].texcoord[1], factor_l);
+                        auto texcoord_t_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[1], p.orig.vertices[p.right_index].texcoord[1], factor_l);
+
+                        auto texcoord_s = interpolate(texcoord_s_l, texcoord_s_r, 1 - factor_scanline);
+                        auto texcoord_t = interpolate(texcoord_t_l, texcoord_t_r, 1 - factor_scanline);
+                        auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p);
+                        r = cast(int) color[0] << 1;
+                        g = cast(int) color[1] << 1;
+                        b = cast(int) color[2] << 1;
+                    } else {
+                        auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r << 4, p.orig.vertices[p.left_index].r << 4, factor_l);
+                        auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r << 4, p.orig.vertices[p.right_index].r << 4, factor_r);
+                        auto g_l = interpolate(p.orig.vertices[p.previous_left_index].g << 4, p.orig.vertices[p.left_index].g << 4, factor_l);
+                        auto g_r = interpolate(p.orig.vertices[p.previous_right_index].g << 4, p.orig.vertices[p.right_index].g << 4, factor_r);
+                        auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
+                        auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
+
+                        log_gpu3d("The result of interpolation: %f %f %d %f %f %f", end_x, start_x, x, w_l, w_r, factor_scanline);
+
+                        r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
+                        g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
+                        b = cast(int) interpolate(b_l, b_r, 1 - factor_scanline) >> 3;
+                    }
+                
                     gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
                 }
             }
