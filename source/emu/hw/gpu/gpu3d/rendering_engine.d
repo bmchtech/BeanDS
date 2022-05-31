@@ -188,7 +188,7 @@ final class RenderingEngine {
     // not a perfect implementation of the above yet but... 
     // TODO???: maybe make interpolation more accurate?
     float get_interpolation_factor(float xmax, float x, float w0, float w1) {
-        return (x * w0) / ((xmax - x) * w1 + x * w0);
+        return ((xmax - x) * w1) / ((xmax - x) * w1 + x * w0);
     }
 
     float interpolate(float a0, float a1, float factor) {
@@ -227,26 +227,23 @@ final class RenderingEngine {
                 if (end_x > 256)   end_x = 256;
                 
                 auto factor_l = get_interpolation_factor(
-                    p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
-                    effective_scanline - p.viewport_coords[p.left_index][1],
+                    cast(int) p.viewport_coords[p.previous_left_index][1] - cast(int) p.viewport_coords[p.left_index][1],
+                    cast(int) effective_scanline - p.viewport_coords[p.left_index][1],
                     p.orig.vertices[p.previous_left_index].pos[3],
                     p.orig.vertices[p.left_index].pos[3]
                 );
 
                 auto factor_r = get_interpolation_factor(
-                    p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
-                    effective_scanline - p.viewport_coords[p.right_index][1],
+                    cast(int) p.viewport_coords[p.previous_right_index][1] - cast(int) p.viewport_coords[p.right_index][1],
+                    effective_scanline - cast(int) p.viewport_coords[p.right_index][1],
                     p.orig.vertices[p.previous_right_index].pos[3],
                     p.orig.vertices[p.right_index].pos[3]
                 );
 
-                factor_l = 1 - factor_l;
-                factor_r = 1 - factor_r;
-
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
 
-                    auto w_l = interpolate(p.orig.vertices[p.left_index].pos[3], p.orig.vertices[p.previous_left_index].pos[3], factor_l);
-                    auto w_r = interpolate(p.orig.vertices[p.right_index].pos[3], p.orig.vertices[p.previous_right_index].pos[3], factor_r);
+                    auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], 1-factor_l);
+                    auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], 1-factor_r);
                     auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r, p.orig.vertices[p.left_index].r, factor_l);
                     auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r, p.orig.vertices[p.right_index].r, factor_r);
                     auto g_l = interpolate(p.orig.vertices[p.previous_left_index].g, p.orig.vertices[p.left_index].g, factor_l);
@@ -255,15 +252,17 @@ final class RenderingEngine {
                     auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b, p.orig.vertices[p.right_index].b, factor_r);
 
                     auto factor_scanline = get_interpolation_factor(
-                        end_x - start_x,
-                        x - start_x,
+                        cast(int) end_x - cast(int) start_x,
+                        x - cast(int) start_x,
                         w_l,
                         w_r
                     );
 
-                    auto r = interpolate(r_l, r_r, factor_scanline);
-                    auto g = interpolate(g_l, g_r, factor_scanline);
-                    auto b = interpolate(b_l, b_r, factor_scanline);
+                    log_gpu3d("The result of interpolation: %f %f %d %f %f %f", end_x, start_x, x, w_l, w_r, factor_scanline);
+
+                    auto r = interpolate(r_l, r_r, 1-factor_scanline);
+                    auto g = interpolate(g_l, g_r, 1-factor_scanline);
+                    auto b = interpolate(b_l, b_r, 1-factor_scanline);
                     gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
                 }
             }
