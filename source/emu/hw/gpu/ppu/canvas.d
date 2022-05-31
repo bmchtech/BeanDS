@@ -39,19 +39,25 @@ struct PaletteIndex {
     int b;
 
     Pixel resolve(EngineType E)(int pram_offset) {
+        Pixel p;
+        
         if (is_3d) {
-            Pixel p;
             p.r = r;
             p.g = g;
             p.b = b;
-            return p;
-        }
+        } else {
+            if (slot == -1) p = Pixel(pram.read!Half(Word(pram_offset + index * 2)));
+            else {
+                if (is_obj) p = Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
+                else        p = Pixel(vram.read_bg_slot !(E, Half)(slot, Word(index * 2)));
+            }
 
-        if (slot == -1) return Pixel(pram.read!Half(Word(pram_offset + index * 2)));
-        else {
-            if (is_obj) return Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
-            else        return Pixel(vram.read_bg_slot !(E, Half)(slot, Word(index * 2)));
+            p.r <<= 1;
+            p.g <<= 1;
+            p.b <<= 1;
         }
+        
+        return p;
     }
 }
 
