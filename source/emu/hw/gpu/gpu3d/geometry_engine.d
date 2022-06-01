@@ -110,12 +110,12 @@ final class GeometryEngine {
     int current_color_g;
     int current_color_b;
 
+    Word palette_base_address;
+
     TriangleAssembler       triangle_assembler;
     QuadAssembler           quad_assembler;
     TriangleStripsAssembler triangle_strips_assembler;
     QuadStripsAssembler     quad_strips_assembler;
-
-    Word palette_base_address;
 
     Vec4 previous_vertex;
     bool receiving_vtxs;
@@ -214,6 +214,7 @@ final class GeometryEngine {
             polygon.texture_t_size              = texture_t_size;
             polygon.texture_format              = texture_format;
             polygon.texture_color_0_transparent = texture_color_0_transparent;
+            polygon.palette_base_address        = palette_base_address;
 
             parent.geometry_buffer[polygon_index] = polygon;
             polygon_index++;

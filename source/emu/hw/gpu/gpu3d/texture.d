@@ -14,7 +14,7 @@ enum TextureFormat {
     DIRECT_TEXTURE       = 7
 }
 
-float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p) {
+float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_base_address) {
     auto texture_s_size = (8 << p.orig.texture_s_size);
     auto texture_t_size = (8 << p.orig.texture_t_size);
 
@@ -31,9 +31,20 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p) {
 
     // TODO: make this a final switch when i've actually implemented all the texture formats
     switch (p.orig.texture_format) {
+        case TextureFormat.COLOR_PALETTE_256:
+            Byte texel = vram.read_texture!Byte(Word((p.orig.texture_vram_offset << 3) + texel_index));
+            Half color = vram.read_texture!Half(palette_base_address * 16 + texel * 2);
+            
+            return [
+                color[0..4],
+                color[5..9],
+                color[10..14],
+                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+            ];
+
         case TextureFormat.DIRECT_TEXTURE:
             Half texel = vram.read_texture!Half(Word((p.orig.texture_vram_offset << 3) + 2 * texel_index));
-    
+
             return [
                 texel[0..4],
                 texel[5..9],

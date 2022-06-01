@@ -57,9 +57,15 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.format.write : formattedWrite;
     import std.stdio : writef, writefln;
 
-    version (quiet) {
+    version (silent) {
         return;
-    } else {
+    } else
+
+    version (quiet) {
+        if (!fatal) return;
+    } else
+
+    {
         if (fatal) {
             writefln("===== ARM7 TRACE =====");
             arm7.cpu_trace.print_trace();

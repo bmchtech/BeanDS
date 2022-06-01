@@ -26,6 +26,7 @@ struct Polygon {
     int texture_t_size;
     TextureFormat texture_format;
     bool texture_color_0_transparent;
+    Word palette_base_address;
 }
 
 interface PolygonAssembler {

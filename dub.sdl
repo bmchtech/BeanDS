@@ -16,6 +16,12 @@ configuration "release" {
 	dflags "-O3"
 	versions "release"
 }
+
+configuration "silent" {
+	targetType "executable"
+	versions "quiet" "silent"
+}
+
 configuration "quiet" {
 	targetType "executable"
 	versions "quiet"

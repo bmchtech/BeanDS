@@ -157,7 +157,6 @@ final class VRAM {
             VRAMBlock block = blocks[i];
 
             if (block.slot_mapped && block.slot == slot) {
-                log_gpu3d("texture sussy: %x", address[0..16]);
                 result |= block.data.read!T(address[0..16]);
             }    
         }

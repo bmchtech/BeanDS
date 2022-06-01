@@ -219,7 +219,7 @@ final class RenderingEngine {
                     ) + cast(int) right_xy[0];
 
                 import std.math;
-                if (std.math.isNaN(start_x) || std.math.isNaN(end_x)) error_gpu3d("bad.");
+                if (std.math.isNaN(start_x) || std.math.isNaN(end_x)) { error_gpu3d("bad."); continue; }
 
                 if (start_x < 0)   start_x = 0;
                 if (start_x > 256) start_x = 256;
@@ -240,6 +240,8 @@ final class RenderingEngine {
                     p.orig.vertices[p.right_index].pos[3]
                 );
 
+                log_gpu3d("sex: %f %f", factor_l, factor_r);
+
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
                     auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], 1-factor_l);
                     auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], 1-factor_r);
@@ -254,19 +256,21 @@ final class RenderingEngine {
                     int r;
                     int g;
                     int b;
+                    int a;
 
                     if (p.orig.uses_textures) {
                         auto texcoord_s_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[0], p.orig.vertices[p.left_index].texcoord[0], factor_l);
-                        auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0], p.orig.vertices[p.right_index].texcoord[0], factor_l);
+                        auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0], p.orig.vertices[p.right_index].texcoord[0], factor_r);
                         auto texcoord_t_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[1], p.orig.vertices[p.left_index].texcoord[1], factor_l);
-                        auto texcoord_t_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[1], p.orig.vertices[p.right_index].texcoord[1], factor_l);
+                        auto texcoord_t_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[1], p.orig.vertices[p.right_index].texcoord[1], factor_r);
 
                         auto texcoord_s = interpolate(texcoord_s_l, texcoord_s_r, 1 - factor_scanline);
                         auto texcoord_t = interpolate(texcoord_t_l, texcoord_t_r, 1 - factor_scanline);
-                        auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p);
+                        auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p, p.orig.palette_base_address);
                         r = cast(int) color[0] << 1;
                         g = cast(int) color[1] << 1;
                         b = cast(int) color[2] << 1;
+                        a = cast(int) color[3];
                     } else {
                         auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r << 4, p.orig.vertices[p.left_index].r << 4, factor_l);
                         auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r << 4, p.orig.vertices[p.right_index].r << 4, factor_r);
@@ -280,9 +284,10 @@ final class RenderingEngine {
                         r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
                         g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
                         b = cast(int) interpolate(b_l, b_r, 1 - factor_scanline) >> 3;
+                        a = 31;
                     }
                 
-                    gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
+                    if (a != 0) gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
                 }
             }
 
