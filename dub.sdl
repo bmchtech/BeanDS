@@ -20,6 +20,7 @@ configuration "release" {
 configuration "silent" {
 	targetType "executable"
 	versions "quiet" "silent"
+	compiler "ldc2"
 }
 
 configuration "quiet" {

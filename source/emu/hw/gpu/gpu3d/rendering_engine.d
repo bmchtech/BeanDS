@@ -198,6 +198,8 @@ final class RenderingEngine {
     // ya this is NOT correct at all and WILL break games (e.g. mario kart).
     // TODO: make the timings of the rendering engine actually decent
     void render(int scanline) {
+        parent.start_rendering_scanline();
+        
         auto effective_scanline = 192 - scanline;
 
         for (int i = 0; i < num_polygons; i++) {
@@ -239,8 +241,6 @@ final class RenderingEngine {
                     p.orig.vertices[p.previous_right_index].pos[3],
                     p.orig.vertices[p.right_index].pos[3]
                 );
-
-                log_gpu3d("sex: %f %f", factor_l, factor_r);
 
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
                     auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], 1-factor_l);
@@ -287,7 +287,7 @@ final class RenderingEngine {
                         a = 31;
                     }
                 
-                    if (a != 0) gpu_engine_a.ppu.canvas.draw_3d_pixel(x, cast(int) r, cast(int) g, cast(int) b);
+                    if (a != 0) parent.plot(Pixel(cast(int) r, cast(int) g, cast(int) b), x);
                 }
             }
 
@@ -308,5 +308,7 @@ final class RenderingEngine {
 
             annotated_polygons[i] = p;
         }
+            
+        parent.stop_rendering_scanline();
     }
 }

@@ -33,6 +33,11 @@ final class GPU3D {
     Polygon* geometry_buffer;
     Polygon* rendering_buffer;
 
+    Pixel[256][48] scanline_cache;
+
+    int scanline_cache_head = 0;
+    int scanline_cache_tail = 0;
+
     this() {
         gpu3d = this;
 
@@ -44,7 +49,40 @@ final class GPU3D {
     }
 
     void vblank() {
-        rendering_engine.vblank();
+        scanline_cache_head = 0;
+        scanline_cache_tail = 0;
+    }
+
+    void render(int scanline) {
+        rendering_engine.render(scanline);
+    }
+
+    void plot(Pixel p, int x) {
+        scanline_cache[scanline_cache_head][x] = p;
+    }
+
+    void start_rendering_scanline() {
+        for (int x = 0; x < 256; x++) {
+            scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0);
+        }
+    }
+
+    void stop_rendering_scanline() {
+        log_gpu3d("    sussy submitting at: %d", scanline_cache_head);
+        scanline_cache_head++;
+        if (scanline_cache_head == 48) scanline_cache_head = 0;
+    }
+
+    void draw_scanline_to_canvas() {
+        log_gpu3d("diff: %d %d", scanline_cache_head, scanline_cache_tail);
+        int y = scanline_cache_head + 1;
+        if (y == 48) y = 0;
+        for (int x = 0; x < 256; x++) {
+            gpu_engine_a.ppu.canvas.draw_3d_pixel(x, scanline_cache[scanline_cache_tail][x]);
+        }
+
+        scanline_cache_tail++;
+        if (scanline_cache_tail == 48) scanline_cache_tail = 0;
     }
 
     void swap_buffers(int num_polygons) {
@@ -53,6 +91,7 @@ final class GPU3D {
         rendering_buffer = temp;
 
         rendering_engine.num_polygons = num_polygons;
+        rendering_engine.annotate_polygons();
     }
 
     Byte read_DISP3DCNT(int target_byte) {

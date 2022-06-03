@@ -25,6 +25,11 @@ final class GPUEngineB {
     int obj_during_hblank;
     bool forced_blank;
 
+    void vblank() {
+        ppu.vblank();
+        gpu3d.vblank();
+    }
+
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
@@ -134,5 +139,9 @@ final class GPUEngineB {
         }
 
         return result;  
+    }
+
+    void hblank(int scanline) {
+
     }
 }

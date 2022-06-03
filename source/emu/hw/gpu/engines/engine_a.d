@@ -27,6 +27,10 @@ final class GPUEngineA {
     bool forced_blank;
     bool bg0_enable;
 
+    void vblank() {
+        ppu.vblank();
+    }
+
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
@@ -79,12 +83,11 @@ final class GPUEngineA {
                 break;
                 
             case 1:
-                ppu.reset_canvas();
-                if (bg0_selection) gpu3d.rendering_engine.render(scanline);
                 ppu.render(scanline);
                 for (int x = 0; x < 256; x++) {
                     videobuffer[x][scanline] = ppu.scanline_buffer[x];
                 }
+                ppu.reset_canvas();
                 break;
                 
             case 2:
@@ -148,5 +151,20 @@ final class GPUEngineA {
         }
 
         return result;  
+    }
+
+    void hblank(int scanline) {
+        if (bg0_selection && bg0_enable) {
+            if (scanline < 191 || scanline == 262) {
+                gpu3d.draw_scanline_to_canvas();
+            }
+
+            // gpu3d rendering starts 48 scanlines in advance
+            if (scanline >= 214) {
+                gpu3d.render(scanline - 214);
+            } else if (scanline < 143) {
+                gpu3d.render(scanline + 48);
+            }
+        }
     }
 }
