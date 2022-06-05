@@ -68,7 +68,6 @@ final class GPU3D {
     }
 
     void stop_rendering_scanline() {
-        log_gpu3d("    sussy submitting at: %d", scanline_cache_head);
         scanline_cache_head++;
         if (scanline_cache_head == 48) scanline_cache_head = 0;
     }

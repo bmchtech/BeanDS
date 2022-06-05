@@ -168,7 +168,6 @@ final class RenderingEngine {
         }
     }
 
-
     float to_screen_coords_x(float x, float w) {
         return ((x + w) * (parent.viewport_x2 - parent.viewport_x1) / (cast(float) (2 * w)) + cast(float) parent.viewport_x1);
     }
@@ -188,7 +187,7 @@ final class RenderingEngine {
     // not a perfect implementation of the above yet but... 
     // TODO???: maybe make interpolation more accurate?
     float get_interpolation_factor(float xmax, float x, float w0, float w1) {
-        return ((xmax - x) * w1) / ((xmax - x) * w1 + x * w0);
+        return ((xmax - x) * 1) / ((xmax - x) * 1 + x * 1);
     }
 
     float interpolate(float a0, float a1, float factor) {
@@ -229,22 +228,22 @@ final class RenderingEngine {
                 if (end_x > 256)   end_x = 256;
                 
                 auto factor_l = get_interpolation_factor(
-                    cast(int) p.viewport_coords[p.previous_left_index][1] - cast(int) p.viewport_coords[p.left_index][1],
-                    cast(int) effective_scanline - p.viewport_coords[p.left_index][1],
+                    p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
+                    effective_scanline - p.viewport_coords[p.left_index][1],
                     p.orig.vertices[p.previous_left_index].pos[3],
                     p.orig.vertices[p.left_index].pos[3]
                 );
 
                 auto factor_r = get_interpolation_factor(
-                    cast(int) p.viewport_coords[p.previous_right_index][1] - cast(int) p.viewport_coords[p.right_index][1],
-                    effective_scanline - cast(int) p.viewport_coords[p.right_index][1],
+                    p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
+                    effective_scanline - p.viewport_coords[p.right_index][1],
                     p.orig.vertices[p.previous_right_index].pos[3],
                     p.orig.vertices[p.right_index].pos[3]
                 );
 
                 for (int x = cast(int) start_x; x < cast(int) end_x; x++) {
-                    auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], 1-factor_l);
-                    auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], 1-factor_r);
+                    auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], factor_l);
+                    auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], factor_r);
 
                     auto factor_scanline = get_interpolation_factor(
                         cast(int) end_x - cast(int) start_x,

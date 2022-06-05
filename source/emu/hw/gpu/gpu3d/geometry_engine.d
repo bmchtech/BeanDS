@@ -151,7 +151,7 @@ final class GeometryEngine {
         geometry_engine = this;
     }
 
-    void multiply_matrix(Mat4x4 matrix) {
+    void multiply_matrix(Mat4x4 matrix, bool dual_position_vector) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
                 projection_matrix = projection_matrix * matrix;
@@ -163,7 +163,10 @@ final class GeometryEngine {
 
             case MatrixMode.POSITION_VECTOR:
                 position_vector_matrix = position_vector_matrix * matrix;
-                modelview_matrix       = modelview_matrix * matrix;
+
+                if (dual_position_vector) {
+                    modelview_matrix = modelview_matrix * matrix;
+                }
                 break;
             
             case MatrixMode.TEXTURE:
@@ -401,7 +404,7 @@ final class GeometryEngine {
             [convert(args[1]), convert(args[5]), convert(args[9]),  convert(args[13])],
             [convert(args[2]), convert(args[6]), convert(args[10]), convert(args[14])],
             [convert(args[3]), convert(args[7]), convert(args[11]), convert(args[15])],
-        ]));
+        ]), true);
     }
 
     void handle_MTX_MULT_4x3(Word* args) {
@@ -412,7 +415,7 @@ final class GeometryEngine {
             [convert(args[1]), convert(args[4]),  convert(args[7]),  convert(args[10])],
             [convert(args[2]), convert(args[5]),  convert(args[8]),  convert(args[11])],
             [0.0f,             0.0f,              0.0f,              1.0f],
-        ]));
+        ]), true);
     }
 
     void handle_MTX_MULT_3x3(Word* args) {
@@ -423,7 +426,7 @@ final class GeometryEngine {
             [convert(args[1]), convert(args[4]),  convert(args[7]),  0.0f],
             [convert(args[2]), convert(args[5]),  convert(args[8]),  0.0f],
             [0.0f,             0.0f,              0.0f,              1.0f],
-        ]));
+        ]), true);
     }
 
     void handle_MTX_TRANS(Word* args) {
@@ -434,7 +437,18 @@ final class GeometryEngine {
             [0.0f, 1.0f, 0.0f, convert(args[1])],
             [0.0f, 0.0f, 1.0f, convert(args[2])],
             [0.0f, 0.0f, 0.0f, 1.0f],
-        ]));
+        ]), true);
+    }
+
+    void handle_MTX_SCALE(Word* args) {
+        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+
+        multiply_matrix(Mat4x4([
+            [convert(args[0]), 0.0f,             0.0f,             0.0f],
+            [0.0f,             convert(args[1]), 0.0f,             0.0f],
+            [0.0f,             0.0f,             convert(args[2]), 0.0f],
+            [0.0f,             0.0f,             0.0f,             1.0f],
+        ]), false);
     }
 
     void handle_BEGIN_VTXS(Word* args) {
@@ -567,6 +581,21 @@ final class GeometryEngine {
         ]);
     }
 
+    // void handle_VEC_TEST(Word* args) {
+    //     if (matrix_mode != MatrixMode.POSITION_VECTOR) {
+    //         error_gpu3d("Tried to use VEC_TEST while in a mode (%d) that isnt MatrixMode.POSITION_VECTOR (2)", matrix_mode);
+    //     }
+
+    //     Vec4 vec = [
+    //         sext_32(args[0][0 .. 9]),
+    //         sext_32(args[1][10..19]),
+    //         sext_32(args[2][20..29]),
+    //         0.0f
+    //     ];
+
+    //     set_result(mod)
+    // }
+
     void push_command(Word data) {
         final switch (state) {
             case State.RECEIVING_COMMAND:
@@ -677,7 +706,7 @@ static GPU3DCommand[256] generate_commands()() {
     commands[0x18] = GPU3DCommand("MTX_MULT_4x4",     0x18, 16, 35,  true);
     commands[0x19] = GPU3DCommand("MTX_MULT_4x3",     0x19, 12, 31,  true);
     commands[0x1A] = GPU3DCommand("MTX_MULT_3x3",     0x1A, 9,  28,  true);
-    commands[0x1B] = GPU3DCommand("MTX_SCALE",        0x1B, 3,  22,  false);
+    commands[0x1B] = GPU3DCommand("MTX_SCALE",        0x1B, 3,  22,  true);
     commands[0x1C] = GPU3DCommand("MTX_TRANS",        0x1C, 3,  22,  true);
     commands[0x20] = GPU3DCommand("COLOR",            0x20, 1,  1,   true);
     commands[0x21] = GPU3DCommand("NORMAL",           0x21, 1,  9,   true);

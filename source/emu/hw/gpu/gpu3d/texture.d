@@ -26,6 +26,12 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
         // we are outside of the texture region, return a transparent object
         return [0.0f, 0.0f, 0.0f, 0.0f];
     }
+    
+    // if ((wrapped_s & 16) ^ (wrapped_t & 16)) {
+    //     return [31, 0, 0, 31];
+    // } else {
+    //     return [31, 31, 31, 31];
+    // }
 
     int texel_index = cast(int) (wrapped_t * texture_s_size + wrapped_s);
 
