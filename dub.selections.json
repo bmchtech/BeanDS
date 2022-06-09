@@ -5,6 +5,7 @@
 		"commandr": "0.2.0",
 		"ddmp": "0.0.1-0.dev.3",
 		"dray": "4.0.0-r6",
+		"dunit": "1.0.16",
 		"fluent-asserts": "0.13.3",
 		"gperftools_d": "0.1.0",
 		"jar": "0.1.0",

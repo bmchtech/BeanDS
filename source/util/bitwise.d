@@ -24,7 +24,7 @@ pragma(inline, true) {
     }
 
     s32 sext_32(T)(T value, u32 size) {
-        auto negative = value[size - 1];
+        auto negative = value.bit(size - 1);
         s32 result = value;
 
         if (negative) result |= (((1 << (32 - size)) - 1) << size);

@@ -1,6 +1,7 @@
 module util;
 
 public {
+    import util.better_assert;
     import util.bitwise;
     import util.file;
     import util.likely;
