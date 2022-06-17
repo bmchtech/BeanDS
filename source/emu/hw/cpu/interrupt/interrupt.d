@@ -61,7 +61,7 @@ final class InterruptManager {
     }
 
     void write_IE(int target_byte, Byte data) {
-        if (this == interrupt9) log_interrupt("IRQ: %X %X", target_byte, data);
+        // if (this == interrupt9) log_interrupt("IRQ: %X %X", target_byte, data);
         enable.set_byte(target_byte, data);
     }
 

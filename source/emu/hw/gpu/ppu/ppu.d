@@ -369,7 +369,6 @@ final class PPU(EngineType E) {
         // relevant addresses for the background's tilemap and screen
         int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x10000;
         int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x10000;
-        if (E == EngineType.A && background_id == 2) log_ppu("tile base address: %d %x %x %x", tile_base_address, tile_base_address, background.character_base_block, character_base);
 
         // the coordinates at the topleft of the background that we are drawing
         int topleft_x      = background.x_offset;
