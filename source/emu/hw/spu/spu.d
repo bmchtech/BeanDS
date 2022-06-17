@@ -87,24 +87,23 @@ final class SPU {
     SoundChannel[16] sound_channels;
 
     Byte read_SOUNDxCNT(int target_byte, int x) {
-        Byte result = 0;
-        auto c = sound_channels[x];
+        Byte result;
         
         final switch (target_byte) {
              case 0:
-                result[0..6] = c.volume_mul;
+                result[0..6] = sound_channels[x].volume_mul;
                 break;
             case 1:
-                result[0..1] = c.volume_div;
+                result[0..1] = sound_channels[x].volume_div;
                 break;
             case 2:
-                result[0..6] = c.panning;
+                result[0..6] = sound_channels[x].panning;
                 break;
             case 3:
-                result[0..2] = c.wave_duty;
-                result[3..4] = c.repeat_mode;
-                result[5..6] = c.format;
-                result[7]    = c.enabled;
+                result[0..2] = sound_channels[x].wave_duty;
+                result[3..4] = sound_channels[x].repeat_mode;
+                result[5..6] = sound_channels[x].format;
+                result[7]    = sound_channels[x].enabled;
                 break;
         }
 
@@ -112,24 +111,36 @@ final class SPU {
     }
 
     void write_SOUNDxCNT(int target_byte, Byte value, int x) {
-        auto c = &sound_channels[x];
         final switch (target_byte) {
              case 0:
-                c.volume_mul  = value[0..6];
+                sound_channels[x].volume_mul  = value[0..6];
                 break;
             case 1:
-                c.volume_div  = value[0..1];
+                sound_channels[x].volume_div  = value[0..1];
                 break;
             case 2:
-                c.panning     = value[0..6];
+                sound_channels[x].panning     = value[0..6];
                 break;
             case 3:
-                c.wave_duty   = value[0..2];
-                c.repeat_mode = value[3..4];
-                c.format      = value[5..6];
-                c.enabled     = value[7];
+                sound_channels[x].wave_duty   = value[0..2];
+                sound_channels[x].repeat_mode = value[3..4];
+                sound_channels[x].format      = value[5..6];
+                sound_channels[x].enabled     = value[7];
 
-                if (c.enabled) { c.reset(); log_spu("CHANNEL ENABLED: %x", x); }
+                if (sound_channels[x].enabled) { 
+                    sound_channels[x].reset(); 
+                    log_spu("Channel Enabled: %x. CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
+                        x,
+                        ((cast(int) read_SOUNDxCNT(0, x) << 0) |
+                        (cast(int) read_SOUNDxCNT(1, x) << 8) |
+                        (cast(int) read_SOUNDxCNT(2, x) << 16) |
+                        (cast(int) read_SOUNDxCNT(3, x) << 24)),
+                        sound_channels[x].source_address,
+                        sound_channels[x].timer_value,
+                        sound_channels[x].loopstart,
+                        sound_channels[x].length,
+                    );
+                }
                 break;
         }
     }

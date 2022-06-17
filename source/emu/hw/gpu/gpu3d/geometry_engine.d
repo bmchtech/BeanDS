@@ -627,7 +627,7 @@ final class GeometryEngine {
                 }
 
                 while (command_parameters_remaining == 0) {
-                    log_gpu3d("Received well-formed command: %s", command_buffer[current_command_index].name);
+                    // log_gpu3d("Received well-formed command: %s", command_buffer[current_command_index].name);
                     this.handle_command(command_buffer[current_command_index].id, cast(Word*) command_parameters_buffer);
 
                     current_command_index++;
