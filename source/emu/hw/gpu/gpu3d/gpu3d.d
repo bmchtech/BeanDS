@@ -73,7 +73,6 @@ final class GPU3D {
     }
 
     void draw_scanline_to_canvas() {
-        log_gpu3d("diff: %d %d", scanline_cache_head, scanline_cache_tail);
         int y = scanline_cache_head + 1;
         if (y == 48) y = 0;
         for (int x = 0; x < 256; x++) {
