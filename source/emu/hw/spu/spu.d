@@ -25,6 +25,20 @@ final class SPU {
         CH3          = 2,
         CH1_PLUS_CH3 = 3
     }
+    
+    enum Format {
+        PCM8      = 0,
+        PCM16     = 1,
+        IMA_ADPCM = 2,
+        PSG_NOISE = 3
+    }
+
+    enum RepeatMode {
+        MANUAL   = 0,
+        LOOP_INF = 1,
+        ONESHOT  = 2,
+        UNKNOWN  = 3,
+    }
 
     private this() {
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
@@ -53,34 +67,53 @@ final class SPU {
 
         private {
             Word current_address;
-            Half current_sample;
+            Sample current_sample;
             int  extra_cycles;
-            int  cycles_since_last_dma;
+            int  cycles_since_last_sample_was_calculated;
         }
 
         void reset() {
             current_address = source_address;
-            current_sample  = 0;
-            cycles_since_last_dma = 0;
+            current_sample  = Sample(0, 0);
+            cycles_since_last_sample_was_calculated = 0;
         }
 
-        short sample() {
-            if (!enabled) return 0;
+        Sample get_sample() {
+            if (!enabled) return Sample(0, 0);
 
-            cycles_since_last_dma += spu.cycles_per_sample;
+            cycles_since_last_sample_was_calculated += spu.cycles_per_sample;
 
-            auto cycles_till_dma_increment = (0x10000 - timer_value) * 2;
+            auto cycles_till_calculate_next_sample = (0x10000 - timer_value) * 2;
 
-            if (cycles_since_last_dma > cycles_till_dma_increment) {
-                current_address += (cycles_since_last_dma / cycles_till_dma_increment) * 2;
-                
-                if (repeat_mode == 1 && current_address >= source_address + length * 4) current_address = source_address;
-
-                cycles_since_last_dma %= cycles_till_dma_increment;
-                current_sample = mem9.read!Half(current_address);
+            while (cycles_since_last_sample_was_calculated > cycles_till_calculate_next_sample) {
+                calculate_next_sample();
+                cycles_since_last_sample_was_calculated -= cycles_till_calculate_next_sample;
             }
 
-            return current_sample;
+            Sample sample;
+            sample.L = cast(short) (current_sample.L * (127 - panning) / 128);
+            sample.R = cast(short) (current_sample.R * (      panning) / 128);
+            return sample;
+        }
+                
+        void calculate_next_sample() {
+            Half sample_data;
+
+            switch (format) {
+                case Format.PCM16:
+                    sample_data = mem9.read!Half(current_address);
+                    this.current_address += 2;
+                    break;
+                
+                default:
+                    break;
+            }
+
+            if (repeat_mode == RepeatMode.LOOP_INF && current_address >= source_address + length * 4) {
+                this.current_address = this.source_address;
+            }
+            
+            current_sample = Sample(sample_data, sample_data);
         }
     }
 
@@ -101,8 +134,8 @@ final class SPU {
                 break;
             case 3:
                 result[0..2] = sound_channels[x].wave_duty;
-                result[3..4] = sound_channels[x].repeat_mode;
-                result[5..6] = sound_channels[x].format;
+                result[3..4] = cast(RepeatMode) sound_channels[x].repeat_mode;
+                result[5..6] = cast(Format) sound_channels[x].format;
                 result[7]    = sound_channels[x].enabled;
                 break;
         }
@@ -214,15 +247,13 @@ final class SPU {
     void sample() {
         Sample result = Sample(0, 0);
         for (int i = 0; i < 16; i++) {
-            short channel_sample = sound_channels[i].sample();
-            result.L += channel_sample * (127 - sound_channels[i].panning) / 128;
-            result.R += channel_sample * (      sound_channels[i].panning) / 128;
+            Sample channel_sample = sound_channels[i].get_sample();
+            result.L += channel_sample.L;
+            result.R += channel_sample.R;
         }
 
-        result.L += 0x200;
-        result.R += 0x200;
-        // if (result.L < 0) result.L = 0;
-        // if (result.R < 0) result.R = 0;
+        result.L += sound_bias;
+        result.R += sound_bias;
 
         push_sample_callback(result);
 

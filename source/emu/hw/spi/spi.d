@@ -89,7 +89,7 @@ final class SPI {
     }
 
     T read_SPIDATA(T)(int offset) {
-        log_firmware("spidata?: %x %x", selected_device_index, result);
+        // log_firmware("spidata?: %x %x", selected_device_index, result);
 
         return T(result);
     }

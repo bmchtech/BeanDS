@@ -177,7 +177,7 @@ final class Firmware : SPIDevice {
     // returns true if this command does further calculation past this write
     // (i.e. if it takes more arguments later)
     private bool parse_command(Byte b) {
-        log_firmware("parsing cmd! %x", b);
+        // log_firmware("parsing cmd! %x", b);
         switch (b) {
             case 0x06: write_enable = true;                        return false;
             case 0x04: write_enable = false;                       return false;
