@@ -135,10 +135,13 @@ final class VRAM {
         bool performed_read = false;
 
         for (int i = 0; i < 10; i++) {
-            // if (i == 2 && vram_c_in_ram) continue;
-            // if (i == 3 && vram_d_in_ram) continue;
+            if (i == 2 && vram_c_in_ram) continue;
+            if (i == 3 && vram_d_in_ram) continue;
 
             VRAMBlock block = blocks[i];
+
+            if (block.slot_mapped) continue;
+            
 
             if (block.in_range(address)) {
                 result |= block.read!T(address);
