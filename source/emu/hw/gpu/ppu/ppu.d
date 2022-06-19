@@ -388,6 +388,7 @@ final class PPU(EngineType E) {
         // im just precalculating this one bit since it stays the same
         int template_args  = background.doesnt_use_color_palettes << 2;
 
+
         // tile_x_offset and tile_y_offset are offsets from the topleft tile. we use this to iterate through
         // each tile.
         for (int tile_x_offset = 0; tile_x_offset < 32 + 1; tile_x_offset++) {

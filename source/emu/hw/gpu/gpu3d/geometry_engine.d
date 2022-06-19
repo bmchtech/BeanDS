@@ -336,7 +336,6 @@ final class GeometryEngine {
     void handle_MTX_IDENTITY(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                arm9.num_log = 1000;
                 projection_matrix = Mat4x4.identity();
                 break;
 
