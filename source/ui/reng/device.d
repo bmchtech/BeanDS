@@ -12,14 +12,18 @@ import raylib;
 import re;
 
 class RengMultimediaDevice : MultiMediaDevice {
-    RengCore reng_core;
-    DSVideo  ds_video;
-    AudioStream stream;
-
     enum SAMPLE_RATE            = 48000;
     enum SAMPLES_PER_UPDATE     = 4096;
     enum BUFFER_SIZE_MULTIPLIER = 3;
     enum NUM_CHANNELS           = 2;
+
+    enum FAST_FOWARD_KEY        = Keys.KEY_TAB;
+
+    RengCore reng_core;
+    DSVideo  ds_video;
+    AudioStream stream;
+
+    bool fast_foward;
 
     this(int screen_scale) {
         Core.target_fps = 999;
@@ -96,6 +100,12 @@ class RengMultimediaDevice : MultiMediaDevice {
             static foreach (re_key, gba_key; keys) {
                 update_key(gba_key, Input.is_key_down(re_key));
             }
+
+            fast_foward = Input.is_key_down(FAST_FOWARD_KEY);
+        }
+
+        bool should_fast_forward() {
+            return fast_foward;
         }
     }
 
@@ -109,6 +119,8 @@ class RengMultimediaDevice : MultiMediaDevice {
 
             buffer_cursor -= NUM_CHANNELS * SAMPLES_PER_UPDATE;
             if (buffer_cursor < 0) buffer_cursor = 0;
+
+            if (fast_foward) buffer_cursor = 0;
         }
     }
 

@@ -36,7 +36,6 @@ final class Runner {
 
         this.frontend = frontend;
 
-        this.fast_forward     = false;
         this.should_cycle_nds = true;
         this.running          = true;
     }
@@ -56,7 +55,7 @@ final class Runner {
         stopwatch = StopWatch(AutoStart.yes);
 
         while (running) {
-            if (frontend.should_cycle_nds() || fast_forward) {
+            if (frontend.should_cycle_nds() || frontend.should_fast_forward()) {
                 nds.cycle(33_513_982 / 60);
                 fps++;
             }
