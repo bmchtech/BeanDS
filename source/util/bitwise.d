@@ -2,6 +2,7 @@ module util.bitwise;
 
 import util;
 
+import core.bitop;
 import std.traits;
 
 pragma(inline, true) {
@@ -20,7 +21,7 @@ pragma(inline, true) {
 
     pure T rotate_right(T)(T value, size_t shift) 
     if (isIntegral!T) {
-        return cast(T) ((value >> shift) | (value << (T.sizeof * 8 - shift)));
+        return ror(value, shift);
     }
 
     s32 sext_32(T)(T value, u32 size) {
