@@ -123,4 +123,5 @@ static const mmio9_registers = [
     MMIORegister("gpu3d.geometry_engine", "BOX_TEST",       0x0400_05C0,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("gpu3d.geometry_engine", "POS_TEST",       0x0400_05C4,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("gpu3d.geometry_engine", "VEC_TEST",       0x0400_05C8,  4,      WRITE).dont_decompose_into_bytes(),
+    MMIORegister("gpu3d.geometry_engine", "VEC_RESULT",     0x0400_0630,  6, READ),
 ];

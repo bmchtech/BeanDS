@@ -140,6 +140,8 @@ final class GeometryEngine {
     Vec4 texcoord_prime;
     Vec4 normal_vector;
 
+    Vec4 vec_test_result;
+
     this(GPU3D parent) {
         this.parent = parent;
         
@@ -580,20 +582,28 @@ final class GeometryEngine {
         ]);
     }
 
-    // void handle_VEC_TEST(Word* args) {
-    //     if (matrix_mode != MatrixMode.POSITION_VECTOR) {
-    //         error_gpu3d("Tried to use VEC_TEST while in a mode (%d) that isnt MatrixMode.POSITION_VECTOR (2)", matrix_mode);
-    //     }
+    void handle_VEC_TEST(Word* args) {
+        if (matrix_mode != MatrixMode.POSITION_VECTOR) {
+            error_gpu3d("Tried to use VEC_TEST while in a mode (%d) that isnt MatrixMode.POSITION_VECTOR (2)", matrix_mode);
+        }
 
-    //     Vec4 vec = [
-    //         sext_32(args[0][0 .. 9]),
-    //         sext_32(args[1][10..19]),
-    //         sext_32(args[2][20..29]),
-    //         0.0f
-    //     ];
+        Vec4 vec = [
+            sext_32(args[0][0 .. 9], 10),
+            sext_32(args[1][10..19], 10),
+            sext_32(args[2][20..29], 10),
+            0.0f
+        ];
 
-    //     set_result(mod)
-    // }
+        vec_test_result = position_vector_matrix * vec;
+    }
+
+    Byte read_VEC_RESULT(int target_byte) {
+        float component_float = vec_test_result[target_byte / 2];
+        Half component_fixed = component_float * (1 << 12);
+        if (component_float < 0) component_fixed |= 0xF000;
+
+        return component_fixed.get_byte(target_byte % 2);
+    }
 
     void push_command(Word data) {
         final switch (state) {
@@ -730,7 +740,7 @@ static GPU3DCommand[256] generate_commands()() {
     commands[0x60] = GPU3DCommand("VIEWPORT",         0x60, 1,  1,   true);
     commands[0x70] = GPU3DCommand("BOX_TEST",         0x70, 3,  103, false);
     commands[0x71] = GPU3DCommand("POS_TEST",         0x71, 2,  9,   false);
-    commands[0x72] = GPU3DCommand("VEC_TEST",         0x72, 1,  5,   false);
+    commands[0x72] = GPU3DCommand("VEC_TEST",         0x72, 1,  5,   true);
 
     return commands;
 }
