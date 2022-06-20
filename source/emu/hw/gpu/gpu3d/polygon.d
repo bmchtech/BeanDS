@@ -125,20 +125,22 @@ final class QuadStripsAssembler : PolygonAssembler {
     int num_vertices;
     Vertex[4] vertices;
 
+    static immutable int[4] mapped_indices = [0, 1, 3, 2];
+
     override bool submit_vertex(Vertex vertex) {
-        vertices[index] = vertex;
+        vertices[mapped_indices[index]] = vertex;
 
-        index++;
-        num_vertices++;
-        if (index >= 3) index -= 3;
-
-        return num_vertices >= 3;
+        return num_vertices >= 4;
     }
 
     Polygon get_polygon() {
         Polygon p;
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
+
+        index = 2;
+        vertices[0] = vertices[3];
+        vertices[1] = vertices[2];
         return p;
     }
 
