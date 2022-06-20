@@ -37,6 +37,19 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
 
     // TODO: make this a final switch when i've actually implemented all the texture formats
     switch (p.orig.texture_format) {
+        case TextureFormat.COLOR_PALETTE_4:
+            Byte texel = vram.read_texture!Byte(Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
+            texel >>= (2 * (texel_index % 4));
+            texel &= 3;
+            Half color = vram.read_texture!Half(palette_base_address * 16 + texel * 2);
+            
+            return [
+                color[0..4],
+                color[5..9],
+                color[10..14],
+                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+            ];
+
         case TextureFormat.COLOR_PALETTE_256:
             Byte texel = vram.read_texture!Byte(Word((p.orig.texture_vram_offset << 3) + texel_index));
             Half color = vram.read_texture!Half(palette_base_address * 16 + texel * 2);
