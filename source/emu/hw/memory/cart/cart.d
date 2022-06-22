@@ -104,6 +104,8 @@ final class Cart {
         if (outbuffer_index == outbuffer_length) {
             transfer_ongoing = false;
             // log_cart("transfer ended!");
+            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
         }
 
         return cast(T) (result >> (8 * offset));
@@ -116,7 +118,7 @@ final class Cart {
     }
 
     void start_transfer() {
-        // log_cart("Starting a transfer with command %x", command);
+        log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
         
         if ((command & 0xFF) == 0xB7) {
             // KEY2 data read
@@ -127,7 +129,7 @@ final class Cart {
             if (address + length >= rom_size()) error_cart("Tried to initiate a B7 transfer at an out of bounds region!");
             
             memcpy(&outbuffer, &rom[address], length);
-            // log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
+            log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
             outbuffer_length = length / 4;
         } else
 
@@ -138,12 +140,16 @@ final class Cart {
                 outbuffer[i] = get_cart_id();
             }
 
+            log_cart("getting cart id");
+
             outbuffer_length = length / 4;
         } else
 
         error_cart("tried to issue an invalid cart command: %x", command);
         
         outbuffer_index  = 0;
+
+        DMA_maybe_start_cart_transfer();
     }
 
     Word get_cart_id() {

@@ -94,29 +94,29 @@ final class QuadAssembler : PolygonAssembler {
 
 final class TriangleStripsAssembler : PolygonAssembler {
     int index = 0;
-    int num_vertices;
     Vertex[4] vertices;
 
     override bool submit_vertex(Vertex vertex) {
         vertices[index] = vertex;
-
         index++;
-        num_vertices++;
-        if (index >= 3) index -= 3;
 
-        return num_vertices >= 3;
+        return index >= 3;
     }
 
     Polygon get_polygon() {
         Polygon p;
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
+        
+        vertices[0] = vertices[1];
+        vertices[1] = vertices[2];
+        index = 2;
+
         return p;
     }
 
     void reset() {
         index = 0;
-        num_vertices = 0;
     }
 }
 

@@ -51,7 +51,7 @@ final class GeometryEngine {
         }
 
         Mat4x4 restore(int index) {
-            return stack[index - 1];
+            return Mat4x4.identity;
         }
     }
 
@@ -178,6 +178,7 @@ final class GeometryEngine {
     }
 
     PolygonAssembler get_assembler() {
+        // log_gpu3d("getting assembler %x", polygon_type);
         final switch (polygon_type) {
             case PolygonType.TRIANGLES:
                 return triangle_assembler;
@@ -209,6 +210,29 @@ final class GeometryEngine {
             )
         )) {
             auto polygon = assembler.get_polygon();
+
+            // log_gpu3d("submitting polygon #%d", polygon_index);
+
+            import std.math;
+            if (std.math.isNaN(polygon.vertices[0].pos[0]) || 
+                std.math.isNaN(polygon.vertices[0].pos[1]) || 
+                std.math.isNaN(polygon.vertices[0].pos[2]) ||
+                std.math.isNaN(polygon.vertices[1].pos[0]) || 
+                std.math.isNaN(polygon.vertices[1].pos[1]) || 
+                std.math.isNaN(polygon.vertices[1].pos[2]) ||
+                std.math.isNaN(polygon.vertices[2].pos[0]) || 
+                std.math.isNaN(polygon.vertices[2].pos[1]) || 
+                std.math.isNaN(polygon.vertices[2].pos[2]) || (
+                    polygon.num_vertices == 4 && (
+
+                std.math.isNaN(polygon.vertices[3].pos[0]) || 
+                std.math.isNaN(polygon.vertices[3].pos[1]) || 
+                std.math.isNaN(polygon.vertices[3].pos[2])
+                    )
+                )) {
+                    error_gpu3d("not good");
+                }
+
             polygon.uses_textures               = texture_mapped;
             polygon.texture_vram_offset         = texture_vram_offset;
             polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
@@ -689,7 +713,7 @@ final class GeometryEngine {
                         static if (commands[i].implemented) {
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
-                            log_gpu3d("Unhandled command: %s", commands[i].name);
+                            // log_gpu3d("Unhandled command: %s", commands[i].name);
                         }
                         return;
                 }

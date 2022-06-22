@@ -59,6 +59,7 @@ final class TouchScreen : SPIDevice {
 
     override Half write(Byte b) {
         Half result = 0;
+        // log_touchscreen("write: %x", b);
 
         final switch (state) {
             case State.WAITING_FOR_COMMAND:
@@ -90,7 +91,7 @@ final class TouchScreen : SPIDevice {
                     
                     case ChannelSelect.TOUCHSCREEN_Y:
                         result = input.keys[22] ? 0 : (y_position * (0xa0 - 0x20)) / 192;
-                        // log_touchscreen("tried to read touchscreen pos y: %x", result);
+                        log_touchscreen("tried to read touchscreen pos y: %x", result);
                         break;
                     
                     case ChannelSelect.BATTERY_VOLTAGE:
@@ -109,7 +110,7 @@ final class TouchScreen : SPIDevice {
                     
                     case ChannelSelect.TOUCHSCREEN_X:
                         result = input.keys[22] ? 0 : (x_position * (0xa0 - 0x20)) / 256;
-                        // log_touchscreen("tried to read touchscreen pos x: %x", result);
+                        log_touchscreen("tried to read touchscreen pos x: %x", result);
                         break;
                     
                     case ChannelSelect.AUX_INPUT:

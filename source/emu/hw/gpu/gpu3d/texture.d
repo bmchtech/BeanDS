@@ -60,6 +60,14 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                 color[10..14],
                 (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
             ];
+        
+        case TextureFormat.TEXEL_COMPRESSED_4x4:
+            return [
+                31,
+                31,
+                31,
+                31.0
+            ];
 
         case TextureFormat.DIRECT_TEXTURE:
             Half texel = vram.read_texture!Half(Word((p.orig.texture_vram_offset << 3) + 2 * texel_index));
@@ -72,7 +80,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         default:
-            log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
+            // log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
     }
     
     // TODO: this return never trigger once the above switch case is made into a final switch

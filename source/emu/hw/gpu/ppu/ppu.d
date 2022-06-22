@@ -525,7 +525,7 @@ final class PPU(EngineType E) {
 
             int topleft_x = sext_32(Word(cast(ushort) attribute_1.bits(0, 8)), 9);
             int topleft_y = attribute_0.bits(0, 7);
-            if (topleft_y > 160) topleft_y -= 256; 
+            if (topleft_y > 192) topleft_y -= 256; 
 
             int middle_x = topleft_x + width  * 4;
             int middle_y = topleft_y + height * 4;
@@ -555,6 +555,7 @@ final class PPU(EngineType E) {
                 convert_from_8_8f_to_double(read_oam!Half(Word(0x16 + 0x20 * scaling_number))),
                 convert_from_8_8f_to_double(read_oam!Half(Word(0x1E + 0x20 * scaling_number)))
             );
+
             // for (int tile_x_offset = 0; tile_x_offset < width; tile_x_offset++) {
 
             //     // get the tile address and read it from memory

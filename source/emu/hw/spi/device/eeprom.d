@@ -39,7 +39,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
     override Half write(Byte b) {
         Half result = 0;
 
-        // log_eeprom("received write: %x", b);
+        log_eeprom("    received write: %x", b);
         switch (state) {
             case State.WAITING_FOR_COMMAND:
                 // log_eeprom("    parsing the command: %x", b);
@@ -67,13 +67,14 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             
             // bad code
             case State.READING_DATA:
+                if (!write_enable_latch) break;
                 // log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     result = data[current_address];
-                    // log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
+                    log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
@@ -91,7 +92,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     data[current_address] = b;
-                    // log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
+                    log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
@@ -105,6 +106,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             default: break;
         }
 
+        log_eeprom("    returning %x", result);
         return result;
     }
 
@@ -122,7 +124,6 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     override void chipselect_fall() {
         state = State.WAITING_FOR_COMMAND;
-
         log_eeprom("chipselect fall");
     }
 
@@ -141,7 +142,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             case 0x9F: state = State.READING_JEDEC_ID; break;
             case 0x06: write_enable_latch = true;  break;
             case 0x04: write_enable_latch = false; break;
-            default: error_eeprom("invalid eeprom command dummy: %x", b);
+            default: log_eeprom("invalid eeprom command dummy: %x", b);
         }
     }
 }
