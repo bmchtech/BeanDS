@@ -107,7 +107,17 @@ final class DMA(HwType H) {
         dma_channels[current_channel].dest_buf   += dest_offset;
         
         if (dma_channels[current_channel].irq_on_end) {
-            error_unimplemented("DMA9 requested an interrupt");
+            Interrupt interrupt_id = cast(Interrupt) 1 << (Interrupt.DMA_0_COMPLETION + current_channel);
+            
+            final switch (H) {
+                case HwType.NDS7:
+                    interrupt7.raise_interrupt(interrupt_id);
+                    break;
+                
+                case HwType.NDS9:
+                    interrupt9.raise_interrupt(interrupt_id);
+                    break;
+            }
         }
 
         if (dma_channels[current_channel].repeat) {
@@ -161,6 +171,8 @@ final class DMA(HwType H) {
                 mem.write_word(address, val);
                 address += 4;
             }
+
+            dma_channels[dma_id].enabled = false;
         }
 
         if (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
@@ -172,7 +184,7 @@ final class DMA(HwType H) {
     }
 
     pragma(inline, true) void start_dma_channel(int dma_id, bool last) {
-        handle_dma();
+        handle_dma(dma_id);
     }
 
     void on_hblank(uint scanline) {

@@ -144,7 +144,7 @@ final class GPU3D {
     }
 
     Byte read_GXSTAT(int target_byte) {
-        return Word(0x00600000).get_byte(target_byte);
+        return Word(0x06000000).get_byte(target_byte);
     }
 
     void write_GXSTAT(int target_byte, Byte data) {

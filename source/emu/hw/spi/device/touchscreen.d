@@ -136,11 +136,11 @@ final class TouchScreen : SPIDevice {
     }
 
     override void chipselect_fall() {
-        state = State.WAITING_FOR_CHIPSELECT;
+        state = State.WAITING_FOR_COMMAND;
     }
 
     override void chipselect_rise() {
-        state = State.WAITING_FOR_COMMAND;
+        state = State.WAITING_FOR_CHIPSELECT;
     }
 
     void update_touchscreen_position(int x_position, int y_position) {

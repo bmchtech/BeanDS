@@ -67,7 +67,6 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             
             // bad code
             case State.READING_DATA:
-                if (!write_enable_latch) break;
                 // log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
@@ -122,16 +121,16 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
     }
 
     override void chipselect_fall() {
-        if (state != State.WRITING_DATA && state != State.WRITING_STATUS) {
-            state = State.WAITING_FOR_CHIPSELECT;
-        }
+        state = State.WAITING_FOR_COMMAND;
 
-        // log_eeprom("resetti");
+        log_eeprom("chipselect fall");
     }
 
     override void chipselect_rise() {
-        state = State.WAITING_FOR_COMMAND;
+        state = State.WAITING_FOR_CHIPSELECT;
+        log_eeprom("chipselect rise");
     }
+
 
     private void parse_command(Byte b) {
         switch (b) {
