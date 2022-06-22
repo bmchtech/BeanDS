@@ -72,7 +72,7 @@ final class GPUEngineB {
         // just do the bitmap mode for now ig
         switch (display_mode) {
             case 0:
-                for (int x = 0; x < 256; x++) videobuffer[x][scanline] = Pixel(63, 63, 63);
+                for (int x = 0; x < 256; x++) videobuffer[x][scanline] = Pixel(Half(0xFFFF));
                 break;
 
             case 1:

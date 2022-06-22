@@ -11,9 +11,9 @@ struct Pixel {
     }
     
     this(Half half) {
-        this.b = half[10..14];
-        this.g = half[5 .. 9];
-        this.r = half[0 .. 4];
+        this.b = half[10..14] << 1;
+        this.g = half[5 .. 9] << 1;
+        this.r = half[0 .. 4] << 1;
     }
 
     uint r;

@@ -51,10 +51,6 @@ struct PaletteIndex {
                 if (is_obj) p = Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
                 else        p = Pixel(vram.read_bg_slot !(E, Half)(slot, Word(index * 2)));
             }
-
-            p.r <<= 1;
-            p.g <<= 1;
-            p.b <<= 1;
         }
         
         return p;
