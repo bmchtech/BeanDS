@@ -371,9 +371,9 @@ final class Canvas(EngineType E) {
 
                 Pixel output = index[0].resolve!E(pram_offset);
 
-                output.r += cast(ubyte) (((31 - output.r) * evy_coeff) >> 4);
-                output.g += cast(ubyte) (((31 - output.g) * evy_coeff) >> 4);
-                output.b += cast(ubyte) (((31 - output.b) * evy_coeff) >> 4);
+                output.r += cast(ubyte) (((63 - output.r) * evy_coeff) >> 4);
+                output.g += cast(ubyte) (((63 - output.g) * evy_coeff) >> 4);
+                output.b += cast(ubyte) (((63 - output.b) * evy_coeff) >> 4);
                 return output;
 
             case Blending.BRIGHTNESS_DECREASE:
@@ -393,9 +393,9 @@ final class Canvas(EngineType E) {
                 Pixel input_B = index[1].resolve!E(pram_offset);
                 Pixel output;
 
-                output.r = min(31, (blend_a * input_A.r + blend_b * input_B.r) >> 4);
-                output.g = min(31, (blend_a * input_A.g + blend_b * input_B.g) >> 4);
-                output.b = min(31, (blend_a * input_A.b + blend_b * input_B.b) >> 4);
+                output.r = min(63, (blend_a * input_A.r + blend_b * input_B.r) >> 4);
+                output.g = min(63, (blend_a * input_A.g + blend_b * input_B.g) >> 4);
+                output.b = min(63, (blend_a * input_A.b + blend_b * input_B.b) >> 4);
                 return output;
         }
     }
