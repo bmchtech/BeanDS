@@ -21,6 +21,8 @@ final class NDS {
 
     bool booted = false;
 
+    void delegate(Pixel[32][32]) update_icon;
+
     this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
@@ -71,6 +73,10 @@ final class NDS {
             error_nds("Malformed ROM - the specified rom header size is greater than the rom size.");
         }
         mem9.memcpy(Word(0x27FFE00), &cart.rom[0], cart.cart_header.rom_header_size);
+
+        update_icon(
+            cart.get_icon()
+        );
     }
 
     void load_bios7(Byte[] bios) {
@@ -132,6 +138,7 @@ final class NDS {
         device.set_update_key_callback(&input.update_key);
         device.set_update_touchscreen_position(&touchscreen.update_touchscreen_position);
         spu.set_push_sample_callback(&device.push_sample);
+        this.update_icon = &device.update_icon;
     }
 
     void set_sample_rate(int sample_rate) {

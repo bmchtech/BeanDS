@@ -29,6 +29,7 @@ abstract class MultiMediaDevice {
         // video stuffs
         void present_videobuffers(Pixel[192][256], Pixel[192][256] buffer);
         void set_fps(int fps);
+        void update_icon(Pixel[32][32] texture);
 
         // audio stuffs
         void push_sample(Sample s);

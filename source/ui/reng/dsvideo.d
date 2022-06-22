@@ -11,7 +11,7 @@ class DSVideo : Component, Updatable, Renderable2D {
 
     RenderTarget render_target_top;
     RenderTarget render_target_bot;
-    Texture2D rp1_texture;
+    RenderTarget render_target_icon;
 
     uint[256 * 192] videobuffer_top;
     uint[256 * 192] videobuffer_bot;
@@ -28,6 +28,11 @@ class DSVideo : Component, Updatable, Renderable2D {
             256,
             192
         );
+
+        render_target_icon = RenderExt.create_render_target(
+            32,
+            32
+        );
     }
 
     override void setup() {
@@ -36,6 +41,14 @@ class DSVideo : Component, Updatable, Renderable2D {
 
     void update() {
 
+    }
+
+    void update_icon(uint[32 * 32] icon_bitmap) {
+        render_target_icon.texture.format = PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        UpdateTexture(render_target_icon.texture, cast(const void*) icon_bitmap);
+        Image image = LoadImageFromTexture(render_target_icon.texture);
+        image.format = PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        SetWindowIcon(image);
     }
 
     void render() {

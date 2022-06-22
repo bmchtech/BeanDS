@@ -41,6 +41,35 @@ final class Cart {
         return rom.length;
     }
 
+    Pixel[32][32] get_icon() {
+        Word icon_offset = this.cart_header.icon_offset;
+        Pixel[32][32] icon_texture;
+
+        for (int x = 0; x < 32; x++) {
+        for (int y = 0; y < 32; y++) {
+            int tile_x = x / 8;
+            int tile_y = y / 8;
+
+            int fine_x = x % 8;
+            int fine_y = y % 8;
+
+            int tile_no = tile_y * 4 + tile_x;
+            
+            Byte palette_entry = rom.read!Byte(icon_offset + 0x20 + (tile_no * 32 + fine_y * 4 + fine_x / 2));
+
+            if (x & 1) palette_entry >>= 4;
+            else       palette_entry &= 0xF;
+
+            icon_texture[x][y] = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
+            icon_texture[x][y].r <<= 1;
+            icon_texture[x][y].g <<= 1;
+            icon_texture[x][y].b <<= 1;
+        }
+        }
+
+        return icon_texture;
+    }
+
     T read(T)(Word address, HwType hw_type) {
         if (slot.access_rights != hw_type) { 
             log_cart("tried to read from cart even though i had no rights!"); 

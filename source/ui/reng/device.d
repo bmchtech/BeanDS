@@ -33,13 +33,13 @@ class RengMultimediaDevice : MultiMediaDevice {
         SetAudioStreamBufferSizeDefault(SAMPLES_PER_UPDATE);
         stream = LoadAudioStream(SAMPLE_RATE, 16, NUM_CHANNELS);
         PlayAudioStream(stream);
+        
+        ds_video = Core.jar.resolve!DSVideo().get; 
     }
 
     override {
         // video stuffs
         void present_videobuffers(Pixel[192][256] buffer_top, Pixel[192][256] buffer_bot) {
-            ds_video = Core.jar.resolve!DSVideo().get; 
-
             for (int y = 0; y < 192; y++) {
             for (int x = 0; x < 256;  x++) {
                     ds_video.videobuffer_top[y * 256 + x] = 
@@ -60,6 +60,23 @@ class RengMultimediaDevice : MultiMediaDevice {
             raylib.SetWindowTitle(toStringz("FPS: %d".format(fps)));
         }
 
+        void update_icon(Pixel[32][32] buffer_texture) {
+            import std.stdio;
+
+            uint[32 * 32] icon_texture;
+
+            for (int x = 0; x < 32; x++) {
+            for (int y = 0; y < 32; y++) {
+                icon_texture[y * 32 + x] = 
+                    (buffer_texture[x][y].r << 2 <<  0) |
+                    (buffer_texture[x][y].g << 2 <<  8) |
+                    (buffer_texture[x][y].b << 2 << 16) |
+                    0xFF000000;
+            }
+            }
+
+            ds_video.update_icon(icon_texture);
+        }
 
         // 2 cuz stereo
         short[NUM_CHANNELS * SAMPLES_PER_UPDATE * BUFFER_SIZE_MULTIPLIER] buffer;
