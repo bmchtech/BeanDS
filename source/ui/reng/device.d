@@ -26,6 +26,7 @@ class RengMultimediaDevice : MultiMediaDevice {
     bool fast_foward;
 
     string rom_title;
+    int fps;
 
     this(int screen_scale) {
         Core.target_fps = 999;
@@ -59,13 +60,14 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         void set_fps(int fps) {
-            import std.stdio;
-            ds_video.update_title("%s [FPS: %d]".format(rom_title, fps));
+            this.fps = fps;
+            redraw_title();
         }
 
         void update_rom_title(string rom_title) {
             import std.string;
             this.rom_title = rom_title.splitLines[0].strip;
+            redraw_title();
         }
 
         void update_icon(Pixel[32][32] buffer_texture) {
@@ -132,6 +134,11 @@ class RengMultimediaDevice : MultiMediaDevice {
         bool should_fast_forward() {
             return fast_foward;
         }
+    }
+
+    void redraw_title() {
+        import std.stdio;
+        ds_video.update_title("%s [FPS: %d]".format(rom_title, fps));
     }
 
     void handle_audio() {
