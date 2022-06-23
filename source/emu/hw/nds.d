@@ -22,6 +22,7 @@ final class NDS {
     bool booted = false;
 
     void delegate(Pixel[32][32]) update_icon;
+    void delegate(string) update_rom_title;
 
     this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
@@ -76,6 +77,10 @@ final class NDS {
 
         update_icon(
             cart.get_icon()
+        );
+
+        update_rom_title(
+            cart.get_rom_title(FirmwareLanguage.ENGLISH)
         );
     }
 
@@ -139,6 +144,7 @@ final class NDS {
         device.set_update_touchscreen_position(&touchscreen.update_touchscreen_position);
         spu.set_push_sample_callback(&device.push_sample);
         this.update_icon = &device.update_icon;
+        this.update_rom_title = &device.update_rom_title;
     }
 
     void set_sample_rate(int sample_rate) {

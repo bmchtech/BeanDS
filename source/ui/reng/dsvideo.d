@@ -4,6 +4,9 @@ import re;
 import re.math;
 import re.gfx;
 
+import std.format;
+import std.string;
+
 import raylib;
 
 class DSVideo : Component, Updatable, Renderable2D {
@@ -50,6 +53,10 @@ class DSVideo : Component, Updatable, Renderable2D {
         image.format = PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
         SetWindowIcon(image);
     }
+    
+    void update_title(string title) {
+        SetWindowTitle(toStringz(title));
+    }
 
     void render() {
         UpdateTexture(render_target_top.texture, cast(const void*) videobuffer_top);
@@ -67,7 +74,7 @@ class DSVideo : Component, Updatable, Renderable2D {
             render_target_bot.texture,
             Rectangle(0, 0, 256, 192),
             Rectangle(0, 0, 256 * screen_scale, 192 * screen_scale),
-            Vector2(0, -192),
+            Vector2(0, -192 * screen_scale),
             0,
             Colors.WHITE
         );

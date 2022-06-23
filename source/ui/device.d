@@ -25,6 +25,7 @@ abstract class MultiMediaDevice {
         void update();
         void draw();
         bool should_cycle_nds();
+        void update_rom_title(string title);
 
         // video stuffs
         void present_videobuffers(Pixel[192][256], Pixel[192][256] buffer);

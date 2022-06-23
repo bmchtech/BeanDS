@@ -61,13 +61,28 @@ final class Cart {
             else       palette_entry &= 0xF;
 
             icon_texture[x][y] = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
-            icon_texture[x][y].r <<= 1;
-            icon_texture[x][y].g <<= 1;
-            icon_texture[x][y].b <<= 1;
         }
         }
 
         return icon_texture;
+    }
+
+    char[128] rom_title_buf;
+    string get_rom_title(FirmwareLanguage language) {
+        import std.utf;
+            
+        Word icon_offset = this.cart_header.icon_offset;
+        Word rom_title_address = icon_offset + 0x240 + cast(int) language * 0x100;
+        wstring rom_title_utf16 = cast(wstring) (cast(char[]) rom[rom_title_address .. rom_title_address + 0x100]);
+        
+        size_t i = 0;
+        size_t j = 0;
+
+        while (i < 128) {
+            rom_title_buf[j] = cast(char) rom_title_utf16.decode(i);
+            j++;
+        }
+        return cast(string) rom_title_buf;
     }
 
     T read(T)(Word address, HwType hw_type) {

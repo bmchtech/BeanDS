@@ -25,6 +25,8 @@ class RengMultimediaDevice : MultiMediaDevice {
 
     bool fast_foward;
 
+    string rom_title;
+
     this(int screen_scale) {
         Core.target_fps = 999;
         reng_core = new RengCore(screen_scale);
@@ -57,7 +59,13 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         void set_fps(int fps) {
-            raylib.SetWindowTitle(toStringz("FPS: %d".format(fps)));
+            import std.stdio;
+            ds_video.update_title("%s [FPS: %d]".format(rom_title, fps));
+        }
+
+        void update_rom_title(string rom_title) {
+            import std.string;
+            this.rom_title = rom_title.splitLines[0].strip;
         }
 
         void update_icon(Pixel[32][32] buffer_texture) {

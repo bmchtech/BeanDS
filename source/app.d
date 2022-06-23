@@ -13,7 +13,7 @@ version (unittest) {
 	void main(string[] args) {
 		auto cli_args = parse_cli_args(args);
 
-		auto reng = new RengMultimediaDevice(1);
+		auto reng = new RengMultimediaDevice(cli_args.screen_scale);
 
 		auto nds = new NDS(cli_args.arm7_ringbuffer_size, cli_args.arm9_ringbuffer_size);
 		nds.set_multimedia_device(reng);

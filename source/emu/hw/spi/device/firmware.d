@@ -3,6 +3,17 @@ module emu.hw.spi.device.firmware;
 import emu;
 import util;
 
+enum FirmwareLanguage {
+    JAPANESE = 0,
+    ENGLISH  = 1,
+    FRENCH   = 2,
+    GERMAN   = 3,
+    ITALIAN  = 4,
+    SPANISH  = 5,
+    CHINESE  = 6,
+    KOREAN   = 7
+}
+
 __gshared Firmware firmware;
 final class Firmware : SPIDevice {
     enum State {
