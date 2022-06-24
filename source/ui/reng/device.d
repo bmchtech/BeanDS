@@ -165,7 +165,9 @@ class RengMultimediaDevice : MultiMediaDevice {
         Keys.KEY_LEFT  : DSKeyCode.LEFT,
         Keys.KEY_UP    : DSKeyCode.UP,
         Keys.KEY_DOWN  : DSKeyCode.DOWN,
-        Keys.KEY_S     : DSKeyCode.R,
-        Keys.KEY_A     : DSKeyCode.L
+        Keys.KEY_A     : DSKeyCode.X,
+        Keys.KEY_S     : DSKeyCode.Y,
+        Keys.KEY_E     : DSKeyCode.R,
+        Keys.KEY_Q     : DSKeyCode.L
     ];
 }
