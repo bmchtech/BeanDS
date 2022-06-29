@@ -12,7 +12,7 @@ class RengCore : Core {
 
     this(int screen_scale) {
         this.width  = 256 * screen_scale;
-        this.height = 192 * screen_scale * 2;
+        this.height = 192 * screen_scale * 2 + SCREEN_SEPARATION_HEIGHT;
         this.screen_scale = screen_scale;
 
         super(width, height, "BeanDS");

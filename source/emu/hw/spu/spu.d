@@ -97,7 +97,7 @@ final class SPU {
         }
                 
         void calculate_next_sample() {
-            Half sample_data;
+            Half sample_data = 0;
 
             switch (format) {
                 case Format.PCM16:

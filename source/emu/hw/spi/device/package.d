@@ -9,7 +9,7 @@ public {
 import util;
 
 abstract class SPIDevice {
-    Half write(Byte b);
+    Byte write(Byte b);
     void chipselect_fall();
     void chipselect_rise();
 }

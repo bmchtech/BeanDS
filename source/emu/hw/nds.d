@@ -98,6 +98,7 @@ final class NDS {
         mem9.direct_boot();
         wram.direct_boot();
         firmware.direct_boot();
+        touchscreen.direct_boot();
 
         if (cart.cart_header.arm7_rom_offset + cart.cart_header.arm7_size > cart.rom_size ||
             cart.cart_header.arm9_rom_offset + cart.cart_header.arm9_size > cart.rom_size) {

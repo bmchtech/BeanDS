@@ -29,8 +29,8 @@ struct Background {
     // my emulator must do so too.
     uint  bgcnt_bits_4_and_5;
 
-    ushort x_offset;
-    ushort y_offset;
+    Half x_offset;
+    Half y_offset;
     bool   enabled;
 
     ushort transformation_dx;
@@ -674,19 +674,11 @@ public:
     }
 
     void write_BGxHOFS(int target_byte, Byte data, int x) {
-        if (target_byte == 0) {
-            backgrounds[x].x_offset = (backgrounds[x].x_offset & 0xFF00) | data;
-        } else { // target_byte == 1
-            backgrounds[x].x_offset = (backgrounds[x].x_offset & 0x00FF) | (data << 8);
-        }
+        backgrounds[x].x_offset.set_byte(target_byte, data);
     }
 
     void write_BGxVOFS(int target_byte, Byte data, int x) {
-        if (target_byte == 0) {
-            backgrounds[x].y_offset = (backgrounds[x].y_offset & 0xFF00) | data;
-        } else { // target_byte == 1
-            backgrounds[x].y_offset = (backgrounds[x].y_offset & 0x00FF) | (data << 8);
-        }
+        backgrounds[x].y_offset.set_byte(target_byte, data);
     }
 
     void write_WINxH(int target_byte, Byte data, int x) {

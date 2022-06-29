@@ -38,14 +38,14 @@ final class TimerManager {
         ulong timestamp = scheduler.get_current_time_relative_to_self();
         timers[timer_id].timer_event = scheduler.add_event_relative_to_self(() => timer_overflow(timer_id), (0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment);
 
-        // log_timers("starting timer %x, %x %x", timer_id, timers[timer_id].reload_value, timestamp);
+        log_timers("starting timer %x, %x %x", timer_id, timers[timer_id].reload_value, timestamp);
         timers[timer_id].timestamp = scheduler.get_current_time_relative_to_self();
     }
 
 
     void reload_timer_for_the_first_time(int timer_id) {
         if (timer_id != 0 && timers[timer_id].countup) return;
-        // log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value, 2 + ((0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment));
+        log_timers("starting timer %x for the first time, %x %x", timer_id, timers[timer_id].reload_value, 2 + ((0x10000 - timers[timer_id].reload_value) << timers[timer_id].increment));
 
         timers[timer_id].enabled_for_first_time = true;
         timers[timer_id].value = timers[timer_id].reload_value;
@@ -61,6 +61,7 @@ final class TimerManager {
         // on_timer_overflow(x);
 
         if (timers[x].irq_enable) {
+            log_timers("timer interrupt raised");
             interrupt_manager.raise_interrupt(get_interrupt_from_timer_id(x));
         }
 
@@ -104,7 +105,7 @@ final class TimerManager {
     uint[4] increment_shifts = [0, 6, 8, 10];
 
     struct Timer {
-        ushort  reload_value;
+        Half  reload_value;
         ushort  reload_value_buffer;
         ushort  value;
         int     increment;
@@ -120,10 +121,7 @@ final class TimerManager {
     }
 
     void write_TMxCNT_L(int target_byte, Byte data, int x) {
-        final switch (target_byte) {
-            case 0: timers[x].reload_value = (timers[x].reload_value & 0xFF00) | (data << 0); break;
-            case 1: timers[x].reload_value = (timers[x].reload_value & 0x00FF) | (data << 8); break;
-        }
+        timers[x].reload_value.set_byte(target_byte, data);
     }
 
     void write_TMxCNT_H(int target_byte, Byte data, int x) {

@@ -137,8 +137,7 @@ class RengMultimediaDevice : MultiMediaDevice {
     }
 
     void redraw_title() {
-        import std.stdio;
-        ds_video.update_title("%s [FPS: %d]".format(rom_title, fps));
+        ds_video.update_title(rom_title);
     }
 
     void handle_audio() {

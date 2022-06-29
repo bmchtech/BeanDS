@@ -72,9 +72,11 @@ final class AUXSPI {
     }
 
     private void write_AUXSPICNT(int target_byte, Byte data) {
+        log_auxspi("AUXSPICNT: %x %x", target_byte, data);
         final switch (target_byte) {
             case 0:
-                if (data[6] && !spi_hold_chipselect) eeprom.chipselect_fall();
+                if ( data[6] && !spi_hold_chipselect) eeprom.chipselect_fall();
+                // if (!data[6] &&  spi_hold_chipselect) eeprom.chipselect_rise();
 
                 baudrate            = data[0..1];
                 spi_hold_chipselect = data[6];

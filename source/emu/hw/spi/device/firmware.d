@@ -14,6 +14,33 @@ enum FirmwareLanguage {
     KOREAN   = 7
 }
 
+struct UserSettings {
+    Byte scr_x1;
+    Byte scr_x2;
+    Byte scr_y1;
+    Byte scr_y2;
+    Half adc_x1;
+    Half adc_x2;
+    Half adc_y1;
+    Half adc_y2;
+
+    // TODO: add all the other user settings here
+    //       but im lazy to maybe later
+
+    static UserSettings get_default() {
+        return UserSettings(
+            Byte(0x20),
+            Byte(0xE0),
+            Byte(0x20),
+            Byte(0xA0),
+            Half(0x02DF),
+            Half(0x0D3B),
+            Half(0x032C),
+            Half(0x0CE7)
+        );
+    }
+}
+
 __gshared Firmware firmware;
 final class Firmware : SPIDevice {
     enum State {
@@ -36,6 +63,8 @@ final class Firmware : SPIDevice {
     State state;
     Command command;
 
+    UserSettings user_settings;
+
     bool write_enable;
     bool power_on;
 
@@ -47,6 +76,8 @@ final class Firmware : SPIDevice {
     this() {
         state = State.WAITING_FOR_CHIPSELECT;
         firmware = this;
+
+        user_settings = UserSettings.get_default();
     }
 
     void direct_boot() {
@@ -59,12 +90,14 @@ final class Firmware : SPIDevice {
         data.write!Half(Word(0x3FE00), Half(5)); // apparently this address is just 5 for some reason
         data.write!Byte(Word(0x3FE03), Byte(1)); // birthday month, must be nonzero
         data.write!Byte(Word(0x3FE04), Byte(1)); // birthday day, must also be nonzero
-        data.write!Half(Word(0x3FE58), Half(0x02DF)); // touch screen ADC x1
-        data.write!Half(Word(0x3FE5A), Half(0x032C)); // touch screen ADC y1
-        data.write!Half(Word(0x3FE5C), Half(0x2020)); // touch screen px x1/y1
-        data.write!Half(Word(0x3FE5E), Half(0x0D3B)); // touch screen ADC x2
-        data.write!Half(Word(0x3FE60), Half(0x0CE7)); // touch screen ADC y2
-        data.write!Half(Word(0x3FE62), Half(0xA0E0)); // touch screen px x2/y2
+        data.write!Half(Word(0x3FE58), user_settings.adc_x1);
+        data.write!Half(Word(0x3FE5A), user_settings.adc_y1);
+        data.write!Byte(Word(0x3FE5C), user_settings.scr_x1);
+        data.write!Byte(Word(0x3FE5D), user_settings.scr_y1);
+        data.write!Half(Word(0x3FE5E), user_settings.adc_x2);
+        data.write!Half(Word(0x3FE60), user_settings.adc_y2);
+        data.write!Byte(Word(0x3FE62), user_settings.scr_x2);
+        data.write!Byte(Word(0x3FE63), user_settings.scr_y2);
         data.write!Half(Word(0x3FE64), Half(1)); // english language
         data.write!Half(Word(0x3FE66), Half(2000)); // the year
 
@@ -74,9 +107,9 @@ final class Firmware : SPIDevice {
         data.write!Word(Word(0x0003C), Word(0x00003FFE)); // enabled weefee channels
     }
 
-    override Half write(Byte b) {
+    override Byte write(Byte b) {
         // arm7.num_log = 20000;
-        Half value = 0;
+        Byte value = 0;
 
         final switch (state) {
             case State.WAITING_FOR_CHIPSELECT:

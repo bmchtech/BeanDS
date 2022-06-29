@@ -28,12 +28,18 @@ final class Cart {
         main_memory.write!Word(Word(0x7FFC40), Word(1)); // boot flag
 
         // obtained from the no$gba emulator
-        main_memory.write!Half(Word(0x7FFCD8), Half(0x02DF));
-        main_memory.write!Half(Word(0x7FFCDA), Half(0x032C));
-        main_memory.write!Half(Word(0x7FFCDC), Half(0x2020));
-        main_memory.write!Half(Word(0x7FFCDE), Half(0x0D3B));
-        main_memory.write!Half(Word(0x7FFCE0), Half(0x0CE7));
-        main_memory.write!Half(Word(0x7FFCE2), Half(0xA0E0));
+        main_memory.write!Half(Word(0x7FFCD8), firmware.user_settings.adc_x1);
+        main_memory.write!Half(Word(0x7FFCDA), firmware.user_settings.adc_y1);
+        main_memory.write!Byte(Word(0x7FFCDC), firmware.user_settings.scr_x1);
+        main_memory.write!Byte(Word(0x7FFCDD), firmware.user_settings.scr_y1);
+        main_memory.write!Half(Word(0x7FFCDE), firmware.user_settings.adc_x2);
+        main_memory.write!Half(Word(0x7FFCE0), firmware.user_settings.adc_y2);
+        main_memory.write!Byte(Word(0x7FFCE2), firmware.user_settings.scr_x2);
+        main_memory.write!Byte(Word(0x7FFCE3), firmware.user_settings.scr_y2);
+
+        log_cart("%x", main_memory.read!Word(Word(0x7FFCD8)));
+        log_cart("%x", main_memory.read!Word(Word(0x7FFCDC)));
+        log_cart("%x", main_memory.read!Word(Word(0x7FFCE0)));
     }
 
     @property 
@@ -45,25 +51,27 @@ final class Cart {
         Word icon_offset = this.cart_header.icon_offset;
         Pixel[32][32] icon_texture;
 
-        for (int x = 0; x < 32; x++) {
-        for (int y = 0; y < 32; y++) {
-            int tile_x = x / 8;
-            int tile_y = y / 8;
+        if (icon_offset != 0) {
+            for (int x = 0; x < 32; x++) {
+            for (int y = 0; y < 32; y++) {
+                int tile_x = x / 8;
+                int tile_y = y / 8;
 
-            int fine_x = x % 8;
-            int fine_y = y % 8;
+                int fine_x = x % 8;
+                int fine_y = y % 8;
 
-            int tile_no = tile_y * 4 + tile_x;
-            
-            Byte palette_entry = rom.read!Byte(icon_offset + 0x20 + (tile_no * 32 + fine_y * 4 + fine_x / 2));
+                int tile_no = tile_y * 4 + tile_x;
+                
+                Byte palette_entry = rom.read!Byte(icon_offset + 0x20 + (tile_no * 32 + fine_y * 4 + fine_x / 2));
 
-            if (x & 1) palette_entry >>= 4;
-            else       palette_entry &= 0xF;
+                if (x & 1) palette_entry >>= 4;
+                else       palette_entry &= 0xF;
 
-            icon_texture[x][y] = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
+                icon_texture[x][y] = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
+            }
+            }
         }
-        }
-
+        
         return icon_texture;
     }
 
@@ -72,16 +80,20 @@ final class Cart {
         import std.utf;
             
         Word icon_offset = this.cart_header.icon_offset;
-        Word rom_title_address = icon_offset + 0x240 + cast(int) language * 0x100;
-        wstring rom_title_utf16 = cast(wstring) (cast(char[]) rom[rom_title_address .. rom_title_address + 0x100]);
-        
-        size_t i = 0;
-        size_t j = 0;
 
-        while (i < 128) {
-            rom_title_buf[j] = cast(char) rom_title_utf16.decode(i);
-            j++;
+        if (icon_offset != 0) {
+            Word rom_title_address = icon_offset + 0x240 + cast(int) language * 0x100;
+            wstring rom_title_utf16 = cast(wstring) (cast(char[]) rom[rom_title_address .. rom_title_address + 0x100]);
+            
+            size_t i = 0;
+            size_t j = 0;
+
+            while (i < 128) {
+                rom_title_buf[j] = cast(char) rom_title_utf16.decode(i);
+                j++;
+            }
         }
+
         return cast(string) rom_title_buf;
     }
 
@@ -164,6 +176,21 @@ final class Cart {
     void start_transfer() {
         log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
         
+        if ((command & 0xFF) == 0x9F) {
+            auto length = get_data_block_size(0x2000);
+            memset(&outbuffer, 0xFF, length);
+            outbuffer_length = length / 4;
+        } else
+        
+        if ((command & 0xFF) == 0x00) {
+            auto length = get_data_block_size(0x200);
+            
+            if (length >= rom_size()) error_cart("Tried to initiate a 00 (aka cart header) transfer at an out of bounds region!");
+            
+            memcpy(&outbuffer, &rom[0], length);
+            outbuffer_length = length / 4;
+        } else
+
         if ((command & 0xFF) == 0xB7) {
             // KEY2 data read
 

@@ -348,7 +348,7 @@ final class ARM7TDMI : ArmCPU {
         regs[pc] = get_address_from_exception!(exception);
 
         set_flag(Flag.T, false);
-        
+
         refill_pipeline();
         halted = false;
     }

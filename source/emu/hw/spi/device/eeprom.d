@@ -34,15 +34,16 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     this() {
         state = State.WAITING_FOR_CHIPSELECT;
+        data[1] = 0x69;
     }
 
-    override Half write(Byte b) {
-        Half result = 0;
+    override Byte write(Byte b) {
+        Byte result = 0;
 
         log_eeprom("    received write: %x", b);
         switch (state) {
             case State.WAITING_FOR_COMMAND:
-                // log_eeprom("    parsing the command: %x", b);
+                log_eeprom("    parsing the command: %x", b);
                 parse_command(b);
                 break;
 
@@ -106,7 +107,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             default: break;
         }
 
-        log_eeprom("    returning %x", result);
+        // log_eeprom("    returning %x", result);
         return result;
     }
 

@@ -9,6 +9,8 @@ import std.string;
 
 import raylib;
 
+enum SCREEN_SEPARATION_HEIGHT = 0;
+
 class DSVideo : Component, Updatable, Renderable2D {
     int screen_scale;
 
@@ -74,7 +76,7 @@ class DSVideo : Component, Updatable, Renderable2D {
             render_target_bot.texture,
             Rectangle(0, 0, 256, 192),
             Rectangle(0, 0, 256 * screen_scale, 192 * screen_scale),
-            Vector2(0, -192 * screen_scale),
+            Vector2(0, -192 * screen_scale - SCREEN_SEPARATION_HEIGHT),
             0,
             Colors.WHITE
         );

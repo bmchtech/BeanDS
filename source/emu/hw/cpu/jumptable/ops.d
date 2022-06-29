@@ -170,7 +170,7 @@ void asr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
 }
 
 void ror(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
-    Word result = operand.rotate_right(shift);
+    Word result = operand.rotate_right(shift & 0x1F);
 
     if (shift == 0) {
         cpu.set_flags_NZ(operand);

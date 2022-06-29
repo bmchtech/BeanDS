@@ -77,7 +77,12 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
         writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
         writefln(fmt, args);
 
-        if (fatal) assert(0);
+        if (fatal) {
+            dump(wram.arm7_only_wram, "arm7_wram.dump");
+            dump(wram.shared_bank_1, "wram_bank1.dump");
+            dump(wram.shared_bank_2, "wram_bank2.dump");
+            assert(0);
+        }
     }
 }
  
