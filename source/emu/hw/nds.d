@@ -134,7 +134,7 @@ final class NDS {
             arm7.run_instruction();
             arm9.run_instruction();
             arm9.run_instruction();
-            scheduler.tick(2);
+            scheduler.tick(1);
             scheduler.process_events();
         }
     }
