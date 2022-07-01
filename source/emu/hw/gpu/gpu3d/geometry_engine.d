@@ -51,7 +51,7 @@ final class GeometryEngine {
         }
 
         Mat4x4 restore(int index) {
-            return Mat4x4.identity;
+            return stack[index - 1];
         }
     }
 
@@ -96,9 +96,9 @@ final class GeometryEngine {
     int command_parameters_length;
     int command_parameters_remaining;
 
-    MatrixStack!32 projection_stack;
+    MatrixStack!1  projection_stack;
     MatrixStack!32 modelview_stack;
-    MatrixStack!1  position_vector_stack;
+    MatrixStack!32 position_vector_stack;
     MatrixStack!1  texture_stack;
 
     Mat4x4 projection_matrix;
@@ -141,6 +141,9 @@ final class GeometryEngine {
     Vec4 normal_vector;
 
     Vec4 vec_test_result;
+
+    uint cycles_till_complete;
+    ulong irq_event;
 
     this(GPU3D parent) {
         this.parent = parent;
@@ -711,6 +714,8 @@ final class GeometryEngine {
                 static if (commands[i].valid) {
                     case i:
                         static if (commands[i].implemented) {
+                            cycles_till_complete += commands[i].cycles;
+                            reschedule_interrupt();
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
                             // log_gpu3d("Unhandled command: %s", commands[i].name);
@@ -721,6 +726,33 @@ final class GeometryEngine {
 
             default:
                 error_gpu3d("Improper command: %x", command);
+        }
+    }
+
+    void reschedule_interrupt() {
+        scheduler.remove_event(irq_event);
+
+        final switch (parent.irq_mode) {
+            case IRQMode.NEVER:
+                break;
+            
+            case IRQMode.LESS_THAN_HALF_FULL:
+                irq_event = scheduler.add_event_relative_to_clock(
+                    () => interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO), 
+                    cycles_till_complete / 2
+                ); // lol, inaccurate but probably works
+                break;
+            
+            case IRQMode.EMPTY:
+                irq_event = scheduler.add_event_relative_to_clock(
+                    () => interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO), 
+                    cycles_till_complete
+                );
+                break;
+            
+            case IRQMode.RESERVED:
+                error_gpu3d("Tried to use a reserved IRQMode!");
+                break;
         }
     }
 }

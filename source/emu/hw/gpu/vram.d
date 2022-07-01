@@ -4,6 +4,15 @@ import emu.hw;
 
 import util;
 
+enum SlotType {
+    BG_PAL_A = 0,
+    BG_PAL_B = 1,
+    OBJ_PAL_A = 2,
+    OBJ_PAL_B = 3,
+    TEXTURE_PAL = 4,
+    TEXTURE = 5
+};
+
 __gshared VRAM vram;
 final class VRAM {
     enum VRAM_A_SIZE = 1 << 17;
@@ -27,15 +36,16 @@ final class VRAM {
         Byte offset;
         bool enabled;
 
+        SlotType slot_type;
         bool slot_mapped;
-        int  slot;
+        int  slot; // bitfield
+        int  slot_ofs = 0;
 
         this(size_t size) {
             data = new Byte[size];
             this.size = size;
 
             this.slot_mapped = false;
-            this.slot = 0; // TODO: is the start behavior predictable at all? and more importantly, does it matter?
         }
 
         bool in_range(Word access_address) {
@@ -66,6 +76,17 @@ final class VRAM {
     bool vram_c_in_ram;
     bool vram_d_in_ram;
 
+    alias Slot = Byte[SLOT_SIZE];
+
+    Slot*[5] slots_bg_pal_a;
+    Slot*[5] slots_bg_pal_b;
+    Slot*[5] slots_obj_pal_a;
+    Slot*[5] slots_obj_pal_b;
+    Slot*[5] slots_texture_pal;
+    Slot*[5] slots_texture;
+
+    Slot*[5][6] all_slots;
+
     this() {
         blocks = [
             new VRAMBlock(VRAM_A_SIZE),
@@ -91,12 +112,36 @@ final class VRAM {
         vram_i = blocks[9];
 
         vram = this;
+        
+        all_slots = [
+            slots_bg_pal_a,
+            slots_bg_pal_b,
+            slots_obj_pal_a,
+            slots_obj_pal_b,
+            slots_texture_pal,
+            slots_texture
+        ];
     }
+
+    void remap_slots() {
+        for (int i = 0; i < 10; i++) {
+            VRAMBlock block = blocks[i];
+            if (block.slot_mapped) {
+                for (int j = 0; j < 5; j++) {
+                    if (block.slot.bit(j)) {
+                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[SLOT_SIZE * (j - block.slot_ofs)]);
+                        log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE * (j - block.slot_ofs), (&block.data[SLOT_SIZE * (j - block.slot_ofs)]) - &block.data[0]);
+                    }
+                }
+            }
+        }
+    }
+
 
     T read_bg_slot(EngineType E, T)(int slot, Word address) {
         final switch (E) {
             case EngineType.A:
-                if (vram_e.slot_mapped) return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
+                // if (vram_e.slot_mapped) return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
                 if (vram_f.slot_mapped) {
                     if (slot <  2 && vram_f.offset == 0) return vram_f.data.read!T(Word(SLOT_SIZE * slot + address));
                     if (slot >= 2 && vram_f.offset == 1) return vram_f.data.read!T(Word(SLOT_SIZE * (slot - 2) + address));
@@ -114,20 +159,21 @@ final class VRAM {
         return T(0);
     }
 
-    T read_obj_slot(EngineType E, T)(int slot, Word address) {
-        final switch (E) {
-            case EngineType.A:
-                if (vram_f.slot_mapped) return vram_f.data.read!T(address);
-                if (vram_g.slot_mapped) return vram_g.data.read!T(address);
-                break;
-
-            case EngineType.B:
-                if (vram_i.slot_mapped) return vram_i.data.read!T(address);
-                break;
+    T read_slot(T)(SlotType slot_type, int slot, Word address) {
+        if (slot_type == SlotType.BG_PAL_A) {
+            auto sexer1 = read_bg_slot!(EngineType.A, T)(slot, address);
+            // auto sexer2 = (*((all_slots[slot_type])[slot])).read!T(address);
+            // log_gpu3d("sexer2f %x", cast(int) (&(((all_slots[slot_type])[slot]))[0] - &vram_f.data[0]));
+            // if (sexer1 != sexer2) {
+                // error_vram("sex! %x %x %x %x %x", slot_type, slot, address, sexer1, sexer2);
+            // }
+        }
+        if (((all_slots[slot_type])[slot]) == null) {
+            log_vram("shitter! %x %x %x", slot_type, slot, address);
+            return T(0);
         }
 
-        error_vram("Tried to draw from obj slot but no slots were mapped!");
-        return T(0);
+        return (*all_slots[slot_type][slot]).read!T(address);
     }
 
     T read_ppu(T)(Word address) {
@@ -147,21 +193,6 @@ final class VRAM {
                 result |= block.read!T(address);
                 performed_read = true;
             }
-        }
-
-        return result;
-    }
-
-    T read_texture(T)(Word address) {
-        T result = 0;
-
-        int slot = address[17..18];
-        for (int i = 0; i < 10; i++) {
-            VRAMBlock block = blocks[i];
-
-            if (block.slot_mapped && block.slot == slot) {
-                result |= block.data.read!T(address[0..16]);
-            }    
         }
 
         return result;
@@ -190,6 +221,10 @@ final class VRAM {
     }
 
     void write9(T)(Word address, T value) {
+        static if (is(T == Byte)) {
+            log_vram("ARM9 tried to perform a byte write of %02x to VRAM at address %08x! Ignoring.", value, address);
+        }
+
         bool performed_write = false;
 
         for (int i = 0; i < 10; i++) {
@@ -200,7 +235,7 @@ final class VRAM {
 
             if (block.slot_mapped) continue;
 
-            if (block.in_range(address)) {            
+            if (block.in_range(address)) {    
                 block.write!T(address, value);
                 performed_write = true;
             }
@@ -290,8 +325,10 @@ final class VRAM {
             case 0: vram_a.address = 0x0680_0000; break;
             case 1: vram_a.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_a.address = 0x0640_0000 + offset.bit(0) * 0x20000; break;
-            case 3: vram_a.slot    = offset; break;
+            case 3: vram_a.slot = 1 << offset; vram_a.slot_type = SlotType.TEXTURE; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_B(int mst, int offset) {
@@ -303,8 +340,10 @@ final class VRAM {
             case 0: vram_b.address = 0x0682_0000; break;
             case 1: vram_b.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_b.address = 0x0640_0000 + offset.bit(0) * 0x20000; break;
-            case 3: vram_b.slot    = offset; break;
+            case 3: vram_b.slot = 1 << offset; vram_b.slot_type = SlotType.TEXTURE; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_C(int mst, int offset) {
@@ -317,9 +356,11 @@ final class VRAM {
             case 0: vram_c.address = 0x0684_0000; break;
             case 1: vram_c.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_c.address = 0x0600_0000 + offset.bit(0) * 0x20000; break;
-            case 3: vram_c.slot    = offset; break;
+            case 3: vram_c.slot = 1 << offset; vram_c.slot_type = SlotType.TEXTURE; break;
             case 4: vram_c.address = 0x0620_0000; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_D(int mst, int offset) {
@@ -332,22 +373,26 @@ final class VRAM {
             case 0: vram_d.address = 0x0686_0000; break;
             case 1: vram_d.address = 0x0600_0000 + offset * 0x20000; break;
             case 2: vram_d.address = 0x0600_0000 + offset.bit(0) * 0x20000; break;
-            case 3: vram_d.slot    = offset; break;
+            case 3: vram_d.slot = 1 << offset; vram_d.slot_type = SlotType.TEXTURE; break;
             case 4: vram_d.address = 0x0660_0000; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_E(int mst) {
         vram_e.mst         = mst;
-        vram_e.slot_mapped = mst == 4;
+        vram_e.slot_mapped = mst > 2;
 
         final switch (mst) {
             case 0: vram_e.address = 0x0688_0000; break;
             case 1: vram_e.address = 0x0600_0000; break;
             case 2: vram_e.address = 0x0640_0000; break;
-            case 3: log_unimplemented("i do not understand what to do here"); break;
-            case 4: log_unimplemented("help me oh slot gods"); break;
+            case 3: vram_e.slot = 0b1111; vram_e.slot_type = SlotType.TEXTURE_PAL; break;
+            case 4: vram_e.slot = 0b1111; vram_e.slot_type = SlotType.BG_PAL_A; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_F(int mst, int offset) {
@@ -359,10 +404,12 @@ final class VRAM {
             case 0: vram_f.address = 0x0689_0000; break;
             case 1: vram_f.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_f.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: vram_f.slot    = offset.bit(0) + offset.bit(1) * 4; break;
-            case 4: log_unimplemented("i do not understand what to do here"); break;
-            case 5: log_unimplemented("i do not understand what to do here"); break;
+            case 3: vram_f.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = 0; vram_f.slot_type = SlotType.TEXTURE_PAL; break;
+            case 4: vram_f.slot = 0b11 << (offset.bit(0) * 2); vram_f.slot_ofs = offset.bit(0) * 2; vram_f.slot_type = SlotType.BG_PAL_A; break;
+            case 5: vram_f.slot = 1; vram_f.slot_ofs = 0; vram_f.slot_type = SlotType.OBJ_PAL_A; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_G(int mst, int offset) {
@@ -374,10 +421,12 @@ final class VRAM {
             case 0: vram_g.address = 0x0689_4000; break;
             case 1: vram_g.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_g.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: vram_g.slot    = offset.bit(0) + offset.bit(1) * 4; break;
-            case 4: log_unimplemented("i do not understand what to do here"); break;
-            case 5: log_unimplemented("i do not understand what to do here"); break;
+            case 3: vram_g.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = 0; vram_g.slot_type = SlotType.TEXTURE_PAL; break;
+            case 4: vram_g.slot = 0b11 << (offset.bit(0) * 2); vram_g.slot_ofs = offset.bit(0) * 2; vram_g.slot_type = SlotType.BG_PAL_A; break;
+            case 5: vram_g.slot = 1; vram_g.slot_ofs = 0; vram_g.slot_type = SlotType.OBJ_PAL_A; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_H(int mst) {
@@ -387,8 +436,10 @@ final class VRAM {
         final switch (mst) {
             case 0: vram_h.address = 0x0689_8000; break;
             case 1: vram_h.address = 0x0620_0000; break;
-            case 2: log_unimplemented("i do not understand what to do here"); break;
+            case 2: vram_h.slot = 0b1111; vram_h.slot_type = SlotType.BG_PAL_B; break;
         }
+
+        remap_slots();
     }
 
     void set_vram_I(int mst) {
@@ -399,8 +450,10 @@ final class VRAM {
             case 0: vram_i.address = 0x068A_0000; break;
             case 1: vram_i.address = 0x0620_8000; break;
             case 2: vram_i.address = 0x0660_0000; break;
-            case 3: vram_i.slot    = 0; break;
+            case 3: vram_i.slot = 1; vram_i.slot_type = SlotType.OBJ_PAL_B; break;
         }
+
+        remap_slots();
     }
 
     Byte read_VRAMSTAT(int target_byte) {

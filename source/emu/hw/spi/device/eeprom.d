@@ -40,10 +40,10 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
     override Byte write(Byte b) {
         Byte result = 0;
 
-        log_eeprom("    received write: %x", b);
+        // log_eeprom("    received write: %x", b);
         switch (state) {
             case State.WAITING_FOR_COMMAND:
-                log_eeprom("    parsing the command: %x", b);
+                // log_eeprom("    parsing the command: %x", b);
                 parse_command(b);
                 break;
 
@@ -75,7 +75,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     result = data[current_address];
-                    log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
+                    // log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
@@ -93,7 +93,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     data[current_address] = b;
-                    log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
+                    // log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
@@ -125,12 +125,12 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     override void chipselect_fall() {
         state = State.WAITING_FOR_COMMAND;
-        log_eeprom("chipselect fall");
+        // log_eeprom("chipselect fall");
     }
 
     override void chipselect_rise() {
         state = State.WAITING_FOR_CHIPSELECT;
-        log_eeprom("chipselect rise");
+        // log_eeprom("chipselect rise");
     }
 
 

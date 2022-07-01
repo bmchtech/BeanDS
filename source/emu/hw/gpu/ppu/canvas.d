@@ -39,6 +39,10 @@ struct PaletteIndex {
     int b;
 
     Pixel resolve(EngineType E)(int pram_offset) {
+        static if (E == EngineType.A) SlotType bg_slot_type  = SlotType.BG_PAL_A;
+        static if (E == EngineType.B) SlotType bg_slot_type  = SlotType.BG_PAL_B;
+        static if (E == EngineType.A) SlotType obj_slot_type = SlotType.OBJ_PAL_A;
+        static if (E == EngineType.B) SlotType obj_slot_type = SlotType.OBJ_PAL_B;
         Pixel p;
 
         if (is_3d) {
@@ -48,8 +52,8 @@ struct PaletteIndex {
         } else {
             if (slot == -1) p = Pixel(pram.read!Half(Word(pram_offset + index * 2)));
             else {
-                if (is_obj) p = Pixel(vram.read_obj_slot!(E, Half)(slot, Word(index * 2)));
-                else        p = Pixel(vram.read_bg_slot !(E, Half)(slot, Word(index * 2)));
+                if (is_obj) p = Pixel(vram.read_slot!Half(obj_slot_type, slot, Word(index * 2)));
+                else        p = Pixel(vram.read_slot!Half(bg_slot_type,  slot, Word(index * 2)));
             }
         }
         

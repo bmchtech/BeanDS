@@ -53,7 +53,7 @@ final class SPI {
     }
 
     void write_SPICNT(int target_byte, Byte data) {
-        log_spi("SPICNT: %x %x", target_byte, data);
+        // log_spi("SPICNT: %x %x", target_byte, data);
         final switch (target_byte) {
             case 0:
                 baudrate = data[0..1];
@@ -90,7 +90,7 @@ final class SPI {
     }
 
     T read_SPIDATA(T)(int offset) {
-        log_spi("spidata?: %x %x", selected_device_index, result);
+        // log_spi("spidata?: %x %x", selected_device_index, result);
 
         return T(result);
     }

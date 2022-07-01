@@ -142,7 +142,7 @@ final class DMA(HwType H) {
 
         while (cart.transfer_ongoing) {
             Word val = cart.read_ROMRESULT!Word(0);
-            log_dma9("cart read %08x. writing to %x", val, address);
+            // log_dma9("cart read %08x. writing to %x", val, address);
             mem.write_word(address, val);
             address += 4;
         }

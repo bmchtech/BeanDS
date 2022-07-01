@@ -34,14 +34,15 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     // }
 
     int texel_index = cast(int) (wrapped_t * texture_s_size + wrapped_s);
+    log_gpu3d("texture type: %s", p.orig.texture_format);
 
     // TODO: make this a final switch when i've actually implemented all the texture formats
     switch (p.orig.texture_format) {
         case TextureFormat.COLOR_PALETTE_4:
-            Byte texel = vram.read_texture!Byte(Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
+            Byte texel = vram.read_slot!Byte(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
             texel >>= (2 * (texel_index % 4));
             texel &= 3;
-            Half color = vram.read_texture!Half(palette_base_address * 16 + texel * 2);
+            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, palette_base_address * 16 + texel * 2);
             
             return [
                 color[0..4],
@@ -51,8 +52,8 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
 
         case TextureFormat.COLOR_PALETTE_256:
-            Byte texel = vram.read_texture!Byte(Word((p.orig.texture_vram_offset << 3) + texel_index));
-            Half color = vram.read_texture!Half(palette_base_address * 16 + texel * 2);
+            Byte texel = vram.read_slot!Byte(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + texel_index));
+            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, palette_base_address * 16 + texel * 2);
             
             return [
                 color[0..4],
@@ -70,7 +71,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
 
         case TextureFormat.DIRECT_TEXTURE:
-            Half texel = vram.read_texture!Half(Word((p.orig.texture_vram_offset << 3) + 2 * texel_index));
+            Half texel = vram.read_slot!Half(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + 2 * texel_index));
 
             return [
                 texel[0..4],
@@ -80,7 +81,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         default:
-            // log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
+            log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
     }
     
     // TODO: this return never trigger once the above switch case is made into a final switch

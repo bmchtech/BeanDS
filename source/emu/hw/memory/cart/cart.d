@@ -36,10 +36,6 @@ final class Cart {
         main_memory.write!Half(Word(0x7FFCE0), firmware.user_settings.adc_y2);
         main_memory.write!Byte(Word(0x7FFCE2), firmware.user_settings.scr_x2);
         main_memory.write!Byte(Word(0x7FFCE3), firmware.user_settings.scr_y2);
-
-        log_cart("%x", main_memory.read!Word(Word(0x7FFCD8)));
-        log_cart("%x", main_memory.read!Word(Word(0x7FFCDC)));
-        log_cart("%x", main_memory.read!Word(Word(0x7FFCE0)));
     }
 
     @property 
@@ -174,7 +170,7 @@ final class Cart {
     }
 
     void start_transfer() {
-        log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
+        // log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
         
         if ((command & 0xFF) == 0x9F) {
             auto length = get_data_block_size(0x2000);
@@ -200,7 +196,7 @@ final class Cart {
             if (address + length >= rom_size()) error_cart("Tried to initiate a B7 transfer at an out of bounds region!");
             
             memcpy(&outbuffer, &rom[address], length);
-            log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
+            // log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
             outbuffer_length = length / 4;
         } else
 
@@ -211,7 +207,7 @@ final class Cart {
                 outbuffer[i] = get_cart_id();
             }
 
-            log_cart("getting cart id");
+            // log_cart("getting cart id");
 
             outbuffer_length = length / 4;
         } else

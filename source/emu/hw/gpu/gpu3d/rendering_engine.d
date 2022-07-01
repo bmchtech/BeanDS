@@ -202,128 +202,136 @@ final class RenderingEngine {
     // ya this is NOT correct at all and WILL break games (e.g. mario kart).
     // TODO: make the timings of the rendering engine actually decent
     void render(int scanline) {
+        if (scanline == 0) {
+            annotate_polygons();
+        }
+        
         parent.start_rendering_scanline();
         
-        // auto effective_scanline = 192 - scanline;
+        auto effective_scanline = 192 - scanline;
 
-        // for (int i = 0; i < num_polygons; i++) {
-        //     auto p = annotated_polygons[i];
-        //     auto left_xy  = p.viewport_coords[p.left_index] [0..2];
-        //     auto right_xy = p.viewport_coords[p.right_index][0..2];
+        for (int i = 0; i < num_polygons; i++) {
+            log_gpu3d("rendering polygon #%x", i);
+            auto p = annotated_polygons[i];
+            auto left_xy  = p.viewport_coords[p.left_index] [0..2];
+            auto right_xy = p.viewport_coords[p.right_index][0..2];
 
-        //     if (p.top_y >= effective_scanline && effective_scanline >= p.bot_y) {
-        //         auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
-        //             get_slope(
-        //                 p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
-        //                 p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
-        //             ) + cast(int) left_xy[0];
+            if (p.top_y >= effective_scanline && effective_scanline >= p.bot_y) {
+                auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
+                    get_slope(
+                        p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
+                        p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
+                    ) + cast(int) left_xy[0];
 
-        //         auto end_x = (effective_scanline - cast(int) right_xy[1]) / 
-        //             get_slope(
-        //                 p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
-        //                 p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
-        //             ) + cast(int) right_xy[0];
+                auto end_x = (effective_scanline - cast(int) right_xy[1]) / 
+                    get_slope(
+                        p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
+                        p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
+                    ) + cast(int) right_xy[0];
 
-        //         import std.math;
-        //         if (std.math.isNaN(start_x) || std.math.isNaN(end_x)) { error_gpu3d("bad. %f %f %f %f %f %f %f %f %f", 
-        //             get_slope(
-        //                 p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
-        //                 p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
-        //             ) + cast(int) right_xy[0], get_slope(
-        //                 p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
-        //                 p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
-        //             ) + cast(int) left_xy[0], start_x, end_x, p.viewport_coords[p.previous_right_index][1], p.viewport_coords[p.right_index][1], 
-        //                 p.viewport_coords[p.previous_right_index][0], p.viewport_coords[p.right_index][0],
-        //             cast(int) right_xy[0]); continue; }
+                import std.math;
+                if (std.math.isNaN(start_x) || std.math.isNaN(end_x)) { error_gpu3d("bad. %f %f %f %f %f %f %f %f %f", 
+                    get_slope(
+                        p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
+                        p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
+                    ) + cast(int) right_xy[0], get_slope(
+                        p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
+                        p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
+                    ) + cast(int) left_xy[0], start_x, end_x, p.viewport_coords[p.previous_right_index][1], p.viewport_coords[p.right_index][1], 
+                        p.viewport_coords[p.previous_right_index][0], p.viewport_coords[p.right_index][0],
+                    cast(int) right_xy[0]); continue; }
 
-        //         int effective_start_x = cast(int) start_x;
-        //         int effective_end_x   = cast(int) end_x;
+                int effective_start_x = cast(int) start_x;
+                int effective_end_x   = cast(int) end_x;
 
-        //         if (start_x < 0)   effective_start_x = 0;
-        //         if (start_x > 256) effective_start_x = 256;
-        //         if (end_x < 0)     effective_end_x = 0;
-        //         if (end_x > 256)   effective_end_x = 256;
+                if (start_x < 0)   effective_start_x = 0;
+                if (start_x > 256) effective_start_x = 256;
+                if (end_x < 0)     effective_end_x = 0;
+                if (end_x > 256)   effective_end_x = 256;
                 
-        //         auto factor_l = get_interpolation_factor(
-        //             p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
-        //             effective_scanline - p.viewport_coords[p.left_index][1],
-        //             p.orig.vertices[p.previous_left_index].pos[3],
-        //             p.orig.vertices[p.left_index].pos[3]
-        //         );
+                auto factor_l = get_interpolation_factor(
+                    p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
+                    effective_scanline - p.viewport_coords[p.left_index][1],
+                    p.orig.vertices[p.previous_left_index].pos[3],
+                    p.orig.vertices[p.left_index].pos[3]
+                );
 
-        //         auto factor_r = get_interpolation_factor(
-        //             p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
-        //             effective_scanline - p.viewport_coords[p.right_index][1],
-        //             p.orig.vertices[p.previous_right_index].pos[3],
-        //             p.orig.vertices[p.right_index].pos[3]
-        //         );
+                auto factor_r = get_interpolation_factor(
+                    p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
+                    effective_scanline - p.viewport_coords[p.right_index][1],
+                    p.orig.vertices[p.previous_right_index].pos[3],
+                    p.orig.vertices[p.right_index].pos[3]
+                );
 
-        //         for (int x = effective_start_x; x < effective_end_x; x++) {
-        //             auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], factor_l);
-        //             auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], factor_r);
+                for (int x = effective_start_x; x < effective_end_x; x++) {
+                    auto w_l = interpolate(p.orig.vertices[p.previous_left_index].pos[3], p.orig.vertices[p.left_index].pos[3], factor_l);
+                    auto w_r = interpolate(p.orig.vertices[p.previous_right_index].pos[3], p.orig.vertices[p.right_index].pos[3], factor_r);
 
-        //             auto factor_scanline = get_interpolation_factor(
-        //                 cast(int) end_x - cast(int) start_x,
-        //                 x - cast(int) start_x,
-        //                 w_l,
-        //                 w_r
-        //             );
+                    auto factor_scanline = get_interpolation_factor(
+                        cast(int) end_x - cast(int) start_x,
+                        x - cast(int) start_x,
+                        w_l,
+                        w_r
+                    );
 
-        //             int r;
-        //             int g;
-        //             int b;
-        //             int a;
+                    int r;
+                    int g;
+                    int b;
+                    int a = 0;
 
-        //             if (p.orig.uses_textures) {
-        //                 auto texcoord_s_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[0], p.orig.vertices[p.left_index].texcoord[0], factor_l);
-        //                 auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0], p.orig.vertices[p.right_index].texcoord[0], factor_r);
-        //                 auto texcoord_t_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[1], p.orig.vertices[p.left_index].texcoord[1], factor_l);
-        //                 auto texcoord_t_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[1], p.orig.vertices[p.right_index].texcoord[1], factor_r);
+                    if (p.orig.uses_textures) {
+                        auto texcoord_s_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[0], p.orig.vertices[p.left_index].texcoord[0], factor_l);
+                        auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0], p.orig.vertices[p.right_index].texcoord[0], factor_r);
+                        auto texcoord_t_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[1], p.orig.vertices[p.left_index].texcoord[1], factor_l);
+                        auto texcoord_t_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[1], p.orig.vertices[p.right_index].texcoord[1], factor_r);
 
-        //                 auto texcoord_s = interpolate(texcoord_s_l, texcoord_s_r, 1 - factor_scanline);
-        //                 auto texcoord_t = interpolate(texcoord_t_l, texcoord_t_r, 1 - factor_scanline);
-        //                 auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p, p.orig.palette_base_address);
-        //                 r = cast(int) color[0] << 1;
-        //                 g = cast(int) color[1] << 1;
-        //                 b = cast(int) color[2] << 1;
-        //                 a = cast(int) color[3];
-        //             } else {
-        //                 auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r << 4, p.orig.vertices[p.left_index].r << 4, factor_l);
-        //                 auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r << 4, p.orig.vertices[p.right_index].r << 4, factor_r);
-        //                 auto g_l = interpolate(p.orig.vertices[p.previous_left_index].g << 4, p.orig.vertices[p.left_index].g << 4, factor_l);
-        //                 auto g_r = interpolate(p.orig.vertices[p.previous_right_index].g << 4, p.orig.vertices[p.right_index].g << 4, factor_r);
-        //                 auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
-        //                 auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
+                        auto texcoord_s = interpolate(texcoord_s_l, texcoord_s_r, 1 - factor_scanline);
+                        auto texcoord_t = interpolate(texcoord_t_l, texcoord_t_r, 1 - factor_scanline);
+                        
+                        auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p, p.orig.palette_base_address);
+                        r = cast(int) color[0] << 1;
+                        g = cast(int) color[1] << 1;
+                        b = cast(int) color[2] << 1;
+                        a = cast(int) color[3];
+                    } else {
+                        auto r_l = interpolate(p.orig.vertices[p.previous_left_index].r << 4, p.orig.vertices[p.left_index].r << 4, factor_l);
+                        auto r_r = interpolate(p.orig.vertices[p.previous_right_index].r << 4, p.orig.vertices[p.right_index].r << 4, factor_r);
+                        auto g_l = interpolate(p.orig.vertices[p.previous_left_index].g << 4, p.orig.vertices[p.left_index].g << 4, factor_l);
+                        auto g_r = interpolate(p.orig.vertices[p.previous_right_index].g << 4, p.orig.vertices[p.right_index].g << 4, factor_r);
+                        auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
+                        auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
 
-        //                 // // log_gpu3d("The result of interpolation: %f %f %d %f %f %f", end_x, start_x, x, w_l, w_r, factor_scanline);
+                        // // log_gpu3d("The result of interpolation: %f %f %d %f %f %f", end_x, start_x, x, w_l, w_r, factor_scanline);
 
-        //                 r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
-        //                 g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
-        //                 b = cast(int) interpolate(b_l, b_r, 1 - factor_scanline) >> 3;
-        //                 a = 31;
-        //             }
+                        r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
+                        g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
+                        b = cast(int) interpolate(b_l, b_r, 1 - factor_scanline) >> 3;
+                        a = 31;
+                    }
                 
-        //             if (a != 0) parent.plot(Pixel(cast(int) r, cast(int) g, cast(int) b), x);
-        //         }
-        //     }
+                    parent.plot(Pixel(cast(int) r, cast(int) g, cast(int) b, a), x);
+                }
+            }
 
-        //     if (effective_scanline == p.bot_y) {
-        //         p.top_y = p.bot_y;
+            if (effective_scanline == p.bot_y) {
+                p.top_y = p.bot_y;
 
-        //         if (p.annotated_vertices[p.annotated_vertex_next].left) {
-        //             p.previous_left_index = p.left_index;
-        //             p.left_index = p.annotated_vertices[p.annotated_vertex_next].index;
-        //         } else {
-        //             p.previous_right_index = p.right_index;
-        //             p.right_index = p.annotated_vertices[p.annotated_vertex_next].index;
-        //         }
+                if (p.annotated_vertices[p.annotated_vertex_next].left) {
+                    p.previous_left_index = p.left_index;
+                    p.left_index = p.annotated_vertices[p.annotated_vertex_next].index;
+                } else {
+                    p.previous_right_index = p.right_index;
+                    p.right_index = p.annotated_vertices[p.annotated_vertex_next].index;
+                }
 
-        //         p.bot_y = cast(int) max(p.viewport_coords[p.left_index][1], p.viewport_coords[p.right_index][1]);
-        //         p.annotated_vertex_next++;
-        //     }
+                log_gpu3d("annotated vertex next: %x", p.annotated_vertex_next);
 
-        //     annotated_polygons[i] = p;
-        // }
+                p.bot_y = cast(int) max(p.viewport_coords[p.left_index][1], p.viewport_coords[p.right_index][1]);
+                p.annotated_vertex_next++;
+            }
+
+            annotated_polygons[i] = p;
+        }
             
         parent.stop_rendering_scanline();
     }

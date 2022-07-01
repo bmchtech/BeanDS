@@ -19,6 +19,10 @@ final class PRAM {
     }
 
     void write(T)(Word address, T value) {
+        static if (is(T == Byte)) {
+            log_vram("A CPU tried to perform a byte write of %02x to PRAM at address %08x! Ignoring.", value, address);
+        }
+
         data.write!T(address % PRAM_SIZE, value);
     }
 }

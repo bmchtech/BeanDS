@@ -3,6 +3,13 @@ module emu.hw.gpu.gpu3d.gpu3d;
 import emu;
 import util;
 
+enum IRQMode {
+    NEVER               = 0,
+    LESS_THAN_HALF_FULL = 1,
+    EMPTY               = 2,
+    RESERVED            = 3,
+}
+
 __gshared GPU3D gpu3d;
 final class GPU3D {
 
@@ -38,6 +45,8 @@ final class GPU3D {
     int scanline_cache_head = 0;
     int scanline_cache_tail = 0;
 
+    IRQMode irq_mode;
+
     this() {
         gpu3d = this;
 
@@ -63,7 +72,7 @@ final class GPU3D {
 
     void start_rendering_scanline() {
         for (int x = 0; x < 256; x++) {
-            scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0);
+            scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0, 0);
         }
     }
 
@@ -76,7 +85,8 @@ final class GPU3D {
         int y = scanline_cache_head + 1;
         if (y == 48) y = 0;
         for (int x = 0; x < 256; x++) {
-            gpu_engine_a.ppu.canvas.draw_3d_pixel(x, scanline_cache[scanline_cache_tail][x]);
+            auto pixel = scanline_cache[scanline_cache_tail][x];
+            if (pixel.a != 0) gpu_engine_a.ppu.canvas.draw_3d_pixel(x, pixel);
         }
 
         scanline_cache_tail++;
@@ -89,7 +99,6 @@ final class GPU3D {
         rendering_buffer = temp;
 
         rendering_engine.num_polygons = num_polygons;
-        rendering_engine.annotate_polygons();
     }
 
     Byte read_DISP3DCNT(int target_byte) {
@@ -144,10 +153,40 @@ final class GPU3D {
     }
 
     Byte read_GXSTAT(int target_byte) {
-        return Word(0x06000000).get_byte(target_byte);
+        Byte result;
+
+        final switch (target_byte) {
+            case 0:
+                result[0] = 0; // TestReady - stubbed as "yes"
+                result[1] = 1; // BoxTestResult - stubbed as "in-view"
+                break;
+
+            case 1:
+                result[0..4] = geometry_engine.position_vector_stack.stack_pointer;
+                result[5]    = geometry_engine.projection_stack.stack_pointer;
+                result[6]    = 0; // GPU matrix push/pop command - stubbed as "ready"
+                result[7]    = 0; // Matrix Error - stubbed as "no"
+                break;
+
+            case 2:
+                result[0..7] = 0; // Command FIFO size - stubbed as "0"
+                break;
+
+            case 3:
+                result[0]    = 0; // Command FIFO size (MSB) - stubbed as "0"
+                result[1]    = 1; // Command FIFO less-than-half-full - stubbed as "yes"
+                result[2]    = 1; // Command FIFO empty - stubbed as "yes"
+                result[3]    = 0; // Geometry Engine Busy - stubbed as "no"
+                result[6..7] = irq_mode;
+                break;
+        }
+
+        return result;
     }
 
     void write_GXSTAT(int target_byte, Byte data) {
-        
+        if (target_byte == 3) {
+            irq_mode = cast(IRQMode) data[6..7];
+        }
     }
 }
