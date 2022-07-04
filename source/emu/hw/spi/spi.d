@@ -18,7 +18,7 @@ final class SPI {
 
     SPIDevice[4] spi_devices;
 
-    private this() {
+    this() {
         spi_devices = [
             null,
             new Firmware(),
@@ -27,8 +27,8 @@ final class SPI {
         ];
     }
 
-    static void reset() {
-        spi = new SPI();
+    void reset() {
+
     }
 
     Byte read_SPICNT(int target_byte) {

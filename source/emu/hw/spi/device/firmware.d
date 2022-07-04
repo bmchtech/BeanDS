@@ -43,6 +43,9 @@ struct UserSettings {
 
 __gshared Firmware firmware;
 final class Firmware : SPIDevice {
+
+    enum FIRMWARE_SIZE = 0x40000;
+    
     enum State {
         WAITING_FOR_CHIPSELECT = 0,
         WAITING_FOR_COMMAND,
@@ -82,29 +85,10 @@ final class Firmware : SPIDevice {
 
     void direct_boot() {
         power_on = true;
+    }
 
-        data.write!Byte(Word(0x0001D), Byte(0xFF));   // console type = nintendo DS
-        data.write!Half(Word(0x00020), Half(0x7FC0)); // offset to user settings area
-
-        // user settings
-        data.write!Half(Word(0x3FE00), Half(5)); // apparently this address is just 5 for some reason
-        data.write!Byte(Word(0x3FE03), Byte(1)); // birthday month, must be nonzero
-        data.write!Byte(Word(0x3FE04), Byte(1)); // birthday day, must also be nonzero
-        data.write!Half(Word(0x3FE58), user_settings.adc_x1);
-        data.write!Half(Word(0x3FE5A), user_settings.adc_y1);
-        data.write!Byte(Word(0x3FE5C), user_settings.scr_x1);
-        data.write!Byte(Word(0x3FE5D), user_settings.scr_y1);
-        data.write!Half(Word(0x3FE5E), user_settings.adc_x2);
-        data.write!Half(Word(0x3FE60), user_settings.adc_y2);
-        data.write!Byte(Word(0x3FE62), user_settings.scr_x2);
-        data.write!Byte(Word(0x3FE63), user_settings.scr_y2);
-        data.write!Half(Word(0x3FE64), Half(1)); // english language
-        data.write!Half(Word(0x3FE66), Half(2000)); // the year
-
-        // wifi stuffs
-        data.write!Half(Word(0x00036), Half(0x0009)); // mac address pt 1
-        data.write!Word(Word(0x00038), Word(0xBF000000)); // mac address pt 2
-        data.write!Word(Word(0x0003C), Word(0x00003FFE)); // enabled weefee channels
+    void load_firmware(Byte[] data) {
+        this.data[0..FIRMWARE_SIZE] = data[0..FIRMWARE_SIZE];
     }
 
     override Byte write(Byte b) {

@@ -7,10 +7,12 @@ __gshared Slot slot;
 final class Slot {
     HwType access_rights;
 
-    private this() {}
+    this() {
 
-    static void reset() {
-        slot = new Slot();
+    }
+
+    void reset() {
+        // something with access_rights???
     }
 
     void write_EXMEMCNT(int target_byte, Byte data) {

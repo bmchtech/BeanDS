@@ -29,11 +29,7 @@ final class TCM {
         dtcm_enabled      = true;
         itcm_enabled      = true;
     }
-
-    static void reset() {
-        tcm = new TCM();
-    }
-
+    
     bool can_read_itcm(Word address) {
         return itcm_enabled && in_itcm(address) && !itcm_load_mode;
     }

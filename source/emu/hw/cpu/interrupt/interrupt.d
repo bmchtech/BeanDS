@@ -42,11 +42,6 @@ final class InterruptManager {
         this.cpu = cpu;
     }
 
-    static void reset() {
-        interrupt7 = new InterruptManager(arm7);
-        interrupt9 = new InterruptManager(arm9);
-    }
-
     void raise_interrupt(Interrupt code) {
         status[code] = 1;
         if (enable & status) cpu.unhalt();

@@ -395,7 +395,7 @@ final class VRAM {
             case 0: vram_f.address = 0x0689_0000; break;
             case 1: vram_f.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_f.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: vram_f.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = 0; vram_f.slot_type = SlotType.TEXTURE_PAL; break;
+            case 3: vram_f.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = offset.bit(1) * 4; vram_f.slot_type = SlotType.TEXTURE_PAL; break;
             case 4: vram_f.slot = 0b11 << (offset.bit(0) * 2); vram_f.slot_ofs = offset.bit(0) * 2; vram_f.slot_type = SlotType.BG_PAL_A; break;
             case 5: vram_f.slot = 1; vram_f.slot_ofs = 0; vram_f.slot_type = SlotType.OBJ_PAL_A; break;
         }
@@ -412,7 +412,7 @@ final class VRAM {
             case 0: vram_g.address = 0x0689_4000; break;
             case 1: vram_g.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_g.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: vram_g.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = 0; vram_g.slot_type = SlotType.TEXTURE_PAL; break;
+            case 3: vram_g.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = offset.bit(1) * 4; vram_g.slot_type = SlotType.TEXTURE_PAL; break;
             case 4: vram_g.slot = 0b11 << (offset.bit(0) * 2); vram_g.slot_ofs = offset.bit(0) * 2; vram_g.slot_type = SlotType.BG_PAL_A; break;
             case 5: vram_g.slot = 1; vram_g.slot_ofs = 0; vram_g.slot_type = SlotType.OBJ_PAL_A; break;
         }

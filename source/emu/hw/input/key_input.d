@@ -21,11 +21,6 @@ enum DSKeyCode {
 
 __gshared KeyInput input;
 final class KeyInput {
-    this() {
-        input = this;
-        reset();
-    }
-
     void reset() {
         keys = 0x007F01FF; // all released
     }

@@ -9,12 +9,8 @@ final class Mem7 : Mem {
     enum BIOS_SIZE = 1 << 14;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    private this() {
-        MMIO7.reset();
-    }
-
-    static void reset() {
-        mem7 = new Mem7();
+    this() {
+        mem7 = this;
     }
 
     T read(T)(Word address) {

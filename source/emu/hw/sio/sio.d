@@ -4,10 +4,6 @@ import util;
 
 __gshared SIO sio;
 final class SIO {
-    this() {
-        sio = this;
-    }
-
     Half rcnt;
 
     Byte read_RCNT(int target_byte) {

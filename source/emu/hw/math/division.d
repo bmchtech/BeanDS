@@ -15,10 +15,6 @@ public class DivController {
     u64 div_result;
     u64 divrem_result;
 
-    this() {
-        math_div = this;
-    }
-
     Byte read_DIVCNT(int target_byte) {
         if (target_byte == 0) return Byte(mode);
         if (target_byte == 1) return Byte(division_by_zero << 6);

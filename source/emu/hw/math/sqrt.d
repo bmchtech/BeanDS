@@ -8,10 +8,6 @@ public class SqrtController {
     Word param_lo;
     Word param_hi;
 
-    this() {
-        math_sqrt = this;
-    }
-
     Byte read_SQRTCNT(int target_byte) {
         if (target_byte == 0) return Byte(mode);
         return Byte(0);

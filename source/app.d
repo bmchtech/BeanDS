@@ -4,6 +4,8 @@ import ui;
 
 import util;
 
+enum DIRECT_BOOT = false;
+
 version (gperf) {
 	import gperftools_d.profiler;
 }
@@ -13,9 +15,9 @@ version (unittest) {
 	void main(string[] args) {
 		auto cli_args = parse_cli_args(args);
 
-		auto reng = new RengMultimediaDevice(cli_args.screen_scale);
-
 		auto nds = new NDS(cli_args.arm7_ringbuffer_size, cli_args.arm9_ringbuffer_size);
+		
+		auto reng = new RengMultimediaDevice(cli_args.screen_scale);
 		nds.set_multimedia_device(reng);
 
 		// sure i could put the bios in the cli_args... and i *will*
@@ -24,9 +26,12 @@ version (unittest) {
 		// shoot me, but im hardcoding it for now.
 		nds.load_bios7(load_file_as_bytes("roms/biosnds7.rom"));
 		nds.load_bios9(load_file_as_bytes("roms/biosnds9.rom"));
+		nds.load_firmware(load_file_as_bytes("roms/firmware.rom"));
 		nds.load_rom(load_file_as_bytes(cli_args.rom_path));
 		nds.set_sample_rate(48000);
-		nds.direct_boot();
+
+		nds.reset();
+		if (cli_args.direct_boot) nds.direct_boot();
 
 		import std.stdio;
 		version (gperf) {

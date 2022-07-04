@@ -8,12 +8,8 @@ __gshared AUXSPI auxspi;
 final class AUXSPI {
     EEPROM!(32, 256) eeprom;
 
-    private this () {
+    this () {
         eeprom = new EEPROM!(32, 256);
-    }
-
-    static void reset() {
-        auxspi = new AUXSPI();
     }
 
     bool transfer_completion_irq7_enable;

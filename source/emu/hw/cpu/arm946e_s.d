@@ -33,27 +33,45 @@ final class ARM946E_S : ArmCPU {
         arm9 = this;
 
         cpu_trace = new CpuTrace(this, ringbuffer_size);
-        reset();
+        cp15 = new Cp15();
+        tcm = new TCM();
     }
 
     void reset() {
         set_mode!MODE_SYSTEM;
         current_mode = MODE_SYSTEM;
-        regs[pc] = 0;
-
         for (int i = 0; i < 7; i++) {
             register_file[MODES[i].OFFSET + 16] |= MODES[i].CPSR_ENCODING;
         }    
 
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
     
-        Cp15.reset();
+        set_reg(pc, Word(get_address_from_exception!(CpuException.Reset)));
     }
 
     void direct_boot() {
         register_file[MODE_USER      .OFFSET + sp] = 0x0300_2F7C;
         register_file[MODE_IRQ       .OFFSET + sp] = 0x0300_3F7C;
         register_file[MODE_SUPERVISOR.OFFSET + sp] = 0x0300_3FC0;
+
+        internal_write!Word(Word(0x27FF800), cart.get_cart_id());
+        internal_write!Word(Word(0x27FF804), cart.get_cart_id());
+        internal_write!Word(Word(0x27FFC00), cart.get_cart_id());
+        internal_write!Word(Word(0x27FFC04), cart.get_cart_id());
+        internal_write!Word(Word(0x27FFC3C), Word(0x00000332));
+        internal_write!Word(Word(0x27FFC40), Word(1)); // boot flag
+
+        // obtained from the no$gba emulator
+        internal_write!Half(Word(0x27FFCD8), firmware.user_settings.adc_x1);
+        internal_write!Half(Word(0x27FFCDA), firmware.user_settings.adc_y1);
+        internal_write!Byte(Word(0x27FFCDC), firmware.user_settings.scr_x1);
+        internal_write!Byte(Word(0x27FFCDD), firmware.user_settings.scr_y1);
+        internal_write!Half(Word(0x27FFCDE), firmware.user_settings.adc_x2);
+        internal_write!Half(Word(0x27FFCE0), firmware.user_settings.adc_y2);
+        internal_write!Byte(Word(0x27FFCE2), firmware.user_settings.scr_x2);
+        internal_write!Byte(Word(0x27FFCE3), firmware.user_settings.scr_y2);
+
+        tcm.direct_boot();
     }
 
     @property

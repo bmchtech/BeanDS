@@ -82,14 +82,6 @@ final class IPC {
         remote = ipc;
     }
 
-    static void reset() {
-        ipc7 = new IPC(interrupt7);
-        ipc9 = new IPC(interrupt9);
-
-        ipc7.set_remote(ipc9);
-        ipc9.set_remote(ipc7);
-    }
-
     Byte read_IPCSYNC(int target_byte) {
         final switch (target_byte) {
             case 0: return sync_data;

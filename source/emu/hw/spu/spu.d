@@ -40,12 +40,11 @@ final class SPU {
         UNKNOWN  = 3,
     }
 
-    private this() {
-        scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
+    this() {
     }
 
-    static void reset() {
-        spu = new SPU();
+    void reset() {
+        scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 
     struct SoundChannel {

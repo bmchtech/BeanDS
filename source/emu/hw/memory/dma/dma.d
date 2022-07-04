@@ -6,18 +6,13 @@ import util;
 __gshared DMA!(HwType.NDS7) dma7;
 __gshared DMA!(HwType.NDS9) dma9;
 
-static void DMA_reset() {
-    dma7 = new DMA!(HwType.NDS7)();
-    dma9 = new DMA!(HwType.NDS9)();
-}
-
 static void DMA_maybe_start_cart_transfer() {
     dma9.maybe_start_cart_transfer();
     dma7.maybe_start_cart_transfer();
 }
 
 final class DMA(HwType H) {
-    private this() {
+    this() {
         dma_channels = [
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),

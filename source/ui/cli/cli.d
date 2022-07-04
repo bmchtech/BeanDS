@@ -9,6 +9,7 @@ struct CLIArgs {
     uint arm7_ringbuffer_size;
     uint arm9_ringbuffer_size;
     uint screen_scale;
+    bool direct_boot;
 }
 
 CLIArgs parse_cli_args(string[] args) {
@@ -17,12 +18,14 @@ CLIArgs parse_cli_args(string[] args) {
         .add(new Option("7", "arm7_ringbuffer_size", "the number of instructions to capture in the arm7 ring buffer (default: 100)").optional.defaultValue("100"))
         .add(new Option("9", "arm9_ringbuffer_size", "the number of instructions to capture in the arm9 ring buffer (default: 100)").optional.defaultValue("100"))
 		.add(new Option("s", "screen_scale", "the screen scale (default: 1)").optional.defaultValue("1"))
+        .add(new Flag("d", "direct_boot", "skip the firmware"))
         .parse(args);
 
     return CLIArgs(
         program.arg("rom_path"),
         to!int(program.option("arm7_ringbuffer_size")),
         to!int(program.option("arm9_ringbuffer_size")),
-        to!int(program.option("screen_scale"))
+        to!int(program.option("screen_scale")),
+        program.hasFlag("direct_boot")
     );
 }

@@ -20,22 +20,6 @@ final class Cart {
     }
 
     void direct_boot() {
-        main_memory.write!Word(Word(0x7FF800), get_cart_id());
-        main_memory.write!Word(Word(0x7FF804), get_cart_id());
-        main_memory.write!Word(Word(0x7FFC00), get_cart_id());
-        main_memory.write!Word(Word(0x7FFC04), get_cart_id());
-        main_memory.write!Word(Word(0x7FFC3C), Word(0x00000332));
-        main_memory.write!Word(Word(0x7FFC40), Word(1)); // boot flag
-
-        // obtained from the no$gba emulator
-        main_memory.write!Half(Word(0x7FFCD8), firmware.user_settings.adc_x1);
-        main_memory.write!Half(Word(0x7FFCDA), firmware.user_settings.adc_y1);
-        main_memory.write!Byte(Word(0x7FFCDC), firmware.user_settings.scr_x1);
-        main_memory.write!Byte(Word(0x7FFCDD), firmware.user_settings.scr_y1);
-        main_memory.write!Half(Word(0x7FFCDE), firmware.user_settings.adc_x2);
-        main_memory.write!Half(Word(0x7FFCE0), firmware.user_settings.adc_y2);
-        main_memory.write!Byte(Word(0x7FFCE2), firmware.user_settings.scr_x2);
-        main_memory.write!Byte(Word(0x7FFCE3), firmware.user_settings.scr_y2);
     }
 
     @property 

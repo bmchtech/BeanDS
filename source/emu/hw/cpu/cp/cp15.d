@@ -6,9 +6,6 @@ import util;
 
 __gshared Cp15 cp15;
 final class Cp15 {
-    static void reset() {
-        cp15 = new Cp15();
-    }
     bool itcm_absent;
     int  itcm_physical_size;
     int  itcm_virtual_size;

@@ -13,10 +13,6 @@ enum HwType {
 
 __gshared NDS nds;
 final class NDS {
-    Cart      cart;
-    ARM7TDMI  arm7;
-    ARM946E_S arm9;
-    
     CpuTrace cpu_trace;
 
     bool booted = false;
@@ -30,41 +26,59 @@ final class NDS {
         //       or make nothing.
         new Scheduler();
 
-        Mem7.reset();
-        Mem9.reset();
-        SPU.reset();
-        DMA_reset();
-        AUXSPI.reset();
-        Slot.reset();
-        SPI.reset();
-
+        mem7 = new Mem7();
+        mem9 = new Mem9();
         arm7 = new ARM7TDMI(mem7, arm7_ringbuffer_size);
         arm9 = new ARM946E_S(mem9, arm9_ringbuffer_size);
 
-        cpu_trace = new CpuTrace(arm7, 100);
+        interrupt7 = new InterruptManager(arm7);
+        interrupt9 = new InterruptManager(arm9);
 
-        InterruptManager.reset();
-        IPC.reset();
-        WRAM.reset();
-        TimerManager.reset();
+        ipc7 = new IPC(interrupt7);
+        ipc9 = new IPC(interrupt9);
+        ipc7.set_remote(ipc9);
+        ipc9.set_remote(ipc7);
+
+        wram = new WRAM();
+        timers7 = new TimerManager(interrupt7);
+        timers9 = new TimerManager(interrupt9);
+        spi = new SPI();
+        auxspi = new AUXSPI();
+        spu = new SPU();
+        slot = new Slot();
+
+        cpu_trace = new CpuTrace(arm7, 100);
         
-        new SqrtController();
-        new DivController();
-        
+        math_sqrt = new SqrtController();
+        math_div = new DivController();
+
+        mmio7 = new MMIO!mmio7_registers("MMIO7");
+        mmio9 = new MMIO!mmio9_registers("MMIO9");
+        dma7 = new DMA!(HwType.NDS7)();
+        dma9 = new DMA!(HwType.NDS9)();
 
         // TODO: maybe this doesnt belong in nds.d... i need to learn more
         //       about the two GBA engines to find out
-        new GPU();
-        new GPUEngineA();
-        new GPUEngineB();
-        new GPU3D();
+        gpu = new GPU();
+        gpu_engine_a = new GPUEngineA();
+        gpu_engine_b = new GPUEngineB();
+        gpu3d = new GPU3D();
 
-        new KeyInput();
-        new MainMemory();
+        input = new KeyInput();
+        main_memory = new MainMemory();
 
-        new SIO();
+        sio = new SIO();
 
         nds = this;
+    }
+
+    void reset() {
+        spu.reset();
+        slot.reset();
+        spi.reset();
+
+        arm7.reset();
+        arm9.reset();
     }
 
     void load_rom(Byte[] rom) {
@@ -73,6 +87,7 @@ final class NDS {
         if (cart.cart_header.rom_header_size >= cart.rom_size()) {
             error_nds("Malformed ROM - the specified rom header size is greater than the rom size.");
         }
+
         mem9.memcpy(Word(0x27FFE00), &cart.rom[0], cart.cart_header.rom_header_size);
 
         update_icon(
@@ -84,21 +99,24 @@ final class NDS {
         );
     }
 
-    void load_bios7(Byte[] bios) {
-        mem7.load_bios(bios);
+    void load_bios7(Byte[] data) {
+        mem7.load_bios(data);
     }
 
-    void load_bios9(Byte[] bios) {
-        mem9.load_bios(bios);
+    void load_bios9(Byte[] data) {
+        mem9.load_bios(data);
+    }
+
+    void load_firmware(Byte[] data) {
+        firmware.load_firmware(data);
     }
 
     void direct_boot() {
-        arm7.direct_boot();
-        arm9.direct_boot();
-        mem9.direct_boot();
-        wram.direct_boot();
         firmware.direct_boot();
         touchscreen.direct_boot();
+        arm7.direct_boot();
+        arm9.direct_boot();
+        wram.direct_boot();
 
         if (cart.cart_header.arm7_rom_offset + cart.cart_header.arm7_size > cart.rom_size ||
             cart.cart_header.arm9_rom_offset + cart.cart_header.arm9_size > cart.rom_size) {

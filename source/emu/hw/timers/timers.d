@@ -8,7 +8,7 @@ __gshared TimerManager timers9;
 final class TimerManager {
     InterruptManager interrupt_manager;
 
-    private this(InterruptManager interrupt_manager) {
+    this(InterruptManager interrupt_manager) {
         timers = [
             Timer(),
             Timer(),
@@ -17,11 +17,6 @@ final class TimerManager {
         ];
     
         this.interrupt_manager = interrupt_manager;
-    }
-
-    static void reset() {
-        timers7 = new TimerManager(interrupt7);
-        timers9 = new TimerManager(interrupt9);
     }
 
     void reload_timer(int timer_id) {

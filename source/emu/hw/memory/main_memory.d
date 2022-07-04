@@ -9,10 +9,6 @@ final class MainMemory {
     enum MAIN_MEMORY_SIZE = 1 << 22;
     Byte[MAIN_MEMORY_SIZE] data;
 
-    this() {
-        main_memory = this;
-    }
-
     T read(T)(Word address) {
         return data.read!T(address & (MAIN_MEMORY_SIZE - 1));
     }

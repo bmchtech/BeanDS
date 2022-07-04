@@ -5,11 +5,6 @@ import emu.hw;
 import util;
 
 __gshared MMIO!mmio9_registers mmio9;
-final class MMIO9 {
-    static void reset() {
-        mmio9 = new MMIO!mmio9_registers("MMIO9");
-    }
-}
 
 static const mmio9_registers = [
     MMIORegister("gpu_engine_a",          "DISPCNT",        0x0400_0000,  4, READ_WRITE),

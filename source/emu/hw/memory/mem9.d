@@ -9,17 +9,8 @@ final class Mem9 : Mem {
     enum BIOS_SIZE = 3072;
     Byte[BIOS_SIZE] bios = new Byte[BIOS_SIZE];
 
-    private this() {
-        MMIO9.reset();
-        TCM.reset();
-    }
-
-    static void reset() {
-        mem9 = new Mem9();
-    }
-
-    void direct_boot() {
-        tcm.direct_boot();
+    this() {
+        mem9 = this;
     }
 
     T read(T)(Word address) {

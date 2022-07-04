@@ -11,7 +11,6 @@ final class GPUEngineB {
     this() {
         ppu = new PPU!(EngineType.B);
         videobuffer = new Pixel[192][256];
-        gpu_engine_b = this;
     }
 
     int bg_mode;

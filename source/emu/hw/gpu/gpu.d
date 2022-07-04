@@ -35,11 +35,9 @@ final class GPU {
 
         enabled = true;
 
-        new PRAM();
-        new VRAM();
-        OAM.reset();
-        
-        gpu = this;
+        pram = new PRAM();
+        vram = new VRAM();
+        oam  = new OAM();
     }
 
     // void set_frontend_vblank_callback(void delegate(Pixel[192][256]) frontend_vblank_callback) {

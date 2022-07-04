@@ -48,8 +48,6 @@ final class GPU3D {
     IRQMode irq_mode;
 
     this() {
-        gpu3d = this;
-
         geometry_engine = new GeometryEngine(this);
         rendering_engine = new RenderingEngine(this);
 

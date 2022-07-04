@@ -8,12 +8,8 @@ final class OAM {
     enum OAM_SIZE = 1 << 11;
     Byte[OAM_SIZE] data;
 
-    private this() {
+    this() {
         data = new Byte[OAM_SIZE];
-    }
-
-    static void reset() {
-        oam = new OAM();
     }
 
     T read(T)(Word address) {

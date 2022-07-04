@@ -18,7 +18,7 @@ final class WRAM {
     bool arm9_wram_enabled;
     Byte mode;
 
-    private this() {
+    this() {
         shared_bank_1  = new Byte[WRAM_SIZE];
         shared_bank_2  = new Byte[WRAM_SIZE];
         arm7_only_wram = new Byte[ARM7_ONLY_WRAM_SIZE];
@@ -26,10 +26,6 @@ final class WRAM {
 
     void direct_boot() {
         set_mode(3);
-    }
-
-    static void reset() {
-        wram = new WRAM();
     }
 
     void set_mode(int new_mode) {

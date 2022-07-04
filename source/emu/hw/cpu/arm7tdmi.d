@@ -33,12 +33,10 @@ final class ARM7TDMI : ArmCPU {
         
         arm7 = this;
         cpu_trace = new CpuTrace(this, ringbuffer_size);
-        reset();
     }
 
     void reset() {
         set_mode!MODE_SYSTEM;
-        regs[pc] = 0;
 
         current_mode = MODES[0];
         for (int i = 0; i < 7; i++) {
@@ -46,6 +44,8 @@ final class ARM7TDMI : ArmCPU {
         }    
 
         regs[0 .. 18] = register_file[MODE_USER.OFFSET .. MODE_USER.OFFSET + 18];
+
+        set_reg(pc, Word(get_address_from_exception!(CpuException.Reset)));
     }
 
     void direct_boot() {
@@ -59,11 +59,11 @@ final class ARM7TDMI : ArmCPU {
         return Architecture.v4T;
     }
 
-    Word save = 0;
+    bool first_fetch = true;
     pragma(inline, true) T fetch(T)() {
-        if (regs[pc] == 0) error_arm7("arm7 branched to 0");
-        if (regs[pc] == 0x03800e1c + 8) { save = regs[0]; log_arm7("FUNCTION: get_touch(%x, %x, %x, %x)", regs[0], regs[1], regs[2], regs[3]); }
-        if (regs[pc] == 0x03801148 + 8) log_arm7("FUNCTION: get_touch return. return val: %x, save: %x", regs[0], memory.read_word(save));
+        if (!first_fetch && regs[pc] == 0) error_arm7("arm7 branched to 0");
+        first_fetch = false;
+        
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
             AccessType old_access_type = pipeline_access_type;
