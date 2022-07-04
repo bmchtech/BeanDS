@@ -602,8 +602,8 @@ final class PPU(EngineType E) {
             case 1:
                 backgrounds[0].mode = BackgroundMode.TEXT;
                 backgrounds[1].mode = BackgroundMode.TEXT;
-                backgrounds[2].mode = BackgroundMode.ROTATION_SCALING;
-                backgrounds[3].mode = BackgroundMode.NONE;
+                backgrounds[2].mode = BackgroundMode.TEXT;
+                backgrounds[3].mode = BackgroundMode.ROTATION_SCALING;
                 break;
 
             case 2:

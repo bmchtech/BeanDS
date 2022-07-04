@@ -160,16 +160,7 @@ final class VRAM {
     }
 
     T read_slot(T)(SlotType slot_type, int slot, Word address) {
-        if (slot_type == SlotType.BG_PAL_A) {
-            auto sexer1 = read_bg_slot!(EngineType.A, T)(slot, address);
-            // auto sexer2 = (*((all_slots[slot_type])[slot])).read!T(address);
-            // log_gpu3d("sexer2f %x", cast(int) (&(((all_slots[slot_type])[slot]))[0] - &vram_f.data[0]));
-            // if (sexer1 != sexer2) {
-                // error_vram("sex! %x %x %x %x %x", slot_type, slot, address, sexer1, sexer2);
-            // }
-        }
         if (((all_slots[slot_type])[slot]) == null) {
-            log_vram("shitter! %x %x %x", slot_type, slot, address);
             return T(0);
         }
 

@@ -59,9 +59,11 @@ final class ARM7TDMI : ArmCPU {
         return Architecture.v4T;
     }
 
+    Word save = 0;
     pragma(inline, true) T fetch(T)() {
         if (regs[pc] == 0) error_arm7("arm7 branched to 0");
-
+        if (regs[pc] == 0x03800e1c + 8) { save = regs[0]; log_arm7("FUNCTION: get_touch(%x, %x, %x, %x)", regs[0], regs[1], regs[2], regs[3]); }
+        if (regs[pc] == 0x03801148 + 8) log_arm7("FUNCTION: get_touch return. return val: %x, save: %x", regs[0], memory.read_word(save));
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
             AccessType old_access_type = pipeline_access_type;
