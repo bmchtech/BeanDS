@@ -79,6 +79,7 @@ final class NDS {
 
         arm7.reset();
         arm9.reset();
+        cart.reset();
     }
 
     void load_rom(Byte[] rom) {

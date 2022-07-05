@@ -10,6 +10,13 @@ __gshared Cart cart;
 final class Cart {
     CartHeader* cart_header;
     Byte[] rom;
+    Mode mode;
+
+    enum Mode {
+        UNENCRYPTED,
+        KEY1,
+        KEY2,
+    }
 
     this(Byte[] rom) {
         cart = this;
@@ -19,7 +26,12 @@ final class Cart {
         this.cart_header = get_cart_header(rom);
     }
 
+    void reset() {
+        mode = Mode.UNENCRYPTED;
+    }
+
     void direct_boot() {
+        mode = Mode.KEY2;
     }
 
     @property 
@@ -155,7 +167,60 @@ final class Cart {
 
     void start_transfer() {
         // log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
+        final switch (mode) {
+            case Mode.UNENCRYPTED: handle_unencrypted_transfer(); break;
+            case Mode.KEY1:        handle_key1_transfer();        break;
+            case Mode.KEY2:        handle_key2_transfer();        break;
+        }
         
+        outbuffer_index  = 0;
+
+        DMA_maybe_start_cart_transfer();
+    }
+
+    void handle_unencrypted_transfer() {
+        if ((command & 0xFF) == 0x9F) {
+            auto length = get_data_block_size(0x2000);
+            memset(&outbuffer, 0xFF, length);
+            outbuffer_length = length / 4;
+        } else
+        
+        if ((command & 0xFF) == 0x00) {
+            auto length = get_data_block_size(0x200);
+            
+            if (length >= rom_size()) error_cart("Tried to initiate a 00 (aka cart header) transfer at an out of bounds region!");
+            
+            memcpy(&outbuffer, &rom[0], length);
+            outbuffer_length = length / 4;
+        } else
+
+        if ((command & 0xFF) == 0x90) {
+            auto length = get_data_block_size(4);
+
+            for (int i = 0; i < length / 4; i++) {
+                outbuffer[i] = get_cart_id();
+            }
+
+            // log_cart("getting cart id");
+
+            outbuffer_length = length / 4;
+        } else
+
+        if ((command & 0xFF) == 0x3C) {
+            auto length = get_data_block_size(0x2000);
+            memset(&outbuffer, 0xFF, length);
+            outbuffer_length = length / 4;
+            mode = Mode.KEY1;
+        } else
+        
+        error_cart("tried to issue an invalid unencrypted command: %x", command);
+    }
+
+    void handle_key1_transfer() {
+        error_cart("tried to issue an invalid KEY1 command: %x", command);
+    }
+
+    void handle_key2_transfer() {
         if ((command & 0xFF) == 0x9F) {
             auto length = get_data_block_size(0x2000);
             memset(&outbuffer, 0xFF, length);
@@ -195,12 +260,8 @@ final class Cart {
 
             outbuffer_length = length / 4;
         } else
-
-        error_cart("tried to issue an invalid cart command: %x", command);
         
-        outbuffer_index  = 0;
-
-        DMA_maybe_start_cart_transfer();
+        error_cart("tried to issue an invalid KEY2 command: %x", command);
     }
 
     Word get_cart_id() {
