@@ -89,12 +89,14 @@ final class MMIO(MMIORegister[] mmio_registers) {
         import std.format;
 
         // log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d)", name, address, T.sizeof);
+        T value = T(0);
 
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.readable && mr.all_at_once) {
-                if (address >= mr.address && address < mr.address + mr.size) {
+                if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
                     static if (mr.implemented) {
-                        mixin("return %s.read_%s!T(address %% %d);".format(mr.component, mr.name, mr.size));
+                        mixin("value |= %s.read_%s!T(address %% %d) << (8 * (address - mr.address));".format(mr.component, mr.name, mr.size));
+                        static if (is(T == Byte)) return value;
                     } else {
                         log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
                         return T(0);
@@ -104,18 +106,16 @@ final class MMIO(MMIORegister[] mmio_registers) {
         }
 
         static if (is(T == Word)) {
-            Word value = Word(0);
-            value[0 .. 7] = read_byte(address + 0);
-            value[8 ..15] = read_byte(address + 1); 
-            value[16..23] = read_byte(address + 2); 
-            value[24..31] = read_byte(address + 3);
+            value[0 .. 7] = value[0 .. 7] | read_byte(address + 0);
+            value[8 ..15] = value[8 ..15] | read_byte(address + 1); 
+            value[16..23] = value[16..23] | read_byte(address + 2); 
+            value[24..31] = value[24..31] | read_byte(address + 3);
             return value;  
         }
 
         static if (is(T == Half)) {
-            Half value = Half(0);
-            value[0.. 7] = read_byte(address + 0); 
-            value[8..15] = read_byte(address + 1);
+            value[0.. 7] = value[0.. 7] | read_byte(address + 0); 
+            value[8..15] = value[8..15] | read_byte(address + 1);
             return value;
         }
 
@@ -127,14 +127,18 @@ final class MMIO(MMIORegister[] mmio_registers) {
     private Byte read_byte(Word address) {
         import std.format;
 
-        switch (address) {
+        mmio_switch: switch (address) {
             static foreach (MMIORegister mr; mmio_registers) {
-                static if (mr.readable && !mr.all_at_once) {
+                static if (mr.readable) {
                     static if (mr.stride == -1) {
                         static foreach(int offset; 0..mr.size) {
                             static if (!mr.filter_enabled || mr.f(offset)) {
                                 case mr.address + offset:
-                                    mixin("return %s.read_%s(%d);".format(mr.component, mr.name, offset));
+                                    static if (!mr.all_at_once) {
+                                        mixin("return %s.read_%s(%d);".format(mr.component, mr.name, offset));
+                                    } else {
+                                        mixin("break mmio_switch;");
+                                    }
                             }
                         }
                     } else {
@@ -142,7 +146,11 @@ final class MMIO(MMIORegister[] mmio_registers) {
                             static foreach(int offset; 0..mr.size) {
                                 static if (!mr.filter_enabled || mr.f(offset)) {
                                     case mr.address + stride_offset * mr.stride + offset:
-                                        mixin("return %s.read_%s(%d, %d);".format(mr.component, mr.name, offset, stride_offset));
+                                        static if (!mr.all_at_once) {
+                                            mixin("return %s.read_%s(%d, %d);".format(mr.component, mr.name, offset, stride_offset));
+                                        } else {
+                                            mixin("break mmio_switch;");
+                                        }
                                 }
                             }
                         }
@@ -162,9 +170,9 @@ final class MMIO(MMIORegister[] mmio_registers) {
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {
             static if (mr.writeable && mr.all_at_once) {
-                if (address >= mr.address && address < mr.address + mr.size) {
+                if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
                     static if (mr.implemented) {
-                        mixin("%s.write_%s!T(value, address %% %d); return;".format(mr.component, mr.name, mr.size));
+                        mixin("%s.write_%s!T(cast(T) (value >> (8 * (address - mr.address))), address %% %d);".format(mr.component, mr.name, mr.size));
                     } else {
                         log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
                         return;
@@ -195,12 +203,16 @@ final class MMIO(MMIORegister[] mmio_registers) {
 
         mmio_switch: switch (address) {
             static foreach (MMIORegister mr; mmio_registers) {
-                static if (mr.writeable && !mr.all_at_once) {
+                static if (mr.writeable) {
                     static if (mr.stride == -1) {
                         static foreach(int offset; 0..mr.size) {
                             static if (!mr.filter_enabled || mr.f(offset)) {
                                 case mr.address + offset:
-                                    mixin("%s.write_%s(%d, value); break mmio_switch;".format(mr.component, mr.name, offset));
+                                    static if (!mr.all_at_once) {
+                                        mixin("%s.write_%s(%d, value); break mmio_switch;".format(mr.component, mr.name, offset));
+                                    } else {
+                                        mixin("break mmio_switch;");
+                                    }
                             }
                         }
                     } else {
@@ -208,7 +220,11 @@ final class MMIO(MMIORegister[] mmio_registers) {
                             static foreach(int offset; 0..mr.size) {
                                 static if (!mr.filter_enabled || mr.f(offset)) {
                                     case mr.address + stride_offset * mr.stride + offset:
-                                        mixin("%s.write_%s(%d, value, %d); break mmio_switch;".format(mr.component, mr.name, offset, stride_offset));
+                                        static if (!mr.all_at_once) {
+                                            mixin("%s.write_%s(%d, value, %d); break mmio_switch;".format(mr.component, mr.name, offset, stride_offset));
+                                        } else {
+                                            mixin("break mmio_switch;");
+                                        }
                                 }
                             }
                         }
