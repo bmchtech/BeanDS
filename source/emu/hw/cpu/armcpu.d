@@ -66,13 +66,13 @@ interface ArmCPU {
 // 2) their register uniqueness (see the diagram in arm7tdmi.h).
 // 3) their offset into the registers array.
 
-enum MODE_USER       = CpuMode(0b10000, 0b011111111111111111, 18 * 0);
-enum MODE_SYSTEM     = CpuMode(0b11111, 0b011111111111111111, 18 * 0);
-enum MODE_SUPERVISOR = CpuMode(0b10011, 0b011001111111111111, 18 * 1);
-enum MODE_ABORT      = CpuMode(0b10111, 0b011001111111111111, 18 * 2);
-enum MODE_UNDEFINED  = CpuMode(0b11011, 0b011001111111111111, 18 * 3);
-enum MODE_IRQ        = CpuMode(0b10010, 0b011001111111111111, 18 * 4);
-enum MODE_FIQ        = CpuMode(0b10001, 0b011000000011111111, 18 * 5);
+enum MODE_USER       = CpuMode(0b10000, 0b011111111111111111, 18 * 0, "USR");
+enum MODE_SYSTEM     = CpuMode(0b11111, 0b011111111111111111, 18 * 0, "SYS");
+enum MODE_SUPERVISOR = CpuMode(0b10011, 0b011001111111111111, 18 * 1, "SVC");
+enum MODE_ABORT      = CpuMode(0b10111, 0b011001111111111111, 18 * 2, "ABT");
+enum MODE_UNDEFINED  = CpuMode(0b11011, 0b011001111111111111, 18 * 3, "UND");
+enum MODE_IRQ        = CpuMode(0b10010, 0b011001111111111111, 18 * 4, "IRQ");
+enum MODE_FIQ        = CpuMode(0b10001, 0b011000000011111111, 18 * 5, "FIQ");
 
 static immutable CpuMode[7] MODES = [
     MODE_USER, MODE_FIQ, MODE_IRQ, MODE_SUPERVISOR, MODE_ABORT, MODE_UNDEFINED,
@@ -85,15 +85,17 @@ enum InstructionSet {
 }
 
 struct CpuMode {
-    this(const(int) c, const(int) r, const(int) o) {
+    this(const(int) c, const(int) r, const(int) o, const(string) s) {
         CPSR_ENCODING = c;
         REGISTER_UNIQUENESS = r;
         OFFSET = o;
+        SHORTNAME = s;
     }
 
     int CPSR_ENCODING;
     int REGISTER_UNIQUENESS;
     int OFFSET;
+    string SHORTNAME;
 }
 
 enum CpuException {

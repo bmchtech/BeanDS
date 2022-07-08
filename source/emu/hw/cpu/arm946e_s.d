@@ -204,11 +204,16 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) Word get_reg__raw(Reg id, Word[18]* regs) {
+        Word result;
+
         if (unlikely(id == pc)) {
-            return (*regs)[pc] - (instruction_set == InstructionSet.ARM ? 4 : 2);
+            result = (*regs)[pc] - (instruction_set == InstructionSet.ARM ? 4 : 2);
+        } else {
+            result = (*regs)[id];
         }
         
-        return (*regs)[id];
+        IFTDebugger.commit_reg_read(HwType.NDS9, id, current_mode, result);
+        return result;
     }
 
     pragma(inline, true) void set_reg__raw(Reg id, Word value, Word[18]* regs) {
@@ -219,6 +224,8 @@ final class ARM946E_S : ArmCPU {
             pipeline_access_type = AccessType.NONSEQUENTIAL;
             refill_pipeline();
         }
+
+        IFTDebugger.commit_reg_write(HwType.NDS9, id, current_mode, value);
     }
 
     pragma(inline, true) void align_pc(CpuMode mode) {
@@ -467,12 +474,20 @@ final class ARM946E_S : ArmCPU {
     T internal_read(T)(Word address) {
         pipeline_access_type = AccessType.NONSEQUENTIAL;
 
-        if (tcm.can_read_itcm(address)) { scheduler.tick(1); return tcm.read_itcm!T(address); }
-        if (tcm.can_read_dtcm(address)) { scheduler.tick(1); return tcm.read_dtcm!T(address); }
+        T result;
+        if      (tcm.can_read_itcm(address)) { scheduler.tick(1); result = tcm.read_itcm!T(address); }
+        else if (tcm.can_read_dtcm(address)) { scheduler.tick(1); result = tcm.read_dtcm!T(address); }
         
-        static if (is (T == Word)) return memory.read_word(address);
-        static if (is (T == Half)) return memory.read_half(address);
-        static if (is (T == Byte)) return memory.read_byte(address);
+        else {
+            static if (is (T == Word)) result = memory.read_word(address);
+            static if (is (T == Half)) result = memory.read_half(address);
+            static if (is (T == Byte)) result = memory.read_byte(address);
+        }
+
+        for (int i = 0; i < T.sizeof; i++) {
+            IFTDebugger.commit_mem_read(HwType.NDS9, address + i, Word(result.get_byte(i)));
+        }
+        return result;
     }
 
     void internal_write(T)(Word address, T value) {
@@ -484,6 +499,10 @@ final class ARM946E_S : ArmCPU {
         static if (is (T == Word)) memory.write_word(address, value);
         static if (is (T == Half)) memory.write_half(address, value);
         static if (is (T == Byte)) memory.write_byte(address, value);
+
+        for (int i = 0; i < T.sizeof; i++) {
+            IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i)));
+        }
     }
 
     Word read_word(Word address, AccessType access_type) { return internal_read!Word(address); }

@@ -33,7 +33,9 @@ enum LogSource {
     EEPROM,
     MAIN_MEMORY,
     FIRMWARE,
-    GPU3D
+    GPU3D,
+    
+    IFT
 }
 
 static immutable ulong logsource_padding = get_largest_logsource_length!();
