@@ -114,6 +114,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
+        IFTDebugger.instruction_start();
 
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
@@ -126,6 +127,8 @@ final class ARM946E_S : ArmCPU {
         static if (is(T == Half)) {
             execute_thumb!ARM946E_S.jumptable[opcode >> 8](this, opcode);
         }
+
+        IFTDebugger.instruction_end();
     }
 
     void run_instruction() {
@@ -142,6 +145,7 @@ final class ARM946E_S : ArmCPU {
             num_log--;
         }
 
+        
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();                
             if (opcode == 0) error_arm9("The ARM9 is probably executing data");

@@ -98,6 +98,8 @@ final class TouchScreen : SPIDevice {
         this.result[0] = Byte((incoming_result >> 8) & 0xFF);
         this.result[1] = Byte((incoming_result >> 0) & 0xFF);
     }
+    
+    bool sussine = true;
 
     override Byte write(Byte b) {
         // log_touchscreen("write: %x", b);
@@ -125,6 +127,13 @@ final class TouchScreen : SPIDevice {
                                 0 : 
                                 ((y_position + 1 - scr_y1) * (adc_y2 - adc_y1)) / (scr_y2 - scr_y1) + adc_y1
                             );
+
+                            if (sussine) {
+                                IFTDebugger.start_debugging();
+                                scheduler.add_event_relative_to_clock(() => IFTDebugger.stop_debugging(), 100);
+                            }
+                            
+                            sussine = false;
                             // log_touchscreen("tried to read touchscreen pos y: %x %x %x %x %x %x", 0x1F, scr_y1, scr_y2, adc_y1, adc_y2, input.keys[22] ? 
                             //     0 : 
                             //     ((y_position + 1 - scr_y1) * (adc_y2 - adc_y1)) / (scr_y2 - scr_y1) + adc_y1);

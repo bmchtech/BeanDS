@@ -94,6 +94,8 @@ final class ARM7TDMI : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
+        IFTDebugger.instruction_start();
+
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
             if (likely(check_cond(cond))) {
@@ -105,6 +107,8 @@ final class ARM7TDMI : ArmCPU {
         static if (is(T == Half)) {
             execute_thumb!ARM7TDMI.jumptable[opcode >> 8](this, opcode);
         }
+
+        IFTDebugger.instruction_end();
     }
 
     void run_instruction() {
