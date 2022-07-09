@@ -96,14 +96,17 @@ final class SPU {
         }
                 
         void calculate_next_sample() {
-            Half sample_data = 0;
+            short sample_data = 0;
 
             switch (format) {
                 case Format.PCM16:
                     sample_data = mem9.read!Half(current_address);
                     this.current_address += 2;
                     break;
-                
+                case Format.PCM8:
+                    sample_data = mem9.read!Byte(current_address);
+                    this.current_address += 1;
+                    break;
                 default:
                     break;
             }
