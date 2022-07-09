@@ -166,8 +166,9 @@ final class SPU {
 
                 if (sound_channels[x].enabled) { 
                     sound_channels[x].reset(); 
-                    log_spu("Channel Enabled: %x. CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
+                    log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
                         x,
+                        cast(Format) sound_channels[x].format,
                         ((cast(int) read_SOUNDxCNT(0, x) << 0) |
                         (cast(int) read_SOUNDxCNT(1, x) << 8) |
                         (cast(int) read_SOUNDxCNT(2, x) << 16) |

@@ -18,6 +18,7 @@ static const mmio7_registers = [
     MMIORegister("timers7",      "TMxCNT_H",      0x0400_0102,  2, READ_WRITE).repeat(4, 4),
     MMIORegister("input",        "KEYINPUT",      0x0400_0130,  2, READ),
     MMIORegister("input",        "EXTKEYIN",      0x0400_0136,  2, READ),
+    MMIORegister("rtc_hook",     "RTC",           0x0400_0138,  1, READ_WRITE),
     MMIORegister("ipc7",         "IPCSYNC",       0x0400_0180,  4, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOCNT",    0x0400_0184,  4, READ_WRITE),
     MMIORegister("ipc7",         "IPCFIFOSEND",   0x0400_0188,  4,      WRITE).dont_decompose_into_bytes(),

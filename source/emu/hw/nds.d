@@ -68,6 +68,7 @@ final class NDS {
         main_memory = new MainMemory();
 
         sio = new SIO();
+        rtc_hook = new RTCHook();
 
         nds = this;
     }
@@ -80,6 +81,8 @@ final class NDS {
         arm7.reset();
         arm9.reset();
         cart.reset();
+
+        rtc_hook.reset();
     }
 
     void load_rom(Byte[] rom) {

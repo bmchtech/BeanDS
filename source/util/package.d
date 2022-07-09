@@ -8,5 +8,6 @@ public {
     import util.likely;
     import util.log;
     import util.ringbuffer;
+    import util.signal;
     import util.types;
 }
