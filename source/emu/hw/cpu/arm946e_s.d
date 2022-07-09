@@ -114,7 +114,7 @@ final class ARM946E_S : ArmCPU {
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
-        IFTDebugger.instruction_start();
+        version (ift) { IFTDebugger.instruction_start(); }
 
         static if (is(T == Word)) {
             auto cond = opcode[28..31];
@@ -128,7 +128,7 @@ final class ARM946E_S : ArmCPU {
             execute_thumb!ARM946E_S.jumptable[opcode >> 8](this, opcode);
         }
 
-        IFTDebugger.instruction_end();
+        version (ift) { IFTDebugger.instruction_end(); }
     }
 
     void run_instruction() {
@@ -216,7 +216,7 @@ final class ARM946E_S : ArmCPU {
             result = (*regs)[id];
         }
         
-        IFTDebugger.commit_reg_read(HwType.NDS9, id, current_mode, result);
+        version (ift) { IFTDebugger.commit_reg_read(HwType.NDS9, id, current_mode, result); }
         return result;
     }
 
@@ -229,7 +229,7 @@ final class ARM946E_S : ArmCPU {
             refill_pipeline();
         }
 
-        IFTDebugger.commit_reg_write(HwType.NDS9, id, current_mode, value);
+        version (ift) { IFTDebugger.commit_reg_write(HwType.NDS9, id, current_mode, value); }
     }
 
     pragma(inline, true) void align_pc(CpuMode mode) {
@@ -489,7 +489,7 @@ final class ARM946E_S : ArmCPU {
         }
 
         for (int i = 0; i < T.sizeof; i++) {
-            IFTDebugger.commit_mem_read(HwType.NDS9, address + i, Word(result.get_byte(i)));
+            version (ift) { IFTDebugger.commit_mem_read(HwType.NDS9, address + i, Word(result.get_byte(i))); }
         }
         return result;
     }
@@ -505,7 +505,7 @@ final class ARM946E_S : ArmCPU {
         static if (is (T == Byte)) memory.write_byte(address, value);
 
         for (int i = 0; i < T.sizeof; i++) {
-            IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i)));
+            version (ift) { IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i))); }
         }
     }
 
