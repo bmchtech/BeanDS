@@ -15,6 +15,7 @@ jobs:
 
     - name: 'Setup'
       run: |
+        git submodule update --init --recursive
         sudo apt-get install xorg-dev
 
     - name: 'Build BeanDS'
@@ -39,6 +40,8 @@ jobs:
 
     - name: 'Setup'
       run: |
+        git submodule update --init --recursive
+
         curl -L https://github.com/ldc-developers/ldc/releases/download/v1.29.0/ldc2-1.29.0-windows-x64.7z --output ldc2-1.29.0-windows-x64.7z
         7z x ldc2-1.29.0-windows-x64.7z
         curl -L https://github.com/redthing1/dray/releases/download/v4.0.0-r4/draylibs_dev_win64_msvc16.7z --output draylibs_dev_win64_msvc16.7z
