@@ -28,3 +28,8 @@ configuration "quiet" {
 	targetType "executable"
 	versions "quiet"
 }
+
+configuration "ift" {
+	targetType "executable"
+	versions "ift"
+}
