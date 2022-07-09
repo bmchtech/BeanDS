@@ -98,6 +98,8 @@ final class SPU {
         void calculate_next_sample() {
             short sample_data = 0;
 
+            // OMG STARVING INDIE DEV PRODUCT NINTENDO SWITCH HOME OF CELESTE AND HOLLOW KNIGHT AND SUPER MARIO
+            // OMG OMG OMG OMG OMG BUY RN
             switch (format) {
                 case Format.PCM16:
                     sample_data = mem9.read!Half(current_address);
