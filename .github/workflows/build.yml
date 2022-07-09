@@ -53,7 +53,6 @@ jobs:
 
         move glfw-3.3.7.bin.WIN64/lib-vc2022/glfw3_mt.lib ./glfw3_mt.lib
 
-        mkdir -p ext
         cd ext
 
         git clone https://github.com/redthing1/dray/
