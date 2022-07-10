@@ -34,7 +34,6 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     this() {
         state = State.WAITING_FOR_CHIPSELECT;
-        data[1] = 0x69;
     }
 
     override Byte write(Byte b) {

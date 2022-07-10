@@ -112,18 +112,40 @@ final class Cart {
 
     int data_block_size_index;
 
+    int key1_gap1_length;
+    int key1_gap2_length;
+    int key1_gap_clks;
+    int key2_encrypt_data;
+    int key2_encrypt_cmd;
+    int transfer_clk_rate;
+    int resb_release_reset;
+    int data_direction;
+
     Byte read_ROMCTRL(int target_byte) {
+        log_arm7("arm7 pc on romctrl read: %x", arm7.regs[pc]);
+
         Byte result = 0;
 
         final switch (target_byte) {
-            case 0: break;
-            case 1: break;
+            case 0: 
+                result[0..7] = key1_gap1_length.bits(0, 7); 
+                break;
+            case 1: 
+                result[0..3] = key1_gap1_length.bits(8, 11);
+                result[4]    = key2_encrypt_data;
+                break;
             case 2: 
+                result[0..5] = key1_gap2_length;
+                result[6]    = key2_encrypt_cmd;
                 result[7]    = transfer_ongoing; // next data word is always ready
                 break;
 
             case 3: 
                 result[0..2] = data_block_size_index;
+                result[3]    = transfer_clk_rate;
+                result[4]    = key1_gap_clks;
+                result[5]    = resb_release_reset;
+                result[6]    = data_direction;
                 result[7]    = transfer_ongoing;
                 break;
         }
@@ -132,7 +154,28 @@ final class Cart {
     }
 
     void write_ROMCTRL(int target_byte, Byte value) {
-        if (target_byte == 3) transfer_ongoing = value[7];
+        final switch (target_byte) {
+            case 0:
+                key1_gap1_length &= ~0xFF;
+                key1_gap1_length |= value;
+                break;
+            case 1:
+                key1_gap1_length &= ~0xF00;
+                key1_gap1_length |= value << 8;
+                key2_encrypt_data = value[4];
+                break;
+            case 2:
+                key1_gap2_length = value[0..5];
+                key2_encrypt_cmd = value[6];
+                break;
+            case 3:
+                data_block_size_index = value[0..2];
+                transfer_clk_rate     = value[3];
+                key1_gap_clks         = value[4];
+                resb_release_reset    = value[5];
+                data_direction        = value[6];
+                transfer_ongoing      = value[7];
+        }
 
         if (transfer_ongoing) start_transfer();
     }
@@ -211,6 +254,7 @@ final class Cart {
             memset(&outbuffer, 0xFF, length);
             outbuffer_length = length / 4;
             mode = Mode.KEY1;
+            transfer_ongoing = false;
         } else
         
         error_cart("tried to issue an invalid unencrypted command: %x", command);

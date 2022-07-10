@@ -144,7 +144,6 @@ final class ARM946E_S : ArmCPU {
             log_state();
             num_log--;
         }
-
         
         if (instruction_set == InstructionSet.ARM) {
             Word opcode = fetch!Word();                
