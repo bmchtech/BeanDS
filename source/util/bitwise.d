@@ -37,4 +37,8 @@ pragma(inline, true) {
         if (negative) value |= (((1UL << (64UL - size)) - 1UL) << size);
         return value;
     }
+
+    u64 make_u64(u32 hi, u32 lo) {
+        return ((cast(u64) hi) << 32) | (cast(u64) lo);
+    }
 }

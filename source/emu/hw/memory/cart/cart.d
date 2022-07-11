@@ -12,6 +12,8 @@ final class Cart {
     Byte[] rom;
     Mode mode;
 
+    Key1Encryption key1_encryption;
+
     enum Mode {
         UNENCRYPTED,
         KEY1,
@@ -24,6 +26,8 @@ final class Cart {
         this.rom[0..rom.length] = rom[0..rom.length];
         
         this.cart_header = get_cart_header(rom);
+
+        key1_encryption = new Key1Encryption();
     }
 
     void reset() {
@@ -209,7 +213,7 @@ final class Cart {
     }
 
     void start_transfer() {
-        // log_cart("Starting a transfer with command %x, %x", command, arm9.regs[pc]);
+        log_cart("Starting a transfer with command %x, %x. Current mode: %s", command, arm7.regs[pc], mode);
         final switch (mode) {
             case Mode.UNENCRYPTED: handle_unencrypted_transfer(); break;
             case Mode.KEY1:        handle_key1_transfer();        break;
@@ -255,13 +259,27 @@ final class Cart {
             outbuffer_length = length / 4;
             mode = Mode.KEY1;
             transfer_ongoing = false;
+
+            key1_encryption.init_keycode(cast(Word) cart_header.game_code, 2, 8);
         } else
         
         error_cart("tried to issue an invalid unencrypted command: %x", command);
     }
 
     void handle_key1_transfer() {
-        error_cart("tried to issue an invalid KEY1 command: %x", command);
+        u64 swapped = bswap(command);
+        key1_encryption.decrypt_64bit(cast(u32*) &swapped);
+        u64 decrypted_command = bswap(swapped);
+
+        if ((decrypted_command & 0xF0) == 0x40) {
+            auto length = get_data_block_size(0x2000);
+            memset(&outbuffer, 0xFF, length);
+            outbuffer_length = length / 4;
+            mode = Mode.KEY2;
+            transfer_ongoing = false;
+        } else
+
+        error_cart("tried to issue an invalid KEY1 command: %x", decrypted_command);
     }
 
     void handle_key2_transfer() {
