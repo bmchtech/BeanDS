@@ -122,11 +122,14 @@ final class TouchScreen : SPIDevice {
                             break;
                         
                         case ChannelSelect.TOUCHSCREEN_Y:
-                            set_result( 
-                                input.keys[22] ? 
-                                0 : 
-                                ((y_position + 1 - scr_y1) * (adc_y2 - adc_y1)) / (scr_y2 - scr_y1) + adc_y1
-                            );
+                            if ((scr_y2 - scr_y1) == 0) set_result(0);
+                                else {
+                                set_result( 
+                                    input.keys[22] ? 
+                                    0 : 
+                                    ((y_position + 1 - scr_y1) * (adc_y2 - adc_y1)) / (scr_y2 - scr_y1) + adc_y1
+                                );
+                            }
 
                             if (sussine) {
                                 IFTDebugger.start_debugging();
@@ -154,11 +157,14 @@ final class TouchScreen : SPIDevice {
                             break;
                         
                         case ChannelSelect.TOUCHSCREEN_X:
-                            set_result( 
-                                input.keys[22] ? 
-                                0 : 
-                                ((x_position + 1 - scr_x1) * (adc_x2 - adc_x1)) / (scr_x2 - scr_x1) + adc_x1
-                            );
+                            if ((scr_x2 - scr_x1) == 0) set_result(0);
+                            else {
+                                set_result( 
+                                    input.keys[22] ? 
+                                    0 : 
+                                    ((x_position + 1 - scr_x1) * (adc_x2 - adc_x1)) / (scr_x2 - scr_x1) + adc_x1
+                                );
+                            }
                             // log_touchscreen("tried to read touchscreen pos x: %x %x", 
                             //     input.keys[22] ? 
                             //     0 : 

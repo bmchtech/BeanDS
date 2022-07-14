@@ -63,7 +63,9 @@ final class Cart {
                 if (x & 1) palette_entry >>= 4;
                 else       palette_entry &= 0xF;
 
-                icon_texture[x][y] = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
+                Pixel p = Pixel(rom.read!Half(icon_offset + 0x220 + palette_entry * 2));
+                if (palette_entry == 0) p.a = 0;
+                icon_texture[x][y] = p;
             }
             }
         }

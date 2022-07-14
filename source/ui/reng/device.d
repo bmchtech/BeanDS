@@ -81,7 +81,7 @@ class RengMultimediaDevice : MultiMediaDevice {
                     (buffer_texture[x][y].r << 2 <<  0) |
                     (buffer_texture[x][y].g << 2 <<  8) |
                     (buffer_texture[x][y].b << 2 << 16) |
-                    0xFF000000;
+                    (buffer_texture[x][y].a << 3 << 24);
             }
             }
 
