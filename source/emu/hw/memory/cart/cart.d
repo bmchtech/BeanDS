@@ -292,6 +292,48 @@ final class Cart {
             outbuffer_length = length / 4;
         } else
 
+        if ((decrypted_command & 0xF0) == 0x20) {
+            auto length = get_data_block_size(0x19B8);
+
+            int addr_step_swapped = (decrypted_command & 0xFFFF0) >> 4;
+            int addr_step = bswap(addr_step_swapped) >> 16;
+            int addr = addr_step * 0x1000;
+            
+            int output_offset = 0;
+            for (int i = 0; i < 0x910; i++) {
+                outbuffer[output_offset] = 0xFF;
+                output_offset++;
+            }
+
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 0x200; j++) {
+                    outbuffer[output_offset] = rom[addr + j];
+                    output_offset++;
+                }
+
+                for (int j = 0; j < 0x18; j++) {
+                    outbuffer[output_offset] = 0;
+                    output_offset++;
+                }
+
+                addr += 0x200;
+            }
+
+            outbuffer_length = length / 4;
+        } else
+
+        if ((decrypted_command & 0xF0) == 0xA0) {
+            auto length = get_data_block_size(0x2000);
+            memset(&outbuffer, 0xFF, length);
+            outbuffer_length = length / 4;
+            mode = Mode.KEY2;
+            transfer_ongoing = false;
+            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+
+            key1_encryption.init_keycode(cast(Word) cart_header.game_code, 2, 8);
+        } else
+
         error_cart("tried to issue an invalid KEY1 command: %x", decrypted_command);
     }
 
