@@ -259,6 +259,8 @@ final class Cart {
             outbuffer_length = length / 4;
             mode = Mode.KEY1;
             transfer_ongoing = false;
+            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
 
             key1_encryption.init_keycode(cast(Word) cart_header.game_code, 2, 8);
         } else
@@ -275,8 +277,9 @@ final class Cart {
             auto length = get_data_block_size(0x2000);
             memset(&outbuffer, 0xFF, length);
             outbuffer_length = length / 4;
-            mode = Mode.KEY2;
             transfer_ongoing = false;
+            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
         } else
 
         error_cart("tried to issue an invalid KEY1 command: %x", decrypted_command);
