@@ -63,16 +63,7 @@ final class RTC_S_35199A01 {
     ubyte serial_data;
     int   serial_index;
 
-    ubyte* active_register;
-    ubyte  status_register_1;
-    ubyte  status_register_2;
-    ubyte  date_time_year;
-    ubyte  date_time_month;
-    ubyte  date_time_day;
-    ubyte  date_time_day_of_week;
-    ubyte  date_time_hh;
-    ubyte  date_time_mm;
-    ubyte  date_time_ss;
+    Register* active_register;
 
     int current_command_index;
     int current_register_index;
@@ -84,15 +75,54 @@ final class RTC_S_35199A01 {
         WRITING_REGISTER
     }
 
+    struct Register {
+        ubyte value;
+        void delegate(ubyte) _update;
+
+        this(void delegate(ubyte) _update) {
+            this._update = _update;
+        }
+
+        void update(ubyte new_value) {
+            if (_update != null) {
+                _update(new_value);
+            } else {
+                value = new_value;
+            }
+        }
+    }
+
+    Register status_register_1;
+    Register status_register_2;
+    Register date_time_year;
+    Register date_time_month;
+    Register date_time_day;
+    Register date_time_day_of_week;
+    Register date_time_hh;
+    Register date_time_mm;
+    Register date_time_ss;
+
     struct CommandData {
-        ubyte*[] registers;
+        Register*[] registers;
     }
     
     CommandData[] commands;
 
     State state;
 
+    ubyte set_value;
+
     this() {
+        status_register_1     = Register(&update_status_register_1);
+        status_register_2     = Register(&update_status_register_2);
+        date_time_year        = Register(null);
+        date_time_month       = Register(null);
+        date_time_day         = Register(null);
+        date_time_day_of_week = Register(null);
+        date_time_hh          = Register(null);
+        date_time_mm          = Register(null);
+        date_time_ss          = Register(null);
+
         commands = [
             CommandData([&status_register_1]),
             CommandData([&status_register_2]),
@@ -113,6 +143,16 @@ final class RTC_S_35199A01 {
         ];
     }
 
+    void update_status_register_1(ubyte value) {
+        if (value & 1) reset();
+
+        status_register_1.value = value & ~1;
+    }
+
+    void update_status_register_2(ubyte value) {
+        status_register_2.value = value;
+    }
+
     void write(RTCParams rtc_params) {
         bool old_SCK = this.SCK;
         bool old_SIO = this.SIO;
@@ -130,11 +170,11 @@ final class RTC_S_35199A01 {
             this.state = State.WAITING_FOR_COMMAND;
         }
 
-        if (rising_edge(old_SCK, SCK) && state != State.WAITING_FOR_COMMAND) {
+        if (falling_edge(old_SCK, SCK) && state != State.WAITING_FOR_COMMAND) {
             
             switch (state) {
                 case State.READING_PARAMETERS:
-                    SIO = bit(*this.get_active_register(), this.serial_index); 
+                    SIO = bit(this.get_active_register().value, this.serial_index); 
                     serial_index++;
 
                     if (this.serial_index == 8) {
@@ -145,14 +185,12 @@ final class RTC_S_35199A01 {
                     break;
 
                 case State.WRITING_REGISTER:
-                    auto old_value = *this.get_active_register();
-                    old_value &= ~(1 << this.serial_index);
-                    old_value |= (SIO << this.serial_index);
+                    set_value |= (SIO << (7 - this.serial_index));
 
-                    *this.get_active_register() = old_value; 
                     serial_index++;
 
                     if (this.serial_index == 8) {
+                        this.get_active_register().update(set_value); 
                         this.serial_index = 0; 
                         advance_current_register_value();
                     }
@@ -211,41 +249,37 @@ final class RTC_S_35199A01 {
         current_register_index++;
     }
 
-    void set_active_register_value(ubyte* register) {
+    void set_active_register_value(Register* register) {
+        log_rtc("Set active register: %x", register.value);
         this.active_register = register;
     }
 
-    ubyte* get_active_register() {
+    Register* get_active_register() {
         return this.active_register;
     }
 
     void handle_command(int command) {
-        switch (command) {
-            case 0: reset(); break;
-
-            default:
-                reset_time();
-                this.current_command_index  = command;
-                this.current_register_index = 0;
-                if (commands[command].registers.length == 0) {
-                    log_rtc("Command %x not implemented", command);
-                } else {
-                    log_rtc("Command %x received", command);
-                    // arm9.num_log = 100000000;
-                    set_active_register_value(commands[command].registers[0]);
-                }
+        reset_time();
+        this.current_command_index  = command;
+        this.current_register_index = 0;
+        if (commands[command].registers.length == 0) {
+            log_rtc("Command %x not implemented", command);
+        } else {
+            log_rtc("Command %x received", command);
+            // arm9.num_log = 100000000;
+            set_active_register_value(commands[command].registers[0]);
         }
     }
 
     void reset_time() {
         auto st = Clock.currTime();
-        this.date_time_year        = to_bcd(st.year - 2000);
-        this.date_time_month       = to_bcd(st.month);
-        this.date_time_day         = to_bcd(st.day);
-        this.date_time_day_of_week = to_bcd(st.dayOfWeek);
-        this.date_time_hh          = to_bcd(st.hour);
-        this.date_time_mm          = to_bcd(st.minute);
-        this.date_time_ss          = to_bcd(st.second);
+        this.date_time_year.value        = to_bcd(st.year - 2000);
+        this.date_time_month.value       = to_bcd(st.month);
+        this.date_time_day.value         = to_bcd(st.day);
+        this.date_time_day_of_week.value = to_bcd(st.dayOfWeek);
+        this.date_time_hh.value          = to_bcd(st.hour);
+        this.date_time_mm.value          = to_bcd(st.minute);
+        this.date_time_ss.value          = to_bcd(st.second);
     }
 
     void reset() {
@@ -266,7 +300,8 @@ final class RTC_S_35199A01 {
         reset_time();
 
         set_active_register_value(&status_register_2);
-        status_register_2 = 0;
+        status_register_2.value = 0;
+        status_register_1.value = 0;
     }
 
     RTCParams read() {
