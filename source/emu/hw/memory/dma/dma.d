@@ -27,6 +27,9 @@ final class DMA(HwType H) {
     static if (H == HwType.NDS9) alias log_dma = log_dma9;
     static if (H == HwType.NDS7) alias log_dma = log_dma7;
 
+    static if (H == HwType.NDS9) alias DMAStartTiming = DMAStartTiming9;
+    static if (H == HwType.NDS7) alias DMAStartTiming = DMAStartTiming7;
+
     bool is_ds_cart_transfer_queued = false;
     int ds_cart_transfer_channel;
 
@@ -182,12 +185,18 @@ final class DMA(HwType H) {
             is_ds_cart_transfer_queued = true;
         }
 
-        if (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
-            dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank &&
+        bool unimplemented_dma = 
+           (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
             dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
-            dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot) {
-                error_dma9("tried to do a dma i dont do");
-            }
+            dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot);
+        
+        static if (H == HwType.NDS9) {
+            unimplemented_dma |= (dma_channels[dma_id].dma_start_timing == DMAStartTiming.HBlank);
+        }
+
+        if (unimplemented_dma) {
+            error_dma9("tried to do a dma i dont do: %x", dma_channels[dma_id].dma_start_timing);
+        }
     }
 
     pragma(inline, true) void start_dma_channel(int dma_id, bool last) {
@@ -195,9 +204,11 @@ final class DMA(HwType H) {
     }
 
     void on_hblank(uint scanline) {
-        for (int i = 0; i < 4; i++) {
-            if (dma_channels[i].dma_start_timing == DMAStartTiming.HBlank) {
-                start_dma_channel(i, false);
+        static if (H == HwType.NDS9) {
+            for (int i = 0; i < 4; i++) {
+                if (dma_channels[i].dma_start_timing == DMAStartTiming.HBlank) {
+                    start_dma_channel(i, false);
+                }
             }
         }
     }
@@ -227,7 +238,7 @@ final class DMA(HwType H) {
         IncrementReload = 0b11
     }
 
-    enum DMAStartTiming {
+    enum DMAStartTiming9 {
         Immediately       = 0,
         VBlank            = 1,
         HBlank            = 2,
@@ -236,6 +247,13 @@ final class DMA(HwType H) {
         DSCartSlot        = 5,
         GBACartSlot       = 6,
         GeometryCmdFifo   = 7
+    }
+
+    enum DMAStartTiming7 {
+        Immediately       = 0,
+        VBlank            = 1,
+        DSCartSlot        = 2,
+        WirelessInterrupt = 3
     }
 
     struct DMAChannel {
@@ -296,7 +314,12 @@ final class DMA(HwType H) {
                 dma_channels[x].source_addr_control = cast(SourceAddrMode) ((data[0] << 1) | (dma_channels[x].source_addr_control & 0b01));
                 dma_channels[x].repeat              =  data[1];
                 dma_channels[x].transferring_words  =  data[2];
-                dma_channels[x].dma_start_timing    =  cast(DMAStartTiming) data[3..5];
+
+                final switch (H) {
+                    case HwType.NDS7: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[4..5]; break;
+                    case HwType.NDS9: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[3..5]; break;
+                }
+
                 dma_channels[x].irq_on_end          =  data[6];
                 dma_channels[x].enabled             =  data[7];
 
@@ -339,22 +362,30 @@ final class DMA(HwType H) {
     }
 
     Byte read_DMAxCNT_H(int target_byte, int x) {
+        Byte result;
 
-        if (scheduler.get_current_time() > 0x00000000a2cdbaa2) {
-            // arm9.num_log = 10;
-        }
         final switch (target_byte) {
             case 0:
-                return cast(Byte) ((dma_channels[x].dest_addr_control            << 5) |
-                                  ((dma_channels[x].source_addr_control & 0b01) << 7));
+                result[0..4] = cast(Byte) dma_channels[x].num_units[16..20];
+                result[5..6] = cast(Byte) dma_channels[x].dest_addr_control;
+                result[7]    = cast(Byte) dma_channels[x].source_addr_control & 1;
+                break;
             case 1:
-                return cast(Byte) (((dma_channels[x].source_addr_control & 0b10) >> 1) |
-                                    (dma_channels[x].repeat                      << 1) |
-                                    (dma_channels[x].transferring_words          << 2) |
-                                    (dma_channels[x].dma_start_timing            << 3) |
-                                    (dma_channels[x].irq_on_end                  << 6) |
-                                    (dma_channels[x].enabled                     << 7));
+                result[0]    = cast(Byte) dma_channels[x].source_addr_control & 2;
+                result[1]    = cast(Byte) dma_channels[x].repeat;
+                result[2]    = cast(Byte) dma_channels[x].transferring_words;
+
+                final switch (H) {
+                    case HwType.NDS7: result[4..5] = cast(Byte) dma_channels[x].dma_start_timing; break;
+                    case HwType.NDS9: result[3..5] = cast(Byte) dma_channels[x].dma_start_timing; break;
+                }
+
+                result[6] = cast(Byte) dma_channels[x].irq_on_end;
+                result[7] = cast(Byte) dma_channels[x].enabled;
+                break;
         }
+
+        return result;
     }
 
     Byte read_DMAxFILL(int target_byte, int x) {

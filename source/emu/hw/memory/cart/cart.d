@@ -282,6 +282,16 @@ final class Cart {
             if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
         } else
 
+        if ((decrypted_command & 0xF0) == 0x10) {
+            auto length = get_data_block_size(4);
+
+            for (int i = 0; i < length / 4; i++) {
+                outbuffer[i] = get_cart_id();
+            }
+
+            outbuffer_length = length / 4;
+        } else
+
         error_cart("tried to issue an invalid KEY1 command: %x", decrypted_command);
     }
 
