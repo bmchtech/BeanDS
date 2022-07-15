@@ -46,6 +46,11 @@ final class Cart {
     Pixel[32][32] get_icon() {
         Word icon_offset = this.cart_header.icon_offset;
         Pixel[32][32] icon_texture;
+        for (int x = 0; x < 32; x++) {
+        for (int y = 0; y < 32; y++) {
+            icon_texture[y][x] = Pixel(0, 0, 0, 0);
+        }
+        }
 
         if (icon_offset != 0) {
             for (int x = 0; x < 32; x++) {
@@ -76,8 +81,11 @@ final class Cart {
     char[128] rom_title_buf;
     string get_rom_title(FirmwareLanguage language) {
         import std.utf;
+        import std.encoding;
             
         Word icon_offset = this.cart_header.icon_offset;
+
+        rom_title_buf[0..128] = ' ';
 
         if (icon_offset != 0) {
             Word rom_title_address = icon_offset + 0x240 + cast(int) language * 0x100;
@@ -87,8 +95,13 @@ final class Cart {
             size_t j = 0;
 
             while (i < 128) {
-                rom_title_buf[j] = cast(char) rom_title_utf16.decode(i);
-                j++;
+                char[2] result;
+                auto len = rom_title_utf16.decode(i).encode!char(result);
+
+                if (result[0] == '\n') break;
+
+                rom_title_buf[j .. j + len] = result[0 .. len];
+                j += len;
             }
         }
 
