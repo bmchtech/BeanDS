@@ -29,6 +29,8 @@ final class RTCHook {
     }
 
     void write_RTC(int target_byte, Byte value) {
+        if (target_byte != 0) return;
+
         // log_rtc("arm7: %x", arm7.regs[pc]);
         // TODO: do i need to implement the data direction bit?
         // idk but ill preserve its value anyway
@@ -44,6 +46,8 @@ final class RTCHook {
     }
 
     Byte read_RTC(int target_byte) {
+        if (target_byte != 0) return Byte(0);
+
         auto rtc_params = rtc.read();
 
         Byte value = 0;
@@ -250,7 +254,7 @@ final class RTC_S_35199A01 {
     }
 
     void set_active_register_value(Register* register) {
-        log_rtc("Set active register: %x", register.value);
+        // log_rtc("Set active register: %x", register.value);
         this.active_register = register;
     }
 
@@ -263,9 +267,9 @@ final class RTC_S_35199A01 {
         this.current_command_index  = command;
         this.current_register_index = 0;
         if (commands[command].registers.length == 0) {
-            log_rtc("Command %x not implemented", command);
+            // log_rtc("Command %x not implemented", command);
         } else {
-            log_rtc("Command %x received", command);
+            // log_rtc("Command %x received", command);
             // arm9.num_log = 100000000;
             set_active_register_value(commands[command].registers[0]);
         }
