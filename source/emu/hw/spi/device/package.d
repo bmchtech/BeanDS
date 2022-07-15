@@ -3,6 +3,7 @@ module emu.hw.spi.device;
 public {
     import emu.hw.spi.device.eeprom;
     import emu.hw.spi.device.firmware;
+    import emu.hw.spi.device.powerman;
     import emu.hw.spi.device.touchscreen;
 }
 

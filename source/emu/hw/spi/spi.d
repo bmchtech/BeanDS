@@ -20,7 +20,7 @@ final class SPI {
 
     this() {
         spi_devices = [
-            null,
+            new PowerMan(),
             new Firmware(),
             new TouchScreen(),
             null
@@ -100,11 +100,6 @@ final class SPI {
 
         if (selected_device_index == 3) {
             error_spi("Tried to write to an invalid SPI device!");
-        }
-
-        if (selected_device_index != 2 && selected_device_index != 1) {
-            log_spi("Tried to read from an unimplemented SPI device: %x", selected_device_index);
-            return;
         }
 
         if (offset == 0) {
