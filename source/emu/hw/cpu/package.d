@@ -8,5 +8,6 @@ public {
     import emu.hw.cpu.cp;
     import emu.hw.cpu.interrupt;
     import emu.hw.cpu.ipc;
+    import emu.hw.cpu.jit;
     import emu.hw.cpu.jumptable;
 }
