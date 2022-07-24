@@ -34,6 +34,21 @@ final class ARM7TDMI : ArmCPU {
         
         arm7 = this;
         cpu_trace = new CpuTrace(this, ringbuffer_size);
+
+        IR!(HostReg_x86_64, GuestReg_ARMv4T)* ir = new IR!(HostReg_x86_64, GuestReg_ARMv4T)();
+        Disassembler!(HostReg_x86_64, GuestReg_ARMv4T).decode_thumb(
+            ir,
+            Word(0b01000111_00000000)
+        );
+        Emitter!(HostReg_x86_64, GuestReg_ARMv4T).Code emitter = new Emitter!(HostReg_x86_64, GuestReg_ARMv4T).Code();
+        emitter.emit(ir);
+        auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
+
+        JITState* jit_state = new JITState();
+        jit_state.regs[0] = 0x68;
+        jit_state.cpsr = 0x7000003F;
+        generated_function(jit_state);
+        log_jit("output: %x %x", jit_state.regs[15], jit_state.cpsr);
     }
 
     void reset() {

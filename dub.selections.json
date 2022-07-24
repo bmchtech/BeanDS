@@ -16,6 +16,7 @@
 		"reng": "0.7.3",
 		"silly": "1.1.1",
 		"stdx-allocator": "2.77.5",
-		"witchcraft": "0.1.9"
+		"witchcraft": "0.1.9",
+		"xbyak": "4.87.0"
 	}
 }

@@ -1,79 +1,50 @@
 module emu.hw.cpu.jit.ir.instruction;
 
-import std.typecons;
+import std.sumtype;
 
 import emu.hw.cpu.jit;
 
-abstract class IRInstruction_Impl {
-    void do_action() {
+alias IRInstruction(H, G) = SumType!(
+    IRInstructionGetReg!(H, G),
+    IRInstructionSetReg!(H, G),
+    IRInstructionBinaryDataOpImm!(H, G),
+    IRInstructionBinaryDataOpVar!(H, G),
+    IRInstructionDeleteVariable!(H, G)
+);
 
+alias IRInstructionGetReg(H, G)          = IRInstructionTemplate!(H, G).IRInstructionGetReg;
+alias IRInstructionSetReg(H, G)          = IRInstructionTemplate!(H, G).IRInstructionSetReg;
+alias IRInstructionBinaryDataOpImm(H, G) = IRInstructionTemplate!(H, G).IRInstructionBinaryDataOpImm;
+alias IRInstructionBinaryDataOpVar(H, G) = IRInstructionTemplate!(H, G).IRInstructionBinaryDataOpVar;
+alias IRInstructionDeleteVariable(H, G)  = IRInstructionTemplate!(H, G).IRInstructionDeleteVariable;
+
+template IRInstructionTemplate(HostReg, GuestReg) {
+    alias _IRGuestReg     = IRGuestReg!(HostReg, GuestReg);
+    alias _IRVariable     = IRVariable!(HostReg, GuestReg);
+
+    struct IRInstructionGetReg {
+        _IRVariable dest;
+        GuestReg src;
     }
-} 
 
-final class IrInstructionGetReg_Impl : IRInstruction_Impl {
-    IROperand dest;
-    IRGuestReg src;
-
-    this(IROperand dest, IRGuestReg src) {
-        this.dest = dest;
-        this.src = src;
+    struct IRInstructionSetReg{
+        GuestReg dest;
+        _IRVariable src;
     }
-}
-
-final class IrInstructionSetReg_Impl : IRInstruction_Impl {
-    IRGuestReg dest;
-    IROperand src;
-
-    this(IRGuestReg dest, IROperand src) {
-        this.dest = guestdest_reg;
-        this.src = src;
+    
+    struct IRInstructionBinaryDataOpImm {
+        IRBinaryDataOp op;
+        _IRVariable dest;
+        uint src;
     }
-}
-
-final class IrInstructionEvalCond_Impl : IRInstruction_Impl {
-    IROperand dest;
-    IRCond cond;
-
-    this(IROperand dest, IRCond cond) {
-        this.dest = dest;
-        this.cond = cond;
+    
+    struct IRInstructionBinaryDataOpVar {
+        IRBinaryDataOp op;
+        _IRVariable dest;
+        _IRVariable src;
     }
-}
 
-final class IrInstructionBinaryDataOp_Impl : IRInstruction_Impl {
-    IROperand dest;
-    IROperand src;
-    IRBinaryDataOp op;
-
-    this(IROperand dest, IROperand src, IRBinaryDataOp op) {
-        this.dest = dest;
-        this.src = src;
-        this.op = op;
+    struct IRInstructionDeleteVariable {
+        _IRVariable variable;
     }
 }
-
-final class IrInstructionSetFlag_Impl : IRInstruction_Impl {
-    IRFlag flag;
-    IROperand src;
-
-    this(IRFlag flag, IROperand src) {
-        this.flag = flag;
-        this.src = src;
-    }
-}
-
-final class IrInstructionDeleteVariable_Impl : IRInstruction_Impl {
-    IROperand dest;
-
-    this(IROperand dest) {
-        this.dest = dest;
-    }
-}
-
-alias IrInstruction = scoped!IRInstruction_Impl;
-alias IrInstructionGetReg = scoped!IrInstructionGetReg_Impl;
-alias IrInstructionSetReg = scoped!IrInstructionSetReg_Impl;
-alias IrInstructionEvalCond = scoped!IrInstructionEvalCond_Impl;
-alias IrInstructionBinaryDataOp = scoped!IrInstructionBinaryDataOp_Impl;
-alias IrInstructionSetFlag = scoped!IrInstructionSetFlag_Impl;
-alias IrInstructionDeleteVariable = scoped!IrInstructionDeleteVariable_Impl;
