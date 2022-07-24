@@ -23,6 +23,7 @@ template Emitter(HostReg, GuestReg) {
         _RegisterAllocator register_allocator;
 
         this() {
+            log_jit("initializing code emitter");
             register_allocator = new _RegisterAllocator();
         }
 
@@ -42,6 +43,12 @@ template Emitter(HostReg, GuestReg) {
             //         return _IRVariable(-1);
             //     }
             // );
+        }
+
+        override void reset() {
+            super.reset();
+            
+            if (register_allocator) register_allocator.reset();
         }
 
         void emit(_IR* ir) {

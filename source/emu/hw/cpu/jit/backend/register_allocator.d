@@ -71,6 +71,8 @@ final class RegisterAllocator(HostReg, GuestReg) {
     BindingVariable[NUM_HOST_REGS] bindings;
 
     this() {
+        log_jit("Initializing register allocator.");
+        
         for (int i = 0; i < NUM_HOST_REGS; i++) {
             bindings[i] = BindingVariable(cast(HostReg) i);
         }

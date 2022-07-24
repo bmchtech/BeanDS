@@ -24,6 +24,7 @@ template IRTemplate(HostReg, GuestReg) {
         }
 
         void reset() {
+            instructions = [];
             variable_generator.reset();
         }
 
