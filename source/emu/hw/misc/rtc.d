@@ -34,8 +34,6 @@ final class RTCHook {
         if (target_byte != 0) return;
 
         // log_rtc("arm7: %x", arm7.regs[pc]);
-        // TODO: do i need to implement the data direction bit?
-        // idk but ill preserve its value anyway
         data_direction = value[4];
 
         rtc.write(
