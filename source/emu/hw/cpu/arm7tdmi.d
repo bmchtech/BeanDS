@@ -37,11 +37,6 @@ final class ARM7TDMI : ArmCPU {
         
         arm7 = this;
         cpu_trace = new CpuTrace(this, ringbuffer_size);
-
-        jit_state = new JITState();
-        ir = new IR!(HostReg_x86_64, GuestReg_ARMv4T)();
-        emitter = new Emitter!(HostReg_x86_64, GuestReg_ARMv4T).Code();
-        // log_jit("output: %x %x", jit_state.regs[15], jit_state.cpsr);
     }
 
     void reset() {
@@ -115,23 +110,6 @@ final class ARM7TDMI : ArmCPU {
         }
 
         static if (is(T == Half)) {
-            if (opcode >> 8 == 0x47) {
-                ir.reset();
-                emitter.reset();
-                Disassembler!(HostReg_x86_64, GuestReg_ARMv4T).decode_thumb(
-                    ir,
-                    Word(opcode)
-                );
-                emitter.emit(ir);
-                auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
-
-                jit_state.regs[0..16] = regs[0..16];
-                jit_state.cpsr = regs[16];
-                generated_function(jit_state);
-                regs[0..16] = jit_state.regs[0..16];
-                regs[16] = jit_state.cpsr;
-                refill_pipeline();
-            }
             execute_thumb!ARM7TDMI.jumptable[opcode >> 8](this, opcode);
         }
 
