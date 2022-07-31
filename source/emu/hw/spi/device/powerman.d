@@ -84,7 +84,7 @@ final class PowerMan : SPIDevice {
                 break;
             
             case Register.BATTERY_STATUS:
-                result[0] = 1;
+                result[0] = battery_power_led_status;
                 break;
             
             case Register.MIC_AMP_CONTROL:
