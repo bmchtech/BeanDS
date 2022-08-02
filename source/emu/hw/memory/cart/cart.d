@@ -12,7 +12,8 @@ final class Cart {
     Byte[] rom;
     Mode mode;
 
-    Key1Encryption key1_encryption;
+    Key1Encryption key1_encryption_level2;
+    Key1Encryption key1_encryption_level3;
 
     enum Mode {
         UNENCRYPTED,
@@ -27,7 +28,8 @@ final class Cart {
         
         this.cart_header = get_cart_header(rom);
 
-        key1_encryption = new Key1Encryption();
+        key1_encryption_level2 = new Key1Encryption();
+        key1_encryption_level3 = new Key1Encryption();
     }
 
     void reset() {
@@ -277,7 +279,8 @@ final class Cart {
             if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
             if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
 
-            key1_encryption.init_keycode(cast(Word) cart_header.game_code, 2, 8);
+            key1_encryption_level2.init_keycode(cast(Word) cart_header.game_code, 2, 8);
+            key1_encryption_level3.init_keycode(cast(Word) cart_header.game_code, 3, 8);
         } else
         
         error_cart("tried to issue an invalid unencrypted command: %x", command);
@@ -285,7 +288,7 @@ final class Cart {
 
     void handle_key1_transfer() {
         u64 swapped = bswap(command);
-        key1_encryption.decrypt_64bit(cast(u32*) &swapped);
+        key1_encryption_level2.decrypt_64bit(cast(u32*) &swapped);
         u64 decrypted_command = bswap(swapped);
 
         if ((decrypted_command & 0xF0) == 0x40) {
@@ -310,25 +313,37 @@ final class Cart {
         if ((decrypted_command & 0xF0) == 0x20) {
             auto length = get_data_block_size(0x19B8);
 
-            int addr_step_swapped = (decrypted_command & 0xFFFF0) >> 4;
-            int addr_step = bswap(addr_step_swapped) >> 16;
+            int addr_step = (bswap(decrypted_command) >> 44) & 0xFFFF;
             int addr = addr_step * 0x1000;
             
             int output_offset = 0;
-            for (int i = 0; i < 0x910; i++) {
-                outbuffer[output_offset] = 0xFF;
-                output_offset++;
-            }
 
             for (int i = 0; i < 8; i++) {
-                for (int j = 0; j < 0x200; j++) {
-                    outbuffer[output_offset] = rom[addr + j];
-                    output_offset++;
+                if (addr == 0x4000) {
+                    for (int j = 0; j < 0x200; j += 8) {
+                        u64 scratch = *(cast(u64*) &rom[addr + j]);
+                        if (j == 0) {
+                            scratch = 0x6A624F7972636E65;
+                        }
+
+                        key1_encryption_level3.encrypt_64bit(cast(u32*) &scratch);
+                        key1_encryption_level2.encrypt_64bit(cast(u32*) &scratch);
+
+                        *(cast(u64*) &outbuffer[output_offset / 4]) = scratch;
+                        output_offset += 8;
+                    }
+                } else {
+                    for (int j = 0; j < 0x200; j++) {
+                        outbuffer[output_offset] = rom[addr + j];
+                        output_offset++;
+                    }
                 }
 
-                for (int j = 0; j < 0x18; j++) {
-                    outbuffer[output_offset] = 0;
-                    output_offset++;
+                if (get_cart_id().bit(15)) {
+                    for (int j = 0; j < 0x18; j++) {
+                        outbuffer[output_offset] = 0;
+                        output_offset++;
+                    }
                 }
 
                 addr += 0x200;
@@ -346,7 +361,7 @@ final class Cart {
             if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
             if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
 
-            key1_encryption.init_keycode(cast(Word) cart_header.game_code, 2, 8);
+            key1_encryption_level2.init_keycode(cast(Word) cart_header.game_code, 2, 8);
         } else
 
         error_cart("tried to issue an invalid KEY1 command: %x", decrypted_command);
