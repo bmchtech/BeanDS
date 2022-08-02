@@ -324,9 +324,9 @@ final class Cart {
                         u64 scratch = *(cast(u64*) &rom[addr + j]);
                         if (j == 0) {
                             scratch = 0x6A624F7972636E65;
+                            key1_encryption_level3.encrypt_64bit(cast(u32*) &scratch);
                         }
 
-                        key1_encryption_level3.encrypt_64bit(cast(u32*) &scratch);
                         key1_encryption_level2.encrypt_64bit(cast(u32*) &scratch);
 
                         *(cast(u64*) &outbuffer[output_offset / 4]) = scratch;
