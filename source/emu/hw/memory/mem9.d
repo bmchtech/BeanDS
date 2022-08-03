@@ -28,7 +28,7 @@ final class Mem9 : Mem {
             case 0x5:              return pram.read!T(address);
             case 0x6:              return vram.read9!T(address);
             case 0x7:              return oam.read!T(address);
-            case 0x8: .. case 0x9: return cart.read!T(address & 0xFF_FFFF, HwType.NDS9);
+            case 0x8: .. case 0x9: log_unimplemented("Attempt from ARM9 to read from GBA Slot ROM: %x", address); break;
             case 0xA: .. case 0xB: log_unimplemented("Attempt from ARM9 to read from GBA Slot RAM: %x", address); break;
             case 0xF:              return bios.read!T(address[0..15]);
         
