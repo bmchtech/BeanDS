@@ -1,5 +1,7 @@
 module emu.hw.nds;
 
+import std.mmfile;
+
 import emu;
 
 import ui.device;
@@ -45,6 +47,7 @@ final class NDS {
         spi = new SPI();
         auxspi = new AUXSPI();
         spu = new SPU();
+        sound_capture = new SoundCapture();
         slot = new Slot();
 
         cpu_trace = new CpuTrace(arm7, 100);
@@ -83,6 +86,11 @@ final class NDS {
         cart.reset();
 
         rtc_hook.reset();
+    }
+
+    void reset_firmware() {
+        // https://melonds.kuribo64.net/board/thread.php?pid=3322
+        rtc_hook.set_time_lost(true);
     }
 
     void load_rom(Byte[] rom) {
@@ -179,6 +187,15 @@ final class NDS {
         spu.set_cycles_per_sample(33_513_982 / sample_rate);
     }
 
+    int get_backup_size() {
+        // lol, fix this later
+        return 32 * 256;
+    }
+
+    void load_save_mmfile(MmFile save_mmfile) {
+        auxspi.eeprom.set_save_mmfile(save_mmfile);
+    }
+
     void write_HALTCNT(int target_byte, Byte data) {
         final switch (data[6..7]) {
             case 0: break;
@@ -193,7 +210,15 @@ final class NDS {
         return Byte(0);
     }
 
+    void write_POSTFLG(int target_byte, Byte data) {
+        // currently i cannot differentiate and know which CPU issues this write.
+        // so i will have to do this funny workaround:
+        if (target_byte == 0 && (arm7.regs[pc] >> 16 == 0 || arm9.regs[pc] >> 16 == 0xFFFF)) {
+            booted = data[0];
+        }
+    }
+
     Byte read_POSTFLG(int target_byte) {
-        return Byte(booted);
+        return target_byte == 0 ? Byte(booted) : Byte(0);
     }
 }

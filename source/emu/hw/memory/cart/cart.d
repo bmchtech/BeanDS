@@ -315,11 +315,12 @@ final class Cart {
 
             int addr_step = (bswap(decrypted_command) >> 44) & 0xFFFF;
             int addr = addr_step * 0x1000;
+            int initial_addr = 0x4000;
             
             int output_offset = 0;
 
             for (int i = 0; i < 8; i++) {
-                if (addr == 0x4000) {
+                if (initial_addr == 0x4000) {
                     for (int j = 0; j < 0x200; j += 8) {
                         u64 scratch = *(cast(u64*) &rom[addr + j]);
                         if (j == 0) {
@@ -333,17 +334,18 @@ final class Cart {
                         output_offset += 8;
                     }
                 } else {
-                    for (int j = 0; j < 0x200; j++) {
-                        outbuffer[output_offset] = rom[addr + j];
-                        output_offset++;
+                    for (int j = 0; j < 0x200 / 4; j++) {
+                        outbuffer[output_offset / 4] = rom.read!Word(Word(addr + j));
+                        output_offset += 4;
                     }
                 }
 
                 if (get_cart_id().bit(15)) {
-                    for (int j = 0; j < 0x18; j++) {
-                        outbuffer[output_offset] = 0;
-                        output_offset++;
-                    }
+                    error_cart("ill implement this later");
+                    // for (int j = 0; j < 0x18; j++) {
+                    //     outbuffer[output_offset / 4] = 0;
+                    //     output_offset += 4;
+                    // }
                 }
 
                 addr += 0x200;

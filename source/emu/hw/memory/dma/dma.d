@@ -185,17 +185,22 @@ final class DMA(HwType H) {
             is_ds_cart_transfer_queued = true;
         }
 
-        bool unimplemented_dma = 
-           (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
-            dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
-            dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot);
         
         static if (H == HwType.NDS9) {
-            unimplemented_dma |= (dma_channels[dma_id].dma_start_timing == DMAStartTiming.HBlank);
+            bool unimplemented_dma = 
+               (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank);
+        } else {
+            bool unimplemented_dma = 
+               (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot);
         }
 
         if (unimplemented_dma) {
-            error_dma9("tried to do a dma i dont do: %x", dma_channels[dma_id].dma_start_timing);
+            error_dma9("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
         }
     }
 

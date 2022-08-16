@@ -58,6 +58,10 @@ final class RTCHook {
         value[4] = data_direction;
         return value;
     }
+
+    void set_time_lost(bool time_lost) {
+        rtc.set_time_lost(time_lost);
+    }
 }
 
 final class RTC_S_35199A01 {
@@ -86,9 +90,11 @@ final class RTC_S_35199A01 {
     struct Register {
         ubyte value;
         void delegate(ubyte) _update;
+        void delegate()      _read_occurred;
 
-        this(void delegate(ubyte) _update) {
-            this._update = _update;
+        this(void delegate(ubyte) _update, void delegate() _read_occurred) {
+            this._update        = _update;
+            this._read_occurred = _read_occurred;
         }
 
         void update(ubyte new_value) {
@@ -96,6 +102,12 @@ final class RTC_S_35199A01 {
                 _update(new_value);
             } else {
                 value = new_value;
+            }
+        }
+
+        void read_occurred() {
+            if (_read_occurred != null) {
+                _read_occurred();
             }
         }
     }
@@ -121,15 +133,15 @@ final class RTC_S_35199A01 {
     ubyte set_value;
 
     this() {
-        status_register_1     = Register(&update_status_register_1);
-        status_register_2     = Register(&update_status_register_2);
-        date_time_year        = Register(null);
-        date_time_month       = Register(null);
-        date_time_day         = Register(null);
-        date_time_day_of_week = Register(null);
-        date_time_hh          = Register(null);
-        date_time_mm          = Register(null);
-        date_time_ss          = Register(null);
+        status_register_1     = Register(&update_status_register_1, &read_ocurred_status_register_1);
+        status_register_2     = Register(&update_status_register_2, null);
+        date_time_year        = Register(null, null);
+        date_time_month       = Register(null, null);
+        date_time_day         = Register(null, null);
+        date_time_day_of_week = Register(null, null);
+        date_time_hh          = Register(null, null);
+        date_time_mm          = Register(null, null);
+        date_time_ss          = Register(null, null);
 
         commands = [
             CommandData([&status_register_1]),
@@ -163,6 +175,10 @@ final class RTC_S_35199A01 {
         status_register_1.value |= 1 << twenty_four_hour_mode;
     }
 
+    void read_ocurred_status_register_1() {
+        status_register_1.value &= 0x0F;
+    }
+
     void update_status_register_2(ubyte value) {
         status_register_2.value = value;
     }
@@ -192,6 +208,7 @@ final class RTC_S_35199A01 {
 
                     if (this.serial_index == 8) {
                         this.serial_index = 0; 
+                        get_active_register().read_occurred();
                         advance_current_register_value();
                     }
                     
@@ -315,6 +332,11 @@ final class RTC_S_35199A01 {
         set_active_register_value(&status_register_2);
         status_register_2.value = 0;
         status_register_1.value = 0;
+    }
+
+    void set_time_lost(bool time_lost) {
+        status_register_1.value &= ~0x80;
+        status_register_1.value |= time_lost << 7;
     }
 
     RTCParams read() {

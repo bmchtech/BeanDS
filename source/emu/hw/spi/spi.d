@@ -73,7 +73,7 @@ final class SPI {
 
                     if (data[3] && !chipselect_hold) {
                         if (selected_device is null) {
-                            log_unimplemented("tried to chipselect an unimplemented chip");
+                            log_unimplemented("tried to chipselect an invalid chip");
                         } else {
                             selected_device.chipselect_fall();
                         }

@@ -1,5 +1,7 @@
 module emu.hw.spi.device.eeprom;
 
+import std.mmfile;
+
 import emu;
 import util;
 
@@ -32,23 +34,30 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     Byte[total_bytes] data;
 
+    MmFile save_mmfile;
+
     this() {
         state = State.WAITING_FOR_CHIPSELECT;
+    }
+
+    void set_save_mmfile(MmFile save_mmfile) {
+        this.save_mmfile = save_mmfile;
+        data = cast(Byte[]) save_mmfile[];
     }
 
     override Byte write(Byte b) {
         Byte result = 0;
 
-        // log_eeprom("    received write: %x", b);
+        log_eeprom("    received write: %x (sanity: %x)", b, data[2]);
         switch (state) {
             case State.WAITING_FOR_COMMAND:
-                // log_eeprom("    parsing the command: %x", b);
+                log_eeprom("    parsing the command: %x", b);
                 parse_command(b);
                 break;
 
             case State.WRITING_STATUS:
                 if (!write_enable_latch) break;
-                // log_eeprom("    setting status: %x", b);
+                log_eeprom("    setting status: %x", b);
                 write_protect                 = b[2..3];
                 status_register_write_disable = b[7];
                 break;
@@ -57,28 +66,27 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 result[1]    = write_enable_latch;
                 result[2..3] = write_protect;
                 result[7]    = status_register_write_disable;
-                // log_eeprom("    reading status: %x", result);
+                log_eeprom("    reading status: %x", result);
                 break;
 
             case State.READING_JEDEC_ID:
                 result = 0xFF;
-                // log_eeprom("    reading jedec id");
+                log_eeprom("    reading jedec id");
                 break;
             
             // bad code
             case State.READING_DATA:
-                if (!write_enable_latch) break;
-                // log_eeprom("    address write? (write): %x", b);
+                log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     result = data[current_address];
-                    // log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
+                    log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
-                    // log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
+                    log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
                     handle_address_write(b);
                     accesses_remaining--;
                 }
@@ -86,17 +94,20 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             
             case State.WRITING_DATA:
                 if (!write_enable_latch) break;
-                // log_eeprom("    address write? (write): %x", b);
+                log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
                 if (accesses_remaining <= page_size) {
                     // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
+                    log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
+
                     data[current_address] = b;
-                    // log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
+                    save_mmfile[current_address] = b;
+
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
-                    // log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
+                    log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
                     handle_address_write(b);
                     accesses_remaining--;
                 }
@@ -106,7 +117,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             default: break;
         }
 
-        // log_eeprom("    returning %x", result);
+        log_eeprom("    returning %x", result);
         return result;
     }
 
@@ -124,12 +135,12 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     override void chipselect_fall() {
         state = State.WAITING_FOR_COMMAND;
-        // log_eeprom("chipselect fall");
+        log_eeprom("chipselect fall");
     }
 
     override void chipselect_rise() {
         state = State.WAITING_FOR_CHIPSELECT;
-        // log_eeprom("chipselect rise");
+        log_eeprom("chipselect rise");
     }
 
 
