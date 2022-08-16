@@ -76,8 +76,11 @@ final class GPU {
 
     void set_hblank_flag() {
         hblank = true;
-        dma9.on_hblank(scanline);
-        dma7.on_hblank(scanline);
+
+        if (0 <= scanline && scanline < 192) {
+            dma9.on_hblank(scanline);
+            dma7.on_hblank(scanline);
+        }
     }
 
     void on_vblank_start() {
