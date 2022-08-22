@@ -111,7 +111,7 @@ final class Cart {
     }
 
     T read(T)(Word address, HwType hw_type) {
-        if (slot.access_rights != hw_type) { 
+        if (slot.nds_slot_access_rights != hw_type) { 
             log_cart("tried to read from cart even though i had no rights!"); 
             return T(0); 
         }
@@ -309,11 +309,11 @@ final class Cart {
         } else
 
         if ((decrypted_command & 0xF0) == 0x20) {
-            auto length = get_data_block_size(0x19B8);
+            auto length = get_data_block_size(0x1000);
 
             int addr_step = (bswap(decrypted_command) >> 44) & 0xFFFF;
             int addr = addr_step * 0x1000;
-            int initial_addr = 0x4000;
+            int initial_addr = addr;
             
             int output_offset = 0;
 
@@ -321,29 +321,32 @@ final class Cart {
                 if (initial_addr == 0x4000) {
                     for (int j = 0; j < 0x200; j += 8) {
                         u64 scratch = *(cast(u64*) &rom[addr + j]);
-                        if (j == 0) {
+                        if (initial_addr == addr && j == 0) {
+                            // encryObj - a key that must appear at the beginning of
+                            // the secure area block
                             scratch = 0x6A624F7972636E65;
-                            key1_encryption_level3.encrypt_64bit(cast(u32*) &scratch);
                         }
 
-                        key1_encryption_level2.encrypt_64bit(cast(u32*) &scratch);
+                        if (addr < 0x4800) {
+                            key1_encryption_level3.encrypt_64bit(cast(u32*) &scratch);
+
+                            if (initial_addr == addr && j == 0) {
+                                key1_encryption_level2.encrypt_64bit(cast(u32*) &scratch);
+                            }
+                        }
 
                         *(cast(u64*) &outbuffer[output_offset / 4]) = scratch;
                         output_offset += 8;
                     }
                 } else {
                     for (int j = 0; j < 0x200 / 4; j++) {
-                        outbuffer[output_offset / 4] = rom.read!Word(Word(addr + j));
+                        outbuffer[output_offset / 4] = rom.read!Word(Word(addr + j * 4));
                         output_offset += 4;
                     }
                 }
 
                 if (get_cart_id().bit(15)) {
                     error_cart("ill implement this later");
-                    // for (int j = 0; j < 0x18; j++) {
-                    //     outbuffer[output_offset / 4] = 0;
-                    //     output_offset += 4;
-                    // }
                 }
 
                 addr += 0x200;
