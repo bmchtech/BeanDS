@@ -187,4 +187,19 @@ final class GPU3D {
             irq_mode = cast(IRQMode) data[6..7];
         }
     }
+
+    Byte read_RAM_COUNT(int target_byte) {
+        Byte result;
+
+        final switch (target_byte) {
+            case 0:
+                result = geometry_engine.polygon_index;
+                break;
+            
+            case 2:
+                result = geometry_engine.vertex_index;
+        }
+
+        return result;
+    }
 }

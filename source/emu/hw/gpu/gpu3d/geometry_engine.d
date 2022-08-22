@@ -121,6 +121,7 @@ final class GeometryEngine {
     bool receiving_vtxs;
 
     int polygon_index = 0;
+    int vertex_index = 0;
 
     Word upcoming_polygon_attributes;
 
@@ -250,6 +251,7 @@ final class GeometryEngine {
 
             parent.geometry_buffer[polygon_index] = polygon;
             polygon_index++;
+            vertex_index += polygon.num_vertices;
         }
     }
 
@@ -548,6 +550,7 @@ final class GeometryEngine {
     void handle_SWAP_BUFFERS(Word* args) {
         parent.swap_buffers(polygon_index);
         polygon_index = 0;
+        vertex_index = 0;
     }
 
     void handle_COLOR(Word* args) {

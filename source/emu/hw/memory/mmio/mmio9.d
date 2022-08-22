@@ -80,6 +80,7 @@ static const mmio9_registers = [
     MMIORegister("gpu_engine_b.ppu",      "BLDY",           0x0400_1054,  2,      WRITE),
     MMIORegister("gpu3d",                 "DISP3DCNT",      0x0400_0060,  2, READ_WRITE),
     MMIORegister("gpu3d",                 "GXSTAT",         0x0400_0600,  4, READ_WRITE),
+    MMIORegister("gpu3d",                 "RAM_COUNT",      0x0400_0604,  4,       READ),
     MMIORegister("gpu3d.geometry_engine", "GXFIFO",         0x0400_0400, 64,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("gpu3d.geometry_engine", "MTX_MODE",       0x0400_0440,  4,      WRITE).dont_decompose_into_bytes(),
     MMIORegister("gpu3d.geometry_engine", "MTX_PUSH",       0x0400_0444,  4,      WRITE).dont_decompose_into_bytes(),
