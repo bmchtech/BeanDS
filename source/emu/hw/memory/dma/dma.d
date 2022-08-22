@@ -7,8 +7,10 @@ __gshared DMA!(HwType.NDS7) dma7;
 __gshared DMA!(HwType.NDS9) dma9;
 
 static void DMA_maybe_start_cart_transfer() {
-    dma9.maybe_start_cart_transfer();
-    dma7.maybe_start_cart_transfer();
+    final switch (slot.nds_slot_access_rights) {
+        case HwType.NDS7: dma7.maybe_start_cart_transfer(); break;
+        case HwType.NDS9: dma9.maybe_start_cart_transfer(); break;
+    }
 }
 
 final class DMA(HwType H) {
@@ -131,18 +133,34 @@ final class DMA(HwType H) {
 
     void maybe_start_cart_transfer() {
         if (is_ds_cart_transfer_queued) {
+            log_cart("starting cart transfer");
             start_cart_transfer();
         }
     }
 
     void start_cart_transfer() {
         Word address = dma_channels[ds_cart_transfer_channel].dest_buf;
-
         while (cart.transfer_ongoing) {
-            Word val = cart.read_ROMRESULT!Word(0);
-            // log_dma9("cart read %08x. writing to %x", val, address);
+            static if (H == HwType.NDS7) Word val = cart.read_ROMRESULT7!Word(0);
+            static if (H == HwType.NDS9) Word val = cart.read_ROMRESULT9!Word(0);
+            
             mem.write_word(address, val);
             address += 4;
+        }
+
+        if (dma_channels[ds_cart_transfer_channel].irq_on_end) {
+            Interrupt interrupt_id = cast(Interrupt) 1 << (Interrupt.DMA_0_COMPLETION + ds_cart_transfer_channel);
+            
+            final switch (H) {
+                case HwType.NDS7:
+                    interrupt7.raise_interrupt(interrupt_id);
+                    break;
+                
+                case HwType.NDS9:
+                    interrupt9.raise_interrupt(interrupt_id);
+                    break;
+            }
+
         }
 
         dma_channels[ds_cart_transfer_channel].enabled = false;

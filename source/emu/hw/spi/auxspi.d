@@ -12,8 +12,7 @@ final class AUXSPI {
         eeprom = new EEPROM!(32, 256);
     }
 
-    bool transfer_completion_irq7_enable;
-    bool transfer_completion_irq9_enable;
+    bool transfer_completion_irq_enable;
     bool spi_hold_chipselect;
     bool nds_slot_mode;
     bool nds_slot_enable;
@@ -22,23 +21,7 @@ final class AUXSPI {
 
     Byte result;
 
-    Byte read_AUXSPICNT7(int target_byte) {
-        Byte result;
-        result |= read_AUXSPICNT(target_byte);
-        
-        if (target_byte == 1) result[6] = transfer_completion_irq7_enable;
-        return result;
-    }
-
-    Byte read_AUXSPICNT9(int target_byte) {
-        Byte result;
-        result |= read_AUXSPICNT(target_byte);
-        
-        if (target_byte == 1) result[6] = transfer_completion_irq9_enable;
-        return result;
-    }
-
-    Byte read_AUXSPICNT(int target_byte) {
+    private Byte read_AUXSPICNT(int target_byte) {
         Byte result;
 
         final switch (target_byte) {
@@ -50,21 +33,12 @@ final class AUXSPI {
 
             case 1:
                 result[5] = nds_slot_mode;
+                result[6] = transfer_completion_irq_enable;
                 result[7] = nds_slot_enable;        
                 break;
         }
 
         return result;
-    }
-
-    void write_AUXSPICNT7(int target_byte, Byte data) {
-        if (target_byte == 1) transfer_completion_irq7_enable = data[6];
-        write_AUXSPICNT(target_byte, data);
-    }
-
-    void write_AUXSPICNT9(int target_byte, Byte data) {
-        if (target_byte == 1) transfer_completion_irq9_enable = data[6];
-        write_AUXSPICNT(target_byte, data);
     }
 
     private void write_AUXSPICNT(int target_byte, Byte data) {
@@ -79,12 +53,13 @@ final class AUXSPI {
                 break;
 
             case 1:
-                nds_slot_mode   = data[5];
-                nds_slot_enable = data[7];
+                nds_slot_mode                  = data[5];
+                transfer_completion_irq_enable = data[6];
+                nds_slot_enable                = data[7];
         }
     }
 
-    void write_AUXSPIDATA7(int target_byte, Byte data) {
+    private void write_AUXSPIDATA(int target_byte, Byte data) {
         if (!nds_slot_mode) return;
 
         if (target_byte == 0) {
@@ -96,37 +71,72 @@ final class AUXSPI {
         active = true;
     }
 
-    void write_AUXSPIDATA9(int target_byte, Byte data) {
-        if (!nds_slot_mode) return;
-
-        if (target_byte == 0) {
-            result = eeprom.write(data);
-            if (!spi_hold_chipselect) eeprom.chipselect_fall();
-            active = false;
-        }
-
-        active = true;
-    }
-
-    Byte read_AUXSPIDATA7(int target_byte) {
+    private Byte read_AUXSPIDATA(int target_byte) {
         if (!nds_slot_mode) return Byte(0);
 
         if (target_byte == 0) {
             active = false;
             return result;
+        }
+
+        return Byte(0);
+    }
+
+    // stupid accessors
+
+    Byte read_AUXSPICNT7(int target_byte) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            return read_AUXSPICNT(target_byte);
+        }
+
+        return Byte(0);
+    }
+
+    Byte read_AUXSPICNT9(int target_byte) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            return read_AUXSPICNT(target_byte);
+        }
+
+        return Byte(0);
+    }
+
+    void write_AUXSPICNT7(int target_byte, Byte data) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            write_AUXSPICNT(target_byte, data);
+        }
+    }
+
+    void write_AUXSPICNT9(int target_byte, Byte data) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            write_AUXSPICNT(target_byte, data);
+        }
+    }
+
+    Byte read_AUXSPIDATA7(int target_byte) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            return read_AUXSPIDATA(target_byte);
         }
 
         return Byte(0);
     }
 
     Byte read_AUXSPIDATA9(int target_byte) {
-        if (!nds_slot_mode) return Byte(0);
-
-        if (target_byte == 0) {
-            active = false;
-            return result;
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            return read_AUXSPIDATA(target_byte);
         }
 
         return Byte(0);
+    }
+
+    void write_AUXSPIDATA7(int target_byte, Byte data) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            write_AUXSPIDATA(target_byte, data);
+        }
+    }
+
+    void write_AUXSPIDATA9(int target_byte, Byte data) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            write_AUXSPIDATA(target_byte, data);
+        }
     }
 }
