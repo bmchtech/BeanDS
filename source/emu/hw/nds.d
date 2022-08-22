@@ -210,13 +210,32 @@ final class NDS {
         return Byte(0);
     }
 
-    void write_POSTFLG(int target_byte, Byte data) {
-        // currently i cannot differentiate and know which CPU issues this write.
-        // so i will have to do this funny workaround:
-        if (target_byte == 0 && (arm7.regs[pc] >> 16 == 0 || arm9.regs[pc] >> 16 == 0xFFFF)) {
-            booted = data[0];
+    Byte read_POSTFLG7(int target_byte) {
+        return read_POSTFLG(target_byte);
+    }
+
+    Byte read_POSTFLG9(int target_byte) {
+        return read_POSTFLG(target_byte);
+    }
+
+    void write_POSTFLG7(int target_byte, Byte data) {
+        if (arm7.regs[pc] >> 16 == 0) {
+            write_POSTFLG(target_byte, data);
         }
     }
+
+    void write_POSTFLG9(int target_byte, Byte data) {
+        if (arm9.regs[pc] >> 16 == 0xFFFF) {
+            write_POSTFLG(target_byte, data);
+        }
+    }
+
+    private void write_POSTFLG(int target_byte, Byte data) {
+        if (target_byte == 0) {
+            booted |= data[0];
+        }
+    }
+
 
     Byte read_POSTFLG(int target_byte) {
         return target_byte == 0 ? Byte(booted) : Byte(0);

@@ -142,9 +142,7 @@ final class Cart {
     int resb_release_reset;
     int data_direction;
 
-    Byte read_ROMCTRL(int target_byte) {
-        log_arm7("arm7 pc on romctrl read: %x", arm7.regs[pc]);
-
+    private Byte read_ROMCTRL(int target_byte) {
         Byte result = 0;
 
         final switch (target_byte) {
@@ -174,7 +172,7 @@ final class Cart {
         return result;
     }
 
-    void write_ROMCTRL(int target_byte, Byte value) {
+    private void write_ROMCTRL(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
                 key1_gap1_length &= ~0xFF;
@@ -201,23 +199,24 @@ final class Cart {
         if (transfer_ongoing) start_transfer();
     }
 
-    void write_ROMDATAOUT(int target_byte, Byte value) {
+    private void write_ROMDATAOUT(int target_byte, Byte value) {
+        log_cart("writing to rom data out: %x %x", target_byte, value);
         command &= ~((cast(u64) 0xFF)  << cast(u64) (target_byte * 8));
         command |=  ((cast(u64) value) << cast(u64) (target_byte * 8));
     }
 
-    T read_ROMRESULT(T)(int offset) {
+    private T read_ROMRESULT(T)(int offset) {
         if (!transfer_ongoing) error_cart("tried to read from ROMRESULT when no transfer was ongoing");
 
         T result = cast(T) outbuffer[outbuffer_index];
         outbuffer_index++;
-        // log_cart("reading from romresult: %x, %d / %d", result, outbuffer_index, outbuffer_length);
+        log_cart("reading from romresult: %x, %d / %d", result, outbuffer_index, outbuffer_length);
 
         if (outbuffer_index == outbuffer_length) {
             transfer_ongoing = false;
             // log_cart("transfer ended!");
-            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
-            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            if (auxspi.transfer_completion_irq_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
         }
 
         return cast(T) (result >> (8 * offset));
@@ -276,8 +275,7 @@ final class Cart {
             outbuffer_length = length / 4;
             mode = Mode.KEY1;
             transfer_ongoing = false;
-            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
-            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            this.raise_interrupt();
 
             key1_encryption_level2.init_keycode(cast(Word) cart_header.game_code, 2, 8);
             key1_encryption_level3.init_keycode(cast(Word) cart_header.game_code, 3, 8);
@@ -290,14 +288,14 @@ final class Cart {
         u64 swapped = bswap(command);
         key1_encryption_level2.decrypt_64bit(cast(u32*) &swapped);
         u64 decrypted_command = bswap(swapped);
+        log_cart("decrypted command: %x", decrypted_command);
 
         if ((decrypted_command & 0xF0) == 0x40) {
             auto length = get_data_block_size(0x2000);
             memset(&outbuffer, 0xFF, length);
             outbuffer_length = length / 4;
             transfer_ongoing = false;
-            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
-            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            this.raise_interrupt();
         } else
 
         if ((decrypted_command & 0xF0) == 0x10) {
@@ -360,8 +358,7 @@ final class Cart {
             outbuffer_length = length / 4;
             mode = Mode.KEY2;
             transfer_ongoing = false;
-            if (auxspi.transfer_completion_irq7_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
-            if (auxspi.transfer_completion_irq9_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
+            this.raise_interrupt();
 
             key1_encryption_level2.init_keycode(cast(Word) cart_header.game_code, 2, 8);
         } else
@@ -423,5 +420,89 @@ final class Cart {
         }
         
         return id;
+    }
+
+    void raise_interrupt() {
+        if (auxspi.transfer_completion_irq_enable) {
+            final switch (slot.nds_slot_access_rights) {
+                case HwType.NDS7: interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION); break;
+                case HwType.NDS9: interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION); break;
+            }
+        }
+    }
+
+    // these are super repetitive
+    // maybe consolidate them with mixins?
+
+    Byte read_ROMCTRL7(int target_byte) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            return read_ROMCTRL(target_byte);
+        } else {
+            log_cart("NDS7 tried to read from ROMCTRL when it had no rights!");
+        }
+
+        return Byte(0);
+    }
+
+    Byte read_ROMCTRL9(int target_byte) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            return read_ROMCTRL(target_byte);
+        } else {
+            log_cart("NDS9 tried to read from ROMCTRL when it had no rights!");
+        }
+
+        return Byte(0);
+    }
+
+    void write_ROMCTRL7(int target_byte, Byte value) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            write_ROMCTRL(target_byte, value);
+        } else {
+            log_cart("NDS7 tried to write to ROMCTRL when it had no rights!");
+        }
+    }
+
+    void write_ROMCTRL9(int target_byte, Byte value) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            write_ROMCTRL(target_byte, value);
+        } else {
+            log_cart("NDS9 tried to write to ROMCTRL when it had no rights!");
+        }
+    }
+
+    T read_ROMRESULT7(T)(int offset) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            return read_ROMRESULT!T(offset);
+        } else {
+            log_cart("NDS7 tried to write to ROMRESULT when it had no rights!");
+        }
+
+        return T(0);
+    }
+
+    T read_ROMRESULT9(T)(int offset) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            return read_ROMRESULT!T(offset);
+        } else {
+            log_cart("NDS9 tried to write to ROMRESULT when it had no rights!");
+        }
+
+        return T(0);
+    }
+
+    void write_ROMDATAOUT7(int target_byte, Byte value) {
+        if (slot.nds_slot_access_rights == HwType.NDS7) {
+            write_ROMDATAOUT(target_byte, value);
+        } else {
+            log_cart("NDS7 tried to write to ROMDATAOUT when it had no rights!");
+        }
+    }
+
+    void write_ROMDATAOUT9(int target_byte, Byte value) {
+        if (slot.nds_slot_access_rights == HwType.NDS9) {
+            write_ROMDATAOUT(target_byte, value);
+        } else {
+            log_cart("NDS9 tried to write to ROMDATAOUT when it had no rights!");
+        }
     }
 }
