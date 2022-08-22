@@ -65,7 +65,7 @@ final class GPU3D {
     }
 
     void plot(Pixel p, int x) {
-        scanline_cache[scanline_cache_head][x] = p;
+        if (p.a != 0) scanline_cache[scanline_cache_head][x] = p;
     }
 
     void start_rendering_scanline() {
@@ -201,5 +201,17 @@ final class GPU3D {
         }
 
         return result;
+    }
+
+    Byte read_RDLINES_COUNT(int target_byte) {
+        // this register indicates how much stress is being put on the GPU
+        // the lower the value, the more stress there is. the values range
+        // from 0 to 46, and because i have no way of knowing (or even
+        // estimating) the gpu stress, i'll just always return 46.
+
+        // or this could just be me being lazy. who knows. roms probably
+        // won't care.
+
+        return Word(46).get_byte(target_byte);
     }
 }
