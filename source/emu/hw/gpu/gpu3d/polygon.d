@@ -31,7 +31,7 @@ struct Polygon {
 
 interface PolygonAssembler {
     bool submit_vertex(Vertex vertex);
-    Polygon get_polygon();
+    Polygon get_polygon(Polygon p);
     void reset();
 }
 
@@ -51,8 +51,7 @@ final class TriangleAssembler : PolygonAssembler {
         return false;
     }
 
-    Polygon get_polygon() {
-        Polygon p;
+    Polygon get_polygon(Polygon p) {
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
         return p;
@@ -80,8 +79,7 @@ final class QuadAssembler : PolygonAssembler {
         return new_triangle_created;
     }
 
-    Polygon get_polygon() {
-        Polygon p;
+    Polygon get_polygon(Polygon p) {
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
         return p;
@@ -103,8 +101,7 @@ final class TriangleStripsAssembler : PolygonAssembler {
         return index >= 3;
     }
 
-    Polygon get_polygon() {
-        Polygon p;
+    Polygon get_polygon(Polygon p) {
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
         
@@ -133,8 +130,7 @@ final class QuadStripsAssembler : PolygonAssembler {
         return num_vertices >= 4;
     }
 
-    Polygon get_polygon() {
-        Polygon p;
+    Polygon get_polygon(Polygon p) {        
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
 

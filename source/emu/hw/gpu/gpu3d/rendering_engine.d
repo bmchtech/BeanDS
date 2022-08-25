@@ -31,9 +31,19 @@ final class RenderingEngine {
             }
 
             this.clockwise = (
-                (p.vertices[1].pos[0] - p.vertices[0].pos[0]) * (p.vertices[2].pos[1] - p.vertices[0].pos[1]) -
-                (p.vertices[1].pos[1] - p.vertices[1].pos[0]) * (p.vertices[2].pos[0] - p.vertices[0].pos[0])
-            ) < 0;
+                    (p.vertices[1].pos[1] - p.vertices[0].pos[1]) * (p.vertices[2].pos[0] - p.vertices[1].pos[0]) -
+                    (p.vertices[1].pos[0] - p.vertices[0].pos[0]) * (p.vertices[2].pos[1] - p.vertices[1].pos[1])
+                ) > 0; //(
+                // (p.vertices[1].pos[0] - p.vertices[0].pos[0]) * (p.vertices[2].pos[1] - p.vertices[0].pos[1]) -
+                // (p.vertices[1].pos[1] - p.vertices[1].pos[0]) * (p.vertices[2].pos[0] - p.vertices[0].pos[0])
+            // ) < 0;
+
+            if (deboog) log_gpu3d("[DEBOOG] cockwise: %x %f", this.clockwise,
+                (
+                    (p.vertices[1].pos[1] - p.vertices[0].pos[1]) * (p.vertices[2].pos[0] - p.vertices[1].pos[0]) -
+                    (p.vertices[1].pos[0] - p.vertices[0].pos[0]) * (p.vertices[2].pos[1] - p.vertices[1].pos[1])
+                )
+            );
 
             int topleft_vertex_index  = 0;
             int botright_vertex_index = 0;

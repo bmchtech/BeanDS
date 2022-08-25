@@ -213,45 +213,7 @@ final class GeometryEngine {
                 texcoord_prime
             )
         )) {
-            auto polygon = assembler.get_polygon();
-
-            // log_gpu3d("submitting polygon #%d", polygon_index);
-
-            import std.math;
-            if (std.math.isNaN(polygon.vertices[0].pos[0]) || 
-                std.math.isNaN(polygon.vertices[0].pos[1]) || 
-                std.math.isNaN(polygon.vertices[0].pos[2]) ||
-                std.math.isNaN(polygon.vertices[1].pos[0]) || 
-                std.math.isNaN(polygon.vertices[1].pos[1]) || 
-                std.math.isNaN(polygon.vertices[1].pos[2]) ||
-                std.math.isNaN(polygon.vertices[2].pos[0]) || 
-                std.math.isNaN(polygon.vertices[2].pos[1]) || 
-                std.math.isNaN(polygon.vertices[2].pos[2]) || (
-                    polygon.num_vertices == 4 && (
-
-                std.math.isNaN(polygon.vertices[3].pos[0]) || 
-                std.math.isNaN(polygon.vertices[3].pos[1]) || 
-                std.math.isNaN(polygon.vertices[3].pos[2])
-                    )
-                )) {
-                    error_gpu3d("not good");
-                }
-
-            polygon.uses_textures               = texture_mapped;
-            polygon.texture_vram_offset         = texture_vram_offset;
-            polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
-            polygon.texture_repeat_t_direction  = texture_repeat_t_direction;
-            polygon.texture_flip_s_direction    = texture_flip_s_direction;
-            polygon.texture_flip_t_direction    = texture_flip_t_direction;
-            polygon.texture_s_size              = texture_s_size;
-            polygon.texture_t_size              = texture_t_size;
-            polygon.texture_format              = texture_format;
-            polygon.texture_color_0_transparent = texture_color_0_transparent;
-            polygon.palette_base_address        = palette_base_address;
-
-            parent.geometry_buffer[polygon_index] = polygon;
-            polygon_index++;
-            vertex_index += polygon.num_vertices;
+            submit_polygon();
         }
     }
 
@@ -571,6 +533,63 @@ final class GeometryEngine {
         texture_format              = cast(TextureFormat) args[0][26..28];
         texture_color_0_transparent = args[0][29];
         texture_transformation_mode = cast(TextureTransformationMode) args[0][30..31];
+    }
+
+    void submit_polygon() {
+        PolygonAssembler assembler = get_assembler();
+        Polygon polygon;
+        polygon = assembler.get_polygon(polygon);
+
+        import std.math;
+        if (std.math.isNaN(polygon.vertices[0].pos[0]) || 
+            std.math.isNaN(polygon.vertices[0].pos[1]) || 
+            std.math.isNaN(polygon.vertices[0].pos[2]) ||
+            std.math.isNaN(polygon.vertices[1].pos[0]) || 
+            std.math.isNaN(polygon.vertices[1].pos[1]) || 
+            std.math.isNaN(polygon.vertices[1].pos[2]) ||
+            std.math.isNaN(polygon.vertices[2].pos[0]) || 
+            std.math.isNaN(polygon.vertices[2].pos[1]) || 
+            std.math.isNaN(polygon.vertices[2].pos[2]) || (
+                polygon.num_vertices == 4 && (
+
+            std.math.isNaN(polygon.vertices[3].pos[0]) || 
+            std.math.isNaN(polygon.vertices[3].pos[1]) || 
+            std.math.isNaN(polygon.vertices[3].pos[2])
+                )
+            )) {
+
+            error_gpu3d("not good");
+        }
+
+        polygon.uses_textures               = texture_mapped;
+        polygon.texture_vram_offset         = texture_vram_offset;
+        polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
+        polygon.texture_repeat_t_direction  = texture_repeat_t_direction;
+        polygon.texture_flip_s_direction    = texture_flip_s_direction;
+        polygon.texture_flip_t_direction    = texture_flip_t_direction;
+        polygon.texture_s_size              = texture_s_size;
+        polygon.texture_t_size              = texture_t_size;
+        polygon.texture_format              = texture_format;
+        polygon.texture_color_0_transparent = texture_color_0_transparent;
+        polygon.palette_base_address        = palette_base_address;
+
+        log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
+        log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
+        log_gpu3d("    texture_vram_offset         : %d", polygon.texture_vram_offset         );
+        log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
+        log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
+        log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
+        log_gpu3d("    texture_flip_t_direction    : %d", polygon.texture_flip_t_direction    );
+        log_gpu3d("    texture_s_size              : %d", polygon.texture_s_size              );
+        log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
+        log_gpu3d("    texture_format              : %s", polygon.texture_format              );
+        log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
+        log_gpu3d("    palette_base_address        : %d", polygon.palette_base_address        );
+        log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
+
+        parent.geometry_buffer[polygon_index] = polygon;
+        polygon_index++;
+        vertex_index += polygon.num_vertices;
     }
 
     void handle_TEXCOORD(Word* args) {

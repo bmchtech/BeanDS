@@ -42,7 +42,20 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             Byte texel = vram.read_slot!Byte(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
             texel >>= (2 * (texel_index % 4));
             texel &= 3;
-            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, palette_base_address * 16 + texel * 2);
+            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, Word(palette_base_address) * 8 + Word(texel) * 2);
+            
+            return [
+                color[0..4],
+                color[5..9],
+                color[10..14],
+                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+            ];
+        
+        case TextureFormat.COLOR_PALETTE_16:
+            Byte texel = vram.read_slot!Byte(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + texel_index / 2));
+            texel >>= (4 * (texel_index % 2));
+            texel &= 15;
+            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, Word(palette_base_address) * 16 + Word(texel) * 2);
             
             return [
                 color[0..4],
@@ -53,7 +66,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
 
         case TextureFormat.COLOR_PALETTE_256:
             Byte texel = vram.read_slot!Byte(SlotType.TEXTURE, 0, Word((p.orig.texture_vram_offset << 3) + texel_index));
-            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, palette_base_address * 16 + texel * 2);
+            Half color = vram.read_slot!Half(SlotType.TEXTURE_PAL, 0, Word(palette_base_address) * 16 + Word(texel) * 2);
             
             return [
                 color[0..4],
