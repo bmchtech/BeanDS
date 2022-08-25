@@ -80,6 +80,7 @@ final class NDS {
         spu.reset();
         slot.reset();
         spi.reset();
+        input.reset();
 
         arm7.reset();
         arm9.reset();
