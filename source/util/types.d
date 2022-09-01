@@ -11,7 +11,20 @@ struct FixedPoint(uint I, uint F) {
     }
 
     this(uint value) {
-        set_value(value);
+        set_value(value << F);
+    }
+
+    this(float float_value) {
+        int   integral_part   = cast(int) float_value;
+        float fractional_part = float_value % 1;
+
+        set_value((integral_part << F) | cast(int) (fractional_part * (1 << F)));
+    }
+
+    static FixedPoint!(I, F) from_repr(int repr) {
+        FixedPoint!(I, F) fixed_point;
+        fixed_point.set_value(repr);
+        return fixed_point;
     }
 
     FixedPoint!(I, F) opBinary(string s)(FixedPoint!(I, F) other)
@@ -26,6 +39,19 @@ struct FixedPoint(uint I, uint F) {
         }
 
         return result; 
+    }
+
+    FixedPoint!(I, F) opBinaryRight(string s)(int other) {
+        return this.opBinary!s(other);
+    }
+
+    FixedPoint!(I, F) opBinary(string s)(int other) {
+        return opBinary!(s)(FixedPoint!(I, F)(other));
+    }
+
+    FixedPoint!(I, F) opUnary(string s : "-")() {
+        this.value ^= (1 << (I + F - 1));
+        return this;
     }
 
     T opCast(T)()
@@ -60,36 +86,52 @@ struct FixedPoint(uint I, uint F) {
     int fractional_part() {
         return value & util.create_mask(0, F - 1);
     }
+
+    int opCmp(FixedPoint!(I, F) other) {
+        return this.value - other.value;
+    }
+
+    int opCmp(int other) {
+        return this.value - (other << F);
+    }
+
+    bool opEquals(FixedPoint!(I, F) other) {
+        return this.value == other.value;
+    }
+
+    bool opEquals(int other) {
+        return this.value == (other << F);
+    }
 }
 
 unittest {
-    FixedPoint!(4, 8) fp1 = 0xF00;
-    assert_equal(cast(float) fp1, -1.0f, "%f");
+    FixedPoint!(4, 8) fp1 = FixedPoint!(4, 8).from_repr(0xF00);
+    assert_equal(cast(float) fp1, -1.0f, "%s");
 }
 
 unittest {
-    FixedPoint!(8, 4) fp1 = 0xFE0;
-    FixedPoint!(8, 4) fp2 = 0x058;
+    FixedPoint!(8, 4) fp1 = FixedPoint!(8, 4).from_repr(0xFE0);
+    FixedPoint!(8, 4) fp2 = FixedPoint!(8, 4).from_repr(0x058);
 
-    assert_equal(cast(float) fp1, -2.0f, "%f");
-    assert_equal(cast(float) fp2, 5.5f, "%f");
+    assert_equal(cast(float) fp1, -2.0f, "%s");
+    assert_equal(cast(float) fp2, 5.5f, "%s");
 
-    assert_equal(cast(float) (fp1 + fp2), 3.5f, "%f");
-    assert_equal(cast(float) (fp1 - fp2), -7.5f, "%f");
-    assert_equal(cast(float) (fp1 * fp2), -11.0f, "%f");
-    assert_equal(cast(float) (fp2 / fp1), -2.75f, "%f");
+    assert_equal(cast(float) (fp1 + fp2), 3.5f, "%s");
+    assert_equal(cast(float) (fp1 - fp2), -7.5f, "%s");
+    assert_equal(cast(float) (fp1 * fp2), -11.0f, "%s");
+    assert_equal(cast(float) (fp2 / fp1), -2.75f, "%s");
 }
 
 unittest {
-    FixedPoint!(4, 4) fp1 = 0xED; // -1.875
-    assert_equal(cast(float) fp1, -1.1875f, "%f");
+    FixedPoint!(4, 4) fp1 = FixedPoint!(4, 4).from_repr(0xED); // -1.875
+    assert_equal(cast(float) fp1, -1.1875f, "%s");
 
     auto fp2 = fp1.convert!(3, 3);
-    assert_equal(cast(float) fp2, -1.25f, "%f"); // precision loss
+    assert_equal(cast(float) fp2, -1.25f, "%s"); // precision loss
     assert_equal(fp2.repr, 0x36, "%04x");
 
     auto fp3 = fp1.convert!(5, 5);
-    assert_equal(cast(float) fp3, -1.1875f, "%f");
+    assert_equal(cast(float) fp3, -1.1875f, "%s");
     assert_equal(fp3.repr, 0x3DA, "%04x");
 }
 

@@ -174,11 +174,11 @@ final class Canvas(EngineType E) {
     }
 
     static if (E == EngineType.A) {
-        public pragma(inline, true) void draw_3d_pixel(uint x, Pixel p) {
+        public pragma(inline, true) void draw_3d_pixel(uint x, Pixel p, bool transparent) {
             if (x >= 256) return;
-            bg_scanline[0][x].transparent = false;
+            bg_scanline[0][x].transparent = transparent;
             bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, p.r, p.g, p.b);
-            bg_scanline[0][x].priority    = 0; // TODO: this whole canvas system needs a refactor.
+            bg_scanline[0][x].priority    = gpu_engine_a.ppu.backgrounds[0].priority; // TODO: this whole canvas system needs a refactor.
         }
     }
 

@@ -69,7 +69,7 @@ final class GPUEngineA {
                 break; 
         }
 
-        ppu.backgrounds[0].enabled = bg0_enable & ~bg0_selection;
+        ppu.backgrounds[0].enabled = false; // bg0_enable & ~bg0_selection;
     }
 
     Pixel[192][256] videobuffer;

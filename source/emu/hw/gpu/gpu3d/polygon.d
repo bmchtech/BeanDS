@@ -4,11 +4,11 @@ import emu;
 import util;
 
 struct Vertex {
-    Vec4 pos;
+    Point pos;
     int r;
     int g;
     int b;
-    Vec4 texcoord;
+    Point texcoord;
 }
 
 struct Polygon {
@@ -67,16 +67,16 @@ final class QuadAssembler : PolygonAssembler {
     Vertex[4] vertices;
 
     override bool submit_vertex(Vertex vertex) {
-        bool new_triangle_created = index >= 3;
+        bool new_quad_created = index >= 3;
 
-        if (index < 4) {
-            vertices[index] = vertex;
-            index++;
-        } else {
+        vertices[index] = vertex;
+        index++;
+
+        if (index >= 4) {
             index = 0;
         }
 
-        return new_triangle_created;
+        return new_quad_created;
     }
 
     Polygon get_polygon(Polygon p) {
@@ -95,6 +95,7 @@ final class TriangleStripsAssembler : PolygonAssembler {
     Vertex[4] vertices;
 
     override bool submit_vertex(Vertex vertex) {
+        // log_gpu3d("[TRIASS] submitting vertex");
         vertices[index] = vertex;
         index++;
 
@@ -102,6 +103,7 @@ final class TriangleStripsAssembler : PolygonAssembler {
     }
 
     Polygon get_polygon(Polygon p) {
+        // log_gpu3d("[TRIASS] got polygon");
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
         
@@ -113,24 +115,27 @@ final class TriangleStripsAssembler : PolygonAssembler {
     }
 
     void reset() {
+        // log_gpu3d("[TRIASS] reset");
         index = 0;
     }
 }
 
 final class QuadStripsAssembler : PolygonAssembler {
     int index = 0;
-    int num_vertices;
     Vertex[4] vertices;
 
     static immutable int[4] mapped_indices = [0, 1, 3, 2];
 
     override bool submit_vertex(Vertex vertex) {
+        // log_gpu3d("[QUADASS] submitting vertex");
         vertices[mapped_indices[index]] = vertex;
+        index++;
 
-        return num_vertices >= 4;
+        return index >= 4;
     }
 
-    Polygon get_polygon(Polygon p) {        
+    Polygon get_polygon(Polygon p) {     
+        // log_gpu3d("[QUADASS] got polygon");   
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
 
@@ -141,7 +146,7 @@ final class QuadStripsAssembler : PolygonAssembler {
     }
 
     void reset() {
+        // log_gpu3d("[QUADASS] reset");
         index = 0;
-        num_vertices = 0;
     }
 }
