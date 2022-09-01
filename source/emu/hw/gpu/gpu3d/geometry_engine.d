@@ -28,17 +28,20 @@ struct GPU3DCommand {
 __gshared GeometryEngine geometry_engine;
 final class GeometryEngine {
     struct MatrixStack(int size) {
-        Mat4x4[size] stack;
+        Matrix[size] stack;
         int stack_pointer = 0;
 
-        void push(Mat4x4 matrix) {
+        void push(Matrix matrix) {
             if (stack_pointer == size) return;
 
+            if (stack_pointer == 2) {
+                // log_gpu3d("MTXOP im going to shoot myself");
+            }
             stack[stack_pointer] = matrix;
             stack_pointer++;
         }
 
-        Mat4x4 pop(int n) {
+        Matrix pop(int n) {
             stack_pointer -= n;
             if (stack_pointer < 0) stack_pointer = 0;
             if (stack_pointer >= size) stack_pointer = size;
@@ -46,12 +49,21 @@ final class GeometryEngine {
             return stack[stack_pointer];
         }
 
-        void store(Mat4x4 matrix, int index) {
+        void store(Matrix matrix, int index) {
+            if (index == 2) {
+                // log_gpu3d("MTXOP im going to store myself");
+            }
             stack[index] = matrix;
         }
 
-        Mat4x4 restore(int index) {
-            return stack[index - 1];
+        Matrix restore(int index) {
+            return stack[index];
+        }
+
+        void reset() {
+            for (int i = 0; i < size; i++) {
+                stack[i] = Matrix.identity();
+            }
         }
     }
 
@@ -95,16 +107,17 @@ final class GeometryEngine {
     Word[32] command_parameters_buffer;
     int command_parameters_length;
     int command_parameters_remaining;
+    int command_parameters_head;
 
     MatrixStack!1  projection_stack;
     MatrixStack!32 modelview_stack;
     MatrixStack!32 position_vector_stack;
     MatrixStack!1  texture_stack;
 
-    Mat4x4 projection_matrix;
-    Mat4x4 modelview_matrix;
-    Mat4x4 position_vector_matrix;
-    Mat4x4 texture_matrix;
+    Matrix projection_matrix;
+    Matrix modelview_matrix;
+    Matrix position_vector_matrix;
+    Matrix texture_matrix;
 
     int current_color_r;
     int current_color_g;
@@ -117,7 +130,7 @@ final class GeometryEngine {
     TriangleStripsAssembler triangle_strips_assembler;
     QuadStripsAssembler     quad_strips_assembler;
 
-    Vec4 previous_vertex;
+    Point previous_point;
     bool receiving_vtxs;
 
     int polygon_index = 0;
@@ -138,10 +151,11 @@ final class GeometryEngine {
 
     bool texture_mapped;
     
-    Vec4 texcoord_prime;
-    Vec4 normal_vector;
+    Point texcoord_prime;
+    Point texcoord;
+    Point normal_vector;
 
-    Vec4 vec_test_result;
+    Point vec_test_result;
 
     uint cycles_till_complete;
     ulong irq_event;
@@ -155,9 +169,14 @@ final class GeometryEngine {
         quad_strips_assembler     = new QuadStripsAssembler();
 
         geometry_engine = this;
+
+        projection_stack.reset();
+        modelview_stack.reset();
+        position_vector_stack.reset();
+        texture_stack.reset();
     }
 
-    void multiply_matrix(Mat4x4 matrix, bool dual_position_vector) {
+    void multiply_matrix(Matrix matrix, bool dual_position_vector) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
                 projection_matrix = projection_matrix * matrix;
@@ -168,21 +187,22 @@ final class GeometryEngine {
                 break;
 
             case MatrixMode.POSITION_VECTOR:
-                position_vector_matrix = position_vector_matrix * matrix;
+                modelview_matrix = modelview_matrix * matrix;
 
                 if (dual_position_vector) {
-                    modelview_matrix = modelview_matrix * matrix;
+                    position_vector_matrix = position_vector_matrix * matrix;
                 }
                 break;
             
             case MatrixMode.TEXTURE:
                 texture_matrix = texture_matrix * matrix;
+                log_gpu3d("MTXOP multiplying texture: %s", texture_matrix[0][0]);
                 break;
         }
     }
 
     PolygonAssembler get_assembler() {
-        // log_gpu3d("getting assembler %x", polygon_type);
+        // // log_gpu3d("getting assembler %x", polygon_type);
         final switch (polygon_type) {
             case PolygonType.TRIANGLES:
                 return triangle_assembler;
@@ -198,15 +218,21 @@ final class GeometryEngine {
         }
     }
 
-    void submit_vertex(Vec4 vertex) {
-        previous_vertex = vertex;
-        vertex = (projection_matrix * modelview_matrix) * vertex;
+    void submit_vertex(Point point) {
+        previous_point = point;
+        point = (projection_matrix * modelview_matrix) * point;
+
+        if (texture_transformation_mode == TextureTransformationMode.VERTEX) {
+            texture_matrix[3][0] = texcoord[0];
+            texture_matrix[3][1] = texcoord[1];
+            texcoord_prime = texture_matrix * previous_point;
+        }
 
         PolygonAssembler assembler = get_assembler();
 
         if (assembler.submit_vertex(
             Vertex(
-                vertex,
+                point,
                 current_color_r,
                 current_color_g,
                 current_color_b,
@@ -217,7 +243,7 @@ final class GeometryEngine {
         }
     }
 
-    void set_current_matrix(Mat4x4 matrix) {
+    void set_current_matrix(Matrix matrix) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
                 projection_matrix = matrix;
@@ -228,11 +254,12 @@ final class GeometryEngine {
                 break;
 
             case MatrixMode.POSITION_VECTOR:
+                modelview_matrix = matrix;
                 position_vector_matrix = matrix;
-                modelview_matrix       = matrix;
                 break;
             
             case MatrixMode.TEXTURE:
+                log_gpu3d("MTXOP setting texture matrix: %s", matrix[0][0]);
                 texture_matrix = matrix;
                 break;
         }
@@ -245,19 +272,19 @@ final class GeometryEngine {
     void handle_MTX_PUSH(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
+                // log_gpu3d("MTXOP pushing projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_stack.push(projection_matrix);
                 break;
 
             case MatrixMode.POSITION:
-                modelview_stack.push(modelview_matrix);
-                break;
-
             case MatrixMode.POSITION_VECTOR: 
+                // log_gpu3d("MTXOP pushing position + modelview (ptr = %d %d)", modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
                 modelview_stack.push(modelview_matrix);
                 position_vector_stack.push(position_vector_matrix);
                 break;
 
             case MatrixMode.TEXTURE:
+                // log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_stack.push(texture_matrix);
                 break;
         }
@@ -266,19 +293,19 @@ final class GeometryEngine {
     void handle_MTX_POP(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
+                // log_gpu3d("MTXOP popping projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_matrix = projection_stack.pop(1);
                 break;
 
             case MatrixMode.POSITION:
-                modelview_matrix = modelview_stack.pop(sext_32(args[0][0..5], 6));
-                break;
-
             case MatrixMode.POSITION_VECTOR:
+                // log_gpu3d("MTXOP popping position + modelview w/ idx %d, (ptr = %d %d)", sext_32(args[0][0..5], 6), modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
                 modelview_matrix = modelview_stack.pop(sext_32(args[0][0..5], 6));
                 position_vector_matrix = position_vector_stack.pop(sext_32(args[0][0..5], 6));
                 break;
 
             case MatrixMode.TEXTURE:
+                log_gpu3d("MTXOP popping texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_matrix = texture_stack.pop(1);
                 break;
         }
@@ -287,19 +314,19 @@ final class GeometryEngine {
     void handle_MTX_STORE(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                projection_stack.store(projection_matrix, args[0][0..4]);
+                // log_gpu3d("MTXOP storing projection");
+                projection_stack.store(projection_matrix, 0);
                 break;
 
             case MatrixMode.POSITION:
-                modelview_stack.store(modelview_matrix, args[0][0..4]);
-                break;
-
             case MatrixMode.POSITION_VECTOR: 
+                // log_gpu3d("MTXOP storing position + modelview w/ idx %d", args[0][0..4]);
                 modelview_stack.store(modelview_matrix, args[0][0..4]);
-                position_vector_stack.store(position_vector_matrix, 0);
+                position_vector_stack.store(position_vector_matrix, args[0][0..4]);
                 break;
 
             case MatrixMode.TEXTURE:
+                log_gpu3d("MTXOP storing texture: %s", texture_matrix[0][0]);
                 texture_stack.store(texture_matrix, 0);
                 break;
         }
@@ -308,20 +335,20 @@ final class GeometryEngine {
     void handle_MTX_RESTORE(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                projection_matrix = projection_stack.restore(args[0][0..4]);
+                // log_gpu3d("MTXOP restoring projection");
+                projection_matrix = projection_stack.restore(0);
                 break;
 
             case MatrixMode.POSITION:
-                modelview_matrix = modelview_stack.restore(args[0][0..4]);
-                break;
-
             case MatrixMode.POSITION_VECTOR:
+                // log_gpu3d("MTXOP restoring position + modelview w/ idx %d", args[0][0..4]);
                 modelview_matrix = modelview_stack.restore(args[0][0..4]);
-                position_vector_matrix = position_vector_stack.restore(1);
+                position_vector_matrix = position_vector_stack.restore(args[0][0..4]);
                 break;
 
             case MatrixMode.TEXTURE:
-                texture_matrix = texture_stack.restore(1);
+                texture_matrix = texture_stack.restore(0);
+                log_gpu3d("MTXOP restoring texture: %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -329,20 +356,21 @@ final class GeometryEngine {
     void handle_MTX_IDENTITY(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                projection_matrix = Mat4x4.identity();
+                projection_matrix = Matrix.identity();
                 break;
 
             case MatrixMode.POSITION:
-                modelview_matrix = Mat4x4.identity();
+                modelview_matrix = Matrix.identity();
                 break;
 
             case MatrixMode.POSITION_VECTOR:
-                modelview_matrix = Mat4x4.identity();
-                position_vector_matrix = Mat4x4.identity();
+                modelview_matrix = Matrix.identity();
+                position_vector_matrix = Matrix.identity();
                 break;
 
             case MatrixMode.TEXTURE:
-                texture_matrix = Mat4x4.identity();
+                texture_matrix = Matrix.identity();
+                log_gpu3d("MTXOP texture matrix overwritten with identity %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -359,14 +387,15 @@ final class GeometryEngine {
     }
 
     void handle_PLTT_BASE(Word* args) {
+        // log_gpu3d("set palette base: %x", args[0][0..12]);
         palette_base_address = args[0][0..12];
     }
 
     void handle_MTX_LOAD_4x4(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x); 
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
         
         set_current_matrix(
-            Mat4x4([
+            Matrix([
                 [convert(args[0]), convert(args[4]), convert(args[8]),  convert(args[12])],
                 [convert(args[1]), convert(args[5]), convert(args[9]),  convert(args[13])],
                 [convert(args[2]), convert(args[6]), convert(args[10]), convert(args[14])],
@@ -376,22 +405,22 @@ final class GeometryEngine {
     }
 
     void handle_MTX_LOAD_4x3(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x); 
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
         set_current_matrix(
-            Mat4x4([
-                [convert(args[0]), convert(args[3]),  convert(args[6]),  convert(args[9])],
-                [convert(args[1]), convert(args[4]),  convert(args[7]),  convert(args[10])],
-                [convert(args[2]), convert(args[5]),  convert(args[8]),  convert(args[11])],
-                [0.0f,             0.0f,              0.0f,              1.0f],
+            Matrix([
+                [convert(args[0]), convert(args[3]), convert(args[6]), convert(args[9])],
+                [convert(args[1]), convert(args[4]), convert(args[7]), convert(args[10])],
+                [convert(args[2]), convert(args[5]), convert(args[8]), convert(args[11])],
+                [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
             ])
         );
     }
 
     void handle_MTX_MULT_4x4(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
-        multiply_matrix(Mat4x4([
+        multiply_matrix(Matrix([
             [convert(args[0]), convert(args[4]), convert(args[8]),  convert(args[12])],
             [convert(args[1]), convert(args[5]), convert(args[9]),  convert(args[13])],
             [convert(args[2]), convert(args[6]), convert(args[10]), convert(args[14])],
@@ -400,51 +429,55 @@ final class GeometryEngine {
     }
 
     void handle_MTX_MULT_4x3(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
-        multiply_matrix(Mat4x4([
-            [convert(args[0]), convert(args[3]),  convert(args[6]),  convert(args[9])],
-            [convert(args[1]), convert(args[4]),  convert(args[7]),  convert(args[10])],
-            [convert(args[2]), convert(args[5]),  convert(args[8]),  convert(args[11])],
-            [0.0f,             0.0f,              0.0f,              1.0f],
+        multiply_matrix(Matrix([
+            [convert(args[0]), convert(args[3]), convert(args[6]), convert(args[9])],
+            [convert(args[1]), convert(args[4]), convert(args[7]), convert(args[10])],
+            [convert(args[2]), convert(args[5]), convert(args[8]), convert(args[11])],
+            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
         ]), true);
     }
 
     void handle_MTX_MULT_3x3(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
-        multiply_matrix(Mat4x4([
-            [convert(args[0]), convert(args[3]),  convert(args[6]),  0.0f],
-            [convert(args[1]), convert(args[4]),  convert(args[7]),  0.0f],
-            [convert(args[2]), convert(args[5]),  convert(args[8]),  0.0f],
-            [0.0f,             0.0f,              0.0f,              1.0f],
+        multiply_matrix(Matrix([
+            [convert(args[0]), convert(args[3]), convert(args[6]), Coordinate(0.0f)],
+            [convert(args[1]), convert(args[4]), convert(args[7]), Coordinate(0.0f)],
+            [convert(args[2]), convert(args[5]), convert(args[8]), Coordinate(0.0f)],
+            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
         ]), true);
     }
 
     void handle_MTX_TRANS(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
-        multiply_matrix(Mat4x4([
-            [1.0f, 0.0f, 0.0f, convert(args[0])],
-            [0.0f, 1.0f, 0.0f, convert(args[1])],
-            [0.0f, 0.0f, 1.0f, convert(args[2])],
-            [0.0f, 0.0f, 0.0f, 1.0f],
+        multiply_matrix(Matrix([
+            [Coordinate(1.0f), Coordinate(0.0f), Coordinate(0.0f), convert(args[0])],
+            [Coordinate(0.0f), Coordinate(1.0f), Coordinate(0.0f), convert(args[1])],
+            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f), convert(args[2])],
+            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
         ]), true);
     }
 
     void handle_MTX_SCALE(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!12(x);
+        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
 
-        multiply_matrix(Mat4x4([
-            [convert(args[0]), 0.0f,             0.0f,             0.0f],
-            [0.0f,             convert(args[1]), 0.0f,             0.0f],
-            [0.0f,             0.0f,             convert(args[2]), 0.0f],
-            [0.0f,             0.0f,             0.0f,             1.0f],
+        multiply_matrix(Matrix([
+            [convert(args[0]), Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f)],
+            [Coordinate(0.0f), convert(args[1]), Coordinate(0.0f), Coordinate(0.0f)],
+            [Coordinate(0.0f), Coordinate(0.0f), convert(args[2]), Coordinate(0.0f)],
+            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
         ]), false);
     }
 
     void handle_BEGIN_VTXS(Word* args) {
+        // log_gpu3d("BEGIN VTXS: %x", args[0]);
         polygon_type = cast(PolygonType) args[0][0..1];
+        if (args[0][2..31]) {
+            error_gpu3d("there's probably an issue with command decoding.");
+        }
         receiving_vtxs = true;
 
         PolygonAssembler assembler = get_assembler();
@@ -456,61 +489,69 @@ final class GeometryEngine {
     }
 
     void handle_VTX_16(Word* args) {
-        submit_vertex(Vec4([
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][0..15]), 16)),
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][16..31]), 16)),
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[1][0..15]), 16)),
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_16: %x %x", args[0], args[1]);
+        submit_vertex(Point([
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[1][0 ..15]), 16)),
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_VTX_10(Word* args) {
-        submit_vertex(Vec4([
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][0..9]), 16)),
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][10..19]), 16)),
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][20..29]), 16)),
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_10: %x", args[0]);
+        submit_vertex(Point([
+            FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][0 .. 9]), 16)).convert!(4, 12),
+            FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][10..19]), 16)).convert!(4, 12),
+            FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][20..29]), 16)).convert!(4, 12),
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_VTX_XY(Word* args) {
-        submit_vertex(Vec4([
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][0..15]), 16)),
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][16..31]), 16)),
-            previous_vertex[2],
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_XY: %x", args[0]);
+        submit_vertex(Point([
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
+            previous_point[2],
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_VTX_XZ(Word* args) {
-        submit_vertex(Vec4([
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][0..15]), 16)),
-            previous_vertex[1],
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][16..31]), 16)),
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_XZ: %x", args[0]);
+        submit_vertex(Point([
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
+            previous_point[1],
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_VTX_YZ(Word* args) {
-        submit_vertex(Vec4([
-            previous_vertex[0],
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][0..15]), 16)),
-            signed_fixed_point_to_float!12(sext_32!Word(Word(args[0][16..31]), 16)),
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_YZ: %x", args[0]);
+        submit_vertex(Point([
+            previous_point[0],
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_VTX_DIFF(Word* args) {
-        submit_vertex(Vec4([
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][0..9]),   10)) / 8 + previous_vertex[0],
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][10..19]), 10)) / 8 + previous_vertex[1],
-            signed_fixed_point_to_float!9(sext_32!Word(Word(args[0][20..29]), 10)) / 8 + previous_vertex[2],
-            1.0f
+        // log_gpu3d("[VTXASS] VTX_DIFF: %x", args[0]);
+        submit_vertex(Point([
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0..9]),   10)) + previous_point[0],
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][10..19]), 10)) + previous_point[1],
+            FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][20..29]), 10)) + previous_point[2],
+            Coordinate(1.0f)
         ]));
     }
 
     void handle_SWAP_BUFFERS(Word* args) {
-        parent.swap_buffers(polygon_index);
+        bool translucent_polygon_y_sorting = args[0][0];
+        bool depth_buffering_mode          = args[0][1];
+        parent.swap_buffers(polygon_index, translucent_polygon_y_sorting, depth_buffering_mode);
         polygon_index = 0;
         vertex_index = 0;
     }
@@ -540,27 +581,6 @@ final class GeometryEngine {
         Polygon polygon;
         polygon = assembler.get_polygon(polygon);
 
-        import std.math;
-        if (std.math.isNaN(polygon.vertices[0].pos[0]) || 
-            std.math.isNaN(polygon.vertices[0].pos[1]) || 
-            std.math.isNaN(polygon.vertices[0].pos[2]) ||
-            std.math.isNaN(polygon.vertices[1].pos[0]) || 
-            std.math.isNaN(polygon.vertices[1].pos[1]) || 
-            std.math.isNaN(polygon.vertices[1].pos[2]) ||
-            std.math.isNaN(polygon.vertices[2].pos[0]) || 
-            std.math.isNaN(polygon.vertices[2].pos[1]) || 
-            std.math.isNaN(polygon.vertices[2].pos[2]) || (
-                polygon.num_vertices == 4 && (
-
-            std.math.isNaN(polygon.vertices[3].pos[0]) || 
-            std.math.isNaN(polygon.vertices[3].pos[1]) || 
-            std.math.isNaN(polygon.vertices[3].pos[2])
-                )
-            )) {
-
-            error_gpu3d("not good");
-        }
-
         polygon.uses_textures               = texture_mapped;
         polygon.texture_vram_offset         = texture_vram_offset;
         polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
@@ -575,7 +595,7 @@ final class GeometryEngine {
 
         log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
         log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
-        log_gpu3d("    texture_vram_offset         : %d", polygon.texture_vram_offset         );
+        log_gpu3d("    texture_vram_offset         : %x", polygon.texture_vram_offset         );
         log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
         log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
         log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
@@ -584,8 +604,9 @@ final class GeometryEngine {
         log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
         log_gpu3d("    texture_format              : %s", polygon.texture_format              );
         log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
-        log_gpu3d("    palette_base_address        : %d", polygon.palette_base_address        );
+        log_gpu3d("    palette_base_address        : %x", polygon.palette_base_address        );
         log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
+        log_gpu3d("    texture_transformation_mode : %s", texture_transformation_mode);
 
         parent.geometry_buffer[polygon_index] = polygon;
         polygon_index++;
@@ -593,65 +614,65 @@ final class GeometryEngine {
     }
 
     void handle_TEXCOORD(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!4(sext_32!Word(Word(x), 16));
-        Vec4 texcoord = Vec4([convert(args[0][0..15]), convert(args[0][16..31]), 0.0f, 0.0f]);
+        // auto convert = (Word x) => signed_fixed_point_to_float!4(sext_32!Word(Word(x), 16));
+        // texcoord = Vec4([convert(args[0][0..15]), convert(args[0][16..31]), 0.0f, 0.0f]);
 
-        final switch (texture_transformation_mode) {
-            case TextureTransformationMode.NONE:
-                texcoord_prime = texcoord;
-                break;
+        // switch (texture_transformation_mode) {
+        //     case TextureTransformationMode.NONE:
+        //         texcoord_prime = texcoord;
+        //         break;
 
-            case TextureTransformationMode.TEXCOORD:
-                texcoord_prime = texture_matrix * texcoord;
-                break;
+        //     case TextureTransformationMode.TEXCOORD:
+        //         texcoord[2] = 0.0625f;
+        //         texcoord[3] = 0.0625f;
+        //         texcoord_prime = texture_matrix * texcoord;
+        //         break;
             
-            case TextureTransformationMode.NORMAL:
-                texture_matrix[3][0] = texcoord[0];
-                texture_matrix[3][1] = texcoord[1];
-                texcoord_prime = texture_matrix * normal_vector;
-                break;
-            
-            case TextureTransformationMode.VERTEX:
-                texture_matrix[3][0] = texcoord[0];
-                texture_matrix[3][1] = texcoord[1];
-                texcoord_prime = texture_matrix * previous_vertex;
-                break;
-        }
+        //     default: break;
+        // }
         
-        texture_mapped = true;
+        // texture_mapped = true;
     }
 
     void handle_NORMAL(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!9(sext_32!Word(Word(x), 10));
-        normal_vector = Vec4([
-            convert(args[0][0..9]),
-            convert(args[0][10..19]),
-            convert(args[0][20..29]),
-            1.0f
-        ]);
+        // auto convert = (Word x) => signed_fixed_point_to_float!9(sext_32!Word(Word(x), 10));
+        // normal_vector = position_vector_matrix * Vec4([
+        //     convert(args[0][0..9]),
+        //     convert(args[0][10..19]),
+        //     convert(args[0][20..29]),
+        //     1.0f
+        // ]);
+
+        // if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
+        //     log_gpu3d("transforming via NORMAL: %s %s %s", texture_matrix[0][0], texture_matrix[0][1], texture_matrix[1][0]);
+        //     texture_matrix[3][0] = texcoord[0];
+        //     texture_matrix[3][1] = texcoord[1];
+        //     texcoord_prime = texture_matrix * normal_vector;
+        // }
     }
 
     void handle_VEC_TEST(Word* args) {
-        if (matrix_mode != MatrixMode.POSITION_VECTOR) {
-            error_gpu3d("Tried to use VEC_TEST while in a mode (%d) that isnt MatrixMode.POSITION_VECTOR (2)", matrix_mode);
-        }
+        // if (matrix_mode != MatrixMode.POSITION_VECTOR) {
+        //     error_gpu3d("Tried to use VEC_TEST while in a mode (%d) that isnt MatrixMode.POSITION_VECTOR (2)", matrix_mode);
+        // }
 
-        Vec4 vec = [
-            sext_32(args[0][0 .. 9], 10),
-            sext_32(args[1][10..19], 10),
-            sext_32(args[2][20..29], 10),
-            0.0f
-        ];
+        // Vec4 vec = [
+        //     sext_32(args[0][0 .. 9], 10),
+        //     sext_32(args[1][10..19], 10),
+        //     sext_32(args[2][20..29], 10),
+        //     0.0f
+        // ];
 
-        vec_test_result = position_vector_matrix * vec;
+        // vec_test_result = position_vector_matrix * vec;
     }
 
     Byte read_VEC_RESULT(int target_byte) {
-        float component_float = vec_test_result[target_byte / 2];
-        Half component_fixed = component_float * (1 << 12);
-        if (component_float < 0) component_fixed |= 0xF000;
+        // float component_float = vec_test_result[target_byte / 2];
+        // Half component_fixed = component_float * (1 << 12);
+        // if (component_float < 0) component_fixed |= 0xF000;
 
-        return component_fixed.get_byte(target_byte % 2);
+        // return component_fixed.get_byte(target_byte % 2);
+        return Byte(0);
     }
 
     void push_command(Word data) {
@@ -659,7 +680,9 @@ final class GeometryEngine {
             case State.RECEIVING_COMMAND:
                 command_buffer_length = 0;
                 for (int i = 0; i < 4; i++) {
+                    // log_gpu3d("am i shittering fucking retarded? %x %x", data.get_byte(i), data);
                     if (data.get_byte(i) != 0) {
+                        // log_gpu3d("queueing command: %s", commands[data.get_byte(i)].name);
                         auto command = commands[data.get_byte(i)];
                         if (!command.valid) error_gpu3d("Invalid command! %x", data.get_byte(i));
 
@@ -667,6 +690,7 @@ final class GeometryEngine {
                         command_buffer_length++;
                         current_command_index = 0;
                         command_parameters_length = 0;
+                        command_parameters_head = 0;
                     }
                 }
 
@@ -685,9 +709,10 @@ final class GeometryEngine {
                 }
 
                 while (command_parameters_remaining == 0) {
-                    // log_gpu3d("Received well-formed command: %s", command_buffer[current_command_index].name);
-                    this.handle_command(command_buffer[current_command_index].id, cast(Word*) command_parameters_buffer);
+                    // log_gpu3d("Received well-formed command: %s (head: %d)", command_buffer[current_command_index].name, command_parameters_head);
+                    this.handle_command(command_buffer[current_command_index].id, cast(Word*) &command_parameters_buffer[command_parameters_head]);
 
+                    command_parameters_head = command_parameters_length;
                     current_command_index++;
 
                     if (current_command_index == command_buffer_length) {
@@ -705,6 +730,7 @@ final class GeometryEngine {
         static if (!is(T == Word)) {
             error_gpu3d("Tried to write a non-Word value to GXFIFO");
         } else {
+            // log_gpu3d("pushing shitter to GXFIFO: %x", data);
             push_command(data);
         }
     }
@@ -715,6 +741,7 @@ final class GeometryEngine {
         static if (commands[i].valid) {
             mixin("
                 void write_%s(T)(T data, int offset) {
+                    // log_gpu3d(\"Received shitter command: %s, %s\", data);
                     if (state == State.RECEIVING_COMMAND) {
                         push_command(Word(%d));
                     } else {
@@ -725,7 +752,7 @@ final class GeometryEngine {
                         
                     push_command(Word(data));
                 }
-            ".format(commands[i].name, i, i));
+            ".format(commands[i].name, commands[i].name, "%x", i, i));
         }
     }
 
@@ -738,6 +765,7 @@ final class GeometryEngine {
                         static if (commands[i].implemented) {
                             cycles_till_complete += commands[i].cycles;
                             reschedule_interrupt();
+                            // log_gpu3d("Handling shitter command %s (first param: %x)", commands[i].name, args[0]);
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
                             // log_gpu3d("Unhandled command: %s", commands[i].name);
@@ -818,7 +846,7 @@ static GPU3DCommand[256] generate_commands()() {
     commands[0x60] = GPU3DCommand("VIEWPORT",         0x60, 1,  1,   true);
     commands[0x70] = GPU3DCommand("BOX_TEST",         0x70, 3,  103, false);
     commands[0x71] = GPU3DCommand("POS_TEST",         0x71, 2,  9,   false);
-    commands[0x72] = GPU3DCommand("VEC_TEST",         0x72, 1,  5,   true);
+    commands[0x72] = GPU3DCommand("VEC_TEST",         0x72, 1,  5,   false);
 
     return commands;
 }

@@ -25,7 +25,8 @@ final class VRAM {
     enum VRAM_H_SIZE = 1 << 15;
     enum VRAM_I_SIZE = 1 << 14;
 
-    enum SLOT_SIZE   = 1 << 13;
+    enum SLOT_SIZE_BG  = 1 << 13;
+    enum SLOT_SIZE_TEX = 1 << 17;
 
     final class VRAMBlock {
         Word address;
@@ -76,7 +77,7 @@ final class VRAM {
     bool vram_c_in_ram;
     bool vram_d_in_ram;
 
-    alias Slot = Byte[SLOT_SIZE];
+    alias Slot = Byte[1 << 17];
 
     Slot*[5] slots_bg_pal_a;
     Slot*[5] slots_bg_pal_b;
@@ -125,12 +126,14 @@ final class VRAM {
 
     void remap_slots() {
         for (int i = 0; i < 10; i++) {
+            int num_times_mapped = 0;
             VRAMBlock block = blocks[i];
             if (block.slot_mapped) {
                 for (int j = 0; j < 5; j++) {
                     if (block.slot.bit(j)) {
-                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[SLOT_SIZE * (j - block.slot_ofs)]);
-                        log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE * (j - block.slot_ofs), (&block.data[SLOT_SIZE * (j - block.slot_ofs)]) - &block.data[0]);
+                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * SLOT_SIZE_BG]);
+                        log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE_BG * (j - block.slot_ofs), block.slot_ofs);
+                        num_times_mapped++;
                     }
                 }
             }
@@ -141,18 +144,17 @@ final class VRAM {
     T read_bg_slot(EngineType E, T)(int slot, Word address) {
         final switch (E) {
             case EngineType.A:
-                // if (vram_e.slot_mapped) return vram_e.data.read!T(Word(SLOT_SIZE * slot + address));
                 if (vram_f.slot_mapped) {
-                    if (slot <  2 && vram_f.offset == 0) return vram_f.data.read!T(Word(SLOT_SIZE * slot + address));
-                    if (slot >= 2 && vram_f.offset == 1) return vram_f.data.read!T(Word(SLOT_SIZE * (slot - 2) + address));
+                    if (slot <  2 && vram_f.offset == 0) return vram_f.data.read!T(Word(SLOT_SIZE_BG * slot + address));
+                    if (slot >= 2 && vram_f.offset == 1) return vram_f.data.read!T(Word(SLOT_SIZE_BG * (slot - 2) + address));
                 }
                 if (vram_g.slot_mapped) {
-                    if (slot <  2 && vram_g.offset == 0) return vram_g.data.read!T(Word(SLOT_SIZE * slot + address));
-                    if (slot >= 2 && vram_g.offset == 1) return vram_g.data.read!T(Word(SLOT_SIZE * (slot - 2) + address));
+                    if (slot <  2 && vram_g.offset == 0) return vram_g.data.read!T(Word(SLOT_SIZE_BG * slot + address));
+                    if (slot >= 2 && vram_g.offset == 1) return vram_g.data.read!T(Word(SLOT_SIZE_BG * (slot - 2) + address));
                 }
                 break;
             case EngineType.B:
-                return vram_h.data.read!T(Word(SLOT_SIZE * slot + address));
+                return vram_h.data.read!T(Word(SLOT_SIZE_BG * slot + address));
         }
 
         error_vram("Tried to draw from bg slot but no slots were mapped!");
@@ -161,6 +163,7 @@ final class VRAM {
 
     T read_slot(T)(SlotType slot_type, int slot, Word address) {
         if (((all_slots[slot_type])[slot]) == null) {
+            // log_vram("tried to read from slot type %s at slot %d, though no slot was mapped :(", slot_type, slot);
             return T(0);
         }
 
@@ -319,6 +322,8 @@ final class VRAM {
             case 3: vram_a.slot = 1 << offset; vram_a.slot_type = SlotType.TEXTURE; break;
         }
 
+        // log_gpu3d("VRAMA: mst=%d, slot_mapped=%d, address=%x", mst, vram_a.slot_mapped, vram_a.address);
+        dump(vram_a.data, "vram_a.dump");
         remap_slots();
     }
 
@@ -416,6 +421,9 @@ final class VRAM {
             case 4: vram_g.slot = 0b11 << (offset.bit(0) * 2); vram_g.slot_ofs = offset.bit(0) * 2; vram_g.slot_type = SlotType.BG_PAL_A; break;
             case 5: vram_g.slot = 1; vram_g.slot_ofs = 0; vram_g.slot_type = SlotType.OBJ_PAL_A; break;
         }
+
+        // log_gpu3d("VRAMG: mst=%d, slot_mapped=%d, address=%x", mst, vram_g.slot_mapped, vram_g.address);
+        dump(vram_g.data, "vram_g.dump");
 
         remap_slots();
     }

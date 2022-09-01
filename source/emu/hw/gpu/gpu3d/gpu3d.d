@@ -26,6 +26,9 @@ final class GPU3D {
     bool polygon_vertex_ram_overflow;
     bool rear_plane_mode;
 
+    Coordinate[256] depth_buffer;
+    bool depth_buffering_mode;
+
     GeometryEngine geometry_engine;
     RenderingEngine rendering_engine;
 
@@ -64,13 +67,21 @@ final class GPU3D {
         rendering_engine.render(scanline);
     }
 
-    void plot(Pixel p, int x) {
-        if (p.a != 0) scanline_cache[scanline_cache_head][x] = p;
+    void plot(Pixel p, int x, Coordinate z, Coordinate w) {
+        Coordinate depth_value = depth_buffering_mode ? w : z;
+        
+        if (depth_buffer[x] >= depth_value && p.a != 0) {
+            scanline_cache[scanline_cache_head][x] = p;
+            depth_buffer[x] = depth_value;
+        }
     }
 
     void start_rendering_scanline() {
         for (int x = 0; x < 256; x++) {
             scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0, 0);
+
+            // TODO: what should the reset value be?
+            depth_buffer[x] = Coordinate(0x7FFF);
         }
     }
 
@@ -84,19 +95,22 @@ final class GPU3D {
         if (y == 48) y = 0;
         for (int x = 0; x < 256; x++) {
             auto pixel = scanline_cache[scanline_cache_tail][x];
-            if (pixel.a != 0) gpu_engine_a.ppu.canvas.draw_3d_pixel(x, pixel);
+            gpu_engine_a.ppu.canvas.draw_3d_pixel(x, pixel, pixel.a == 0);
         }
 
         scanline_cache_tail++;
         if (scanline_cache_tail == 48) scanline_cache_tail = 0;
     }
 
-    void swap_buffers(int num_polygons) {
+    void swap_buffers(int num_polygons, bool translucent_polygon_y_sorting, bool depth_buffering_mode) {
         auto temp = geometry_buffer;
         geometry_buffer = rendering_buffer;
         rendering_buffer = temp;
 
+        // TODO: translucent_polygon_y_sorting is unused
+
         rendering_engine.num_polygons = num_polygons;
+        this.depth_buffering_mode = depth_buffering_mode;
     }
 
     Byte read_DISP3DCNT(int target_byte) {
