@@ -130,7 +130,7 @@ final class GeometryEngine {
     TriangleStripsAssembler triangle_strips_assembler;
     QuadStripsAssembler     quad_strips_assembler;
 
-    Point previous_point;
+    Point_4_12 previous_point;
     bool receiving_vtxs;
 
     int polygon_index = 0;
@@ -151,11 +151,11 @@ final class GeometryEngine {
 
     bool texture_mapped;
     
-    Point texcoord_prime;
-    Point texcoord;
-    Point normal_vector;
+    Point_20_12 texcoord_prime;
+    Point_4_12 texcoord;
+    Point_4_12 normal_vector;
 
-    Point vec_test_result;
+    Point_4_12 vec_test_result;
 
     uint cycles_till_complete;
     ulong irq_event;
@@ -218,21 +218,35 @@ final class GeometryEngine {
         }
     }
 
-    void submit_vertex(Point point) {
+    Point_20_12 expand_point(Point_4_12 point) {
+        return Point_20_12([
+            point[0].convert!(20, 12),
+            point[1].convert!(20, 12),
+            point[2].convert!(20, 12),
+            point[3].convert!(20, 12)
+        ]);
+    }
+    
+    void submit_vertex(Point_4_12 point) {
         previous_point = point;
-        point = (projection_matrix * modelview_matrix) * point;
 
-        if (texture_transformation_mode == TextureTransformationMode.VERTEX) {
-            texture_matrix[3][0] = texcoord[0];
-            texture_matrix[3][1] = texcoord[1];
-            texcoord_prime = texture_matrix * previous_point;
+        for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++) {
+            log_gpu3d("PROJ_MATR[%d][%d] = %f", i, j, cast(float) projection_matrix[i][j]);
         }
+
+        auto clip_matrix_point = (projection_matrix * modelview_matrix) * expand_point(point);
+
+        // if (texture_transformation_mode == TextureTransformationMode.VERTEX) {
+        //     texture_matrix[3][0] = texcoord[0];
+        //     texture_matrix[3][1] = texcoord[1];
+        //     texcoord_prime = texture_matrix * previous_point;
+        // }
 
         PolygonAssembler assembler = get_assembler();
 
         if (assembler.submit_vertex(
-            Vertex(
-                point,
+            Vertex!Point_20_12(
+                clip_matrix_point,
                 current_color_r,
                 current_color_g,
                 current_color_b,
@@ -272,19 +286,19 @@ final class GeometryEngine {
     void handle_MTX_PUSH(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
-                // log_gpu3d("MTXOP pushing projection (ptr = %d)", projection_stack.stack_pointer);
+                log_gpu3d("MTXOP pushing projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_stack.push(projection_matrix);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR: 
-                // log_gpu3d("MTXOP pushing position + modelview (ptr = %d %d)", modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
+                log_gpu3d("MTXOP pushing position + modelview (ptr = %d %d)", modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
                 modelview_stack.push(modelview_matrix);
                 position_vector_stack.push(position_vector_matrix);
                 break;
 
             case MatrixMode.TEXTURE:
-                // log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
+                log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_stack.push(texture_matrix);
                 break;
         }
@@ -293,13 +307,13 @@ final class GeometryEngine {
     void handle_MTX_POP(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                // log_gpu3d("MTXOP popping projection (ptr = %d)", projection_stack.stack_pointer);
+                log_gpu3d("MTXOP popping projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_matrix = projection_stack.pop(1);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR:
-                // log_gpu3d("MTXOP popping position + modelview w/ idx %d, (ptr = %d %d)", sext_32(args[0][0..5], 6), modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
+                log_gpu3d("MTXOP popping position + modelview w/ idx %d, (ptr = %d %d)", sext_32(args[0][0..5], 6), modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
                 modelview_matrix = modelview_stack.pop(sext_32(args[0][0..5], 6));
                 position_vector_matrix = position_vector_stack.pop(sext_32(args[0][0..5], 6));
                 break;
@@ -320,7 +334,7 @@ final class GeometryEngine {
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR: 
-                // log_gpu3d("MTXOP storing position + modelview w/ idx %d", args[0][0..4]);
+                log_gpu3d("MTXOP storing position + modelview w/ idx %d", args[0][0..4]);
                 modelview_stack.store(modelview_matrix, args[0][0..4]);
                 position_vector_stack.store(position_vector_matrix, args[0][0..4]);
                 break;
@@ -335,13 +349,13 @@ final class GeometryEngine {
     void handle_MTX_RESTORE(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                // log_gpu3d("MTXOP restoring projection");
+                log_gpu3d("MTXOP restoring projection");
                 projection_matrix = projection_stack.restore(0);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR:
-                // log_gpu3d("MTXOP restoring position + modelview w/ idx %d", args[0][0..4]);
+                log_gpu3d("MTXOP restoring position + modelview w/ idx %d", args[0][0..4]);
                 modelview_matrix = modelview_stack.restore(args[0][0..4]);
                 position_vector_matrix = position_vector_stack.restore(args[0][0..4]);
                 break;
@@ -392,7 +406,7 @@ final class GeometryEngine {
     }
 
     void handle_MTX_LOAD_4x4(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
         
         set_current_matrix(
             Matrix([
@@ -405,20 +419,20 @@ final class GeometryEngine {
     }
 
     void handle_MTX_LOAD_4x3(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         set_current_matrix(
             Matrix([
-                [convert(args[0]), convert(args[3]), convert(args[6]), convert(args[9])],
-                [convert(args[1]), convert(args[4]), convert(args[7]), convert(args[10])],
-                [convert(args[2]), convert(args[5]), convert(args[8]), convert(args[11])],
-                [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
+                [convert(args[0]),  convert(args[3]),  convert(args[6]),  convert(args[9])],
+                [convert(args[1]),  convert(args[4]),  convert(args[7]),  convert(args[10])],
+                [convert(args[2]),  convert(args[5]),  convert(args[8]),  convert(args[11])],
+                [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f)],
             ])
         );
     }
 
     void handle_MTX_MULT_4x4(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         multiply_matrix(Matrix([
             [convert(args[0]), convert(args[4]), convert(args[8]),  convert(args[12])],
@@ -429,46 +443,46 @@ final class GeometryEngine {
     }
 
     void handle_MTX_MULT_4x3(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         multiply_matrix(Matrix([
-            [convert(args[0]), convert(args[3]), convert(args[6]), convert(args[9])],
-            [convert(args[1]), convert(args[4]), convert(args[7]), convert(args[10])],
-            [convert(args[2]), convert(args[5]), convert(args[8]), convert(args[11])],
-            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
+            [convert(args[0]),  convert(args[3]),  convert(args[6]),  convert(args[9])],
+            [convert(args[1]),  convert(args[4]),  convert(args[7]),  convert(args[10])],
+            [convert(args[2]),  convert(args[5]),  convert(args[8]),  convert(args[11])],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f)],
         ]), true);
     }
 
     void handle_MTX_MULT_3x3(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         multiply_matrix(Matrix([
-            [convert(args[0]), convert(args[3]), convert(args[6]), Coordinate(0.0f)],
-            [convert(args[1]), convert(args[4]), convert(args[7]), Coordinate(0.0f)],
-            [convert(args[2]), convert(args[5]), convert(args[8]), Coordinate(0.0f)],
-            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
+            [convert(args[0]),  convert(args[3]),  convert(args[6]),  Coord_20_12(0.0f)],
+            [convert(args[1]),  convert(args[4]),  convert(args[7]),  Coord_20_12(0.0f)],
+            [convert(args[2]),  convert(args[5]),  convert(args[8]),  Coord_20_12(0.0f)],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f)],
         ]), true);
     }
 
     void handle_MTX_TRANS(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         multiply_matrix(Matrix([
-            [Coordinate(1.0f), Coordinate(0.0f), Coordinate(0.0f), convert(args[0])],
-            [Coordinate(0.0f), Coordinate(1.0f), Coordinate(0.0f), convert(args[1])],
-            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f), convert(args[2])],
-            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
+            [Coord_20_12(1.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), convert(args[0])],
+            [Coord_20_12(0.0f), Coord_20_12(1.0f), Coord_20_12(0.0f), convert(args[1])],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f), convert(args[2])],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f)],
         ]), true);
     }
 
     void handle_MTX_SCALE(Word* args) {
-        auto convert = (Word x) => FixedPoint!(4, 12).from_repr(x); 
+        auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
 
         multiply_matrix(Matrix([
-            [convert(args[0]), Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f)],
-            [Coordinate(0.0f), convert(args[1]), Coordinate(0.0f), Coordinate(0.0f)],
-            [Coordinate(0.0f), Coordinate(0.0f), convert(args[2]), Coordinate(0.0f)],
-            [Coordinate(0.0f), Coordinate(0.0f), Coordinate(0.0f), Coordinate(1.0f)],
+            [convert(args[0]),  Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f)],
+            [Coord_20_12(0.0f), convert(args[1]),  Coord_20_12(0.0f), Coord_20_12(0.0f)],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), convert(args[2]),  Coord_20_12(0.0f)],
+            [Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(1.0f)],
         ]), false);
     }
 
@@ -490,61 +504,61 @@ final class GeometryEngine {
 
     void handle_VTX_16(Word* args) {
         // log_gpu3d("[VTXASS] VTX_16: %x %x", args[0], args[1]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[1][0 ..15]), 16)),
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
     void handle_VTX_10(Word* args) {
         // log_gpu3d("[VTXASS] VTX_10: %x", args[0]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][0 .. 9]), 16)).convert!(4, 12),
             FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][10..19]), 16)).convert!(4, 12),
             FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][20..29]), 16)).convert!(4, 12),
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
     void handle_VTX_XY(Word* args) {
         // log_gpu3d("[VTXASS] VTX_XY: %x", args[0]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
             previous_point[2],
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
     void handle_VTX_XZ(Word* args) {
         // log_gpu3d("[VTXASS] VTX_XZ: %x", args[0]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             previous_point[1],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
     void handle_VTX_YZ(Word* args) {
         // log_gpu3d("[VTXASS] VTX_YZ: %x", args[0]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             previous_point[0],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
     void handle_VTX_DIFF(Word* args) {
         // log_gpu3d("[VTXASS] VTX_DIFF: %x", args[0]);
-        submit_vertex(Point([
+        submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0..9]),   10)) + previous_point[0],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][10..19]), 10)) + previous_point[1],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][20..29]), 10)) + previous_point[2],
-            Coordinate(1.0f)
+            Coord_4_12(1.0f)
         ]));
     }
 
@@ -578,7 +592,7 @@ final class GeometryEngine {
 
     void submit_polygon() {
         PolygonAssembler assembler = get_assembler();
-        Polygon polygon;
+        Polygon!Point_20_12 polygon;
         polygon = assembler.get_polygon(polygon);
 
         polygon.uses_textures               = texture_mapped;
@@ -614,24 +628,29 @@ final class GeometryEngine {
     }
 
     void handle_TEXCOORD(Word* args) {
-        // auto convert = (Word x) => signed_fixed_point_to_float!4(sext_32!Word(Word(x), 16));
-        // texcoord = Vec4([convert(args[0][0..15]), convert(args[0][16..31]), 0.0f, 0.0f]);
+        auto convert = (Word x) => signed_fixed_point_to_float!4(sext_32!Word(Word(x), 16));
+        texcoord = Point_4_12([
+            Coord_4_12(convert(args[0][0 ..15])), 
+            Coord_4_12(convert(args[0][16..31])), 
+            Coord_4_12(0.0f), 
+            Coord_4_12(0.0f)
+        ]);
 
-        // switch (texture_transformation_mode) {
-        //     case TextureTransformationMode.NONE:
-        //         texcoord_prime = texcoord;
-        //         break;
+        switch (texture_transformation_mode) {
+            case TextureTransformationMode.NONE:
+                texcoord_prime = expand_point(texcoord);
+                break;
 
-        //     case TextureTransformationMode.TEXCOORD:
-        //         texcoord[2] = 0.0625f;
-        //         texcoord[3] = 0.0625f;
-        //         texcoord_prime = texture_matrix * texcoord;
-        //         break;
+            case TextureTransformationMode.TEXCOORD:
+                texcoord[2] = Coord_4_12(0.0625f);
+                texcoord[3] = Coord_4_12(0.0625f);
+                texcoord_prime = texture_matrix * expand_point(texcoord);
+                break;
             
-        //     default: break;
-        // }
+            default: break;
+        }
         
-        // texture_mapped = true;
+        texture_mapped = true;
     }
 
     void handle_NORMAL(Word* args) {

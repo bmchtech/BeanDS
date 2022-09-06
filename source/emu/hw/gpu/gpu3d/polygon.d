@@ -3,16 +3,16 @@ module emu.hw.gpu.gpu3d.polygon;
 import emu;
 import util;
 
-struct Vertex {
-    Point pos;
+struct Vertex(T) {
+    T pos;
     int r;
     int g;
     int b;
-    Point texcoord;
+    T texcoord;
 }
 
-struct Polygon {
-    Vertex[10] vertices; // max-gon is ten-gon
+struct Polygon(T) {
+    Vertex!T[10] vertices; // max-gon is ten-gon
     int num_vertices;
 
     bool uses_textures;
@@ -30,16 +30,16 @@ struct Polygon {
 }
 
 interface PolygonAssembler {
-    bool submit_vertex(Vertex vertex);
-    Polygon get_polygon(Polygon p);
+    bool submit_vertex(Vertex!Point_20_12 vertex);
+    Polygon!Point_20_12 get_polygon(Polygon!Point_20_12 p);
     void reset();
 }
 
 final class TriangleAssembler : PolygonAssembler {
     int index = 0;
-    Vertex[4] vertices;
+    Vertex!Point_20_12[4] vertices;
 
-    override bool submit_vertex(Vertex vertex) {
+    override bool submit_vertex(Vertex!Point_20_12 vertex) {
         vertices[index] = vertex;
         index++;
 
@@ -51,7 +51,7 @@ final class TriangleAssembler : PolygonAssembler {
         return false;
     }
 
-    Polygon get_polygon(Polygon p) {
+    Polygon!Point_20_12 get_polygon(Polygon!Point_20_12 p) {
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
         return p;
@@ -64,9 +64,9 @@ final class TriangleAssembler : PolygonAssembler {
 
 final class QuadAssembler : PolygonAssembler {
     int index = 0;
-    Vertex[4] vertices;
+    Vertex!Point_20_12[4] vertices;
 
-    override bool submit_vertex(Vertex vertex) {
+    override bool submit_vertex(Vertex!Point_20_12 vertex) {
         bool new_quad_created = index >= 3;
 
         vertices[index] = vertex;
@@ -79,7 +79,7 @@ final class QuadAssembler : PolygonAssembler {
         return new_quad_created;
     }
 
-    Polygon get_polygon(Polygon p) {
+    Polygon!Point_20_12 get_polygon(Polygon!Point_20_12 p) {
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
         return p;
@@ -92,16 +92,16 @@ final class QuadAssembler : PolygonAssembler {
 
 final class TriangleStripsAssembler : PolygonAssembler {
     int index = 0;
-    Vertex[4] vertices;
+    Vertex!Point_20_12[4] vertices;
 
-    override bool submit_vertex(Vertex vertex) {
+    override bool submit_vertex(Vertex!Point_20_12 vertex) {
         vertices[index] = vertex;
         index++;
 
         return index >= 3;
     }
 
-    Polygon get_polygon(Polygon p) {
+    Polygon!Point_20_12 get_polygon(Polygon!Point_20_12 p) {
         p.vertices[0..3] = vertices[0..3];
         p.num_vertices = 3;
         
@@ -119,18 +119,18 @@ final class TriangleStripsAssembler : PolygonAssembler {
 
 final class QuadStripsAssembler : PolygonAssembler {
     int index = 0;
-    Vertex[4] vertices;
+    Vertex!Point_20_12[4] vertices;
 
     static immutable int[4] mapped_indices = [0, 1, 3, 2];
 
-    override bool submit_vertex(Vertex vertex) {
+    override bool submit_vertex(Vertex!Point_20_12 vertex) {
         vertices[mapped_indices[index]] = vertex;
         index++;
 
         return index >= 4;
     }
 
-    Polygon get_polygon(Polygon p) {     
+    Polygon!Point_20_12 get_polygon(Polygon!Point_20_12 p) {
         p.vertices[0..4] = vertices[0..4];
         p.num_vertices = 4;
 

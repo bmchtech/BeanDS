@@ -85,6 +85,9 @@ final class WRAM {
     void write7(T)(Word address, T value) {
         // log_wram("arm7 writing %x to %x in mode %x %x", value, address, mode, arm7_wram_enabled);
         if (address < 0x0380_0000 && arm7_wram_enabled) {
+            if ((address % WRAM_SIZE) == (0x037fad64 % WRAM_SIZE)) {
+                log_wram("WRAM writing to the dumb location: %x %x [size: %d] (AT PC %x)", address, value, T.sizeof, arm7.regs[pc]);
+            }
             (*(arm7_mapping[address[14]])).write!T(address % WRAM_SIZE, value);
         } else {
             arm7_only_wram.write!T(address % ARM7_ONLY_WRAM_SIZE, value);

@@ -370,7 +370,7 @@ final class PPU(EngineType E) {
         int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x10000;
         int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x10000;
 
-        // the coordinates at the topleft of the background that we are drawing
+        // the Coord_4_12s at the topleft of the background that we are drawing
         int topleft_x      = background.x_offset;
         int topleft_y      = background.y_offset + bg_scanline;
 
@@ -428,7 +428,7 @@ final class PPU(EngineType E) {
         int screen_base_address = background.screen_base_block * 0x800 + screen_base * 0x10000;
         int tile_base_address   = background.character_base_block * 0x4000 + character_base * 0x10000;
 
-        // the coordinates at the topleft of the background that we are drawing
+        // the Coord_4_12s at the topleft of the background that we are drawing
         long texture_point_x = background.internal_reference_x;
         long texture_point_y = background.internal_reference_y;
 

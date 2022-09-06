@@ -21,8 +21,6 @@ T read_slot(T)(SlotType slot_type, Word address) {
     return vram.read_slot!T(slot_type, slot, address % (1 << 17));
 }
 
-
-
 float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_base_address) {
     auto texture_s_size = (8 << p.orig.texture_s_size);
     auto texture_t_size = (8 << p.orig.texture_t_size);

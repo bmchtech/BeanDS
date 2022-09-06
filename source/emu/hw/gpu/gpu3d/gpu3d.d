@@ -26,7 +26,7 @@ final class GPU3D {
     bool polygon_vertex_ram_overflow;
     bool rear_plane_mode;
 
-    Coordinate[256] depth_buffer;
+    Coord_14_18[256] depth_buffer;
     bool depth_buffering_mode;
 
     GeometryEngine geometry_engine;
@@ -38,10 +38,10 @@ final class GPU3D {
     int viewport_y2;
 
     // TODO: how big is this really?
-    Polygon[0x1000] polygon_ram_1;
-    Polygon[0x1000] polygon_ram_2;
-    Polygon* geometry_buffer;
-    Polygon* rendering_buffer;
+    Polygon!Point_20_12[0x1000] polygon_ram_1;
+    Polygon!Point_20_12[0x1000] polygon_ram_2;
+    Polygon!Point_20_12* geometry_buffer;
+    Polygon!Point_20_12* rendering_buffer;
 
     Pixel[256][48] scanline_cache;
 
@@ -54,8 +54,8 @@ final class GPU3D {
         geometry_engine = new GeometryEngine(this);
         rendering_engine = new RenderingEngine(this);
 
-        geometry_buffer  = cast(Polygon*) &polygon_ram_1;
-        rendering_buffer = cast(Polygon*) &polygon_ram_2;
+        geometry_buffer  = cast(Polygon!Point_20_12*) &polygon_ram_1;
+        rendering_buffer = cast(Polygon!Point_20_12*) &polygon_ram_2;
     }
 
     void vblank() {
@@ -67,8 +67,8 @@ final class GPU3D {
         rendering_engine.render(scanline);
     }
 
-    void plot(Pixel p, int x, Coordinate z, Coordinate w) {
-        Coordinate depth_value = depth_buffering_mode ? w : z;
+    void plot(Pixel p, int x, Coord_14_18 z, Coord_14_18 w) {
+        Coord_14_18 depth_value = depth_buffering_mode ? w : z;
         
         if (depth_buffer[x] >= depth_value && p.a != 0) {
             scanline_cache[scanline_cache_head][x] = p;
@@ -81,7 +81,7 @@ final class GPU3D {
             scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0, 0);
 
             // TODO: what should the reset value be?
-            depth_buffer[x] = Coordinate(0x7FFF);
+            depth_buffer[x] = Coord_14_18.from_repr(0x7FFFFFFF);
         }
     }
 

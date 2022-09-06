@@ -18,7 +18,7 @@ struct FixedPoint(uint I, uint F) {
         int   integral_part   = cast(int) float_value;
         float fractional_part = float_value % 1;
 
-        set_value((integral_part << F) | cast(int) (fractional_part * (1 << F)));
+        set_value((integral_part << F) | (cast(int) (fractional_part * (1 << F)) & ((1 << F) - 1)));
     }
 
     static FixedPoint!(I, F) from_repr(int repr) {
@@ -29,36 +29,68 @@ struct FixedPoint(uint I, uint F) {
 
     FixedPoint!(I, F) opBinary(string s)(FixedPoint!(I, F) other)
         if (s == "+" || s == "-" || s == "*" || s == "/") {
+
+        // if (s == "*") {
+        //     log_gpu3d("performing a multiplication: %f %f %x %x %x %x",
+        //         cast(float) other.value,
+        //         cast(float) this.value,
+        //         other.repr,
+        //         this.repr,
+        //         this.repr * other.repr,
+        //         this.value * other.value
+        //     );
+        // }
+
+        final switch (s) {
+            case "+": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value + cast(long) other.value));
+            case "-": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value - cast(long) other.value));
+            case "*": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) this.value * cast(long) other.value) >> F));
+            case "/": return FixedPoint!(I, F).from_repr(cast(int) ((cast(float) this.value / cast(float) other.value) * (1 << F)));
+        }
+    }
+
+    FixedPoint!(I, F) opBinary(string s)(int other)
+        if (s == "+" || s == "-" || s == "*" || s == "/") {
         FixedPoint!(I, F) result;
 
         final switch (s) {
-            case "+": result.set_value(this.value + other.value); break;
-            case "-": result.set_value(this.value - other.value); break;
-            case "*": result.set_value((this.value * other.value) >> F); break;
-            case "/": result.set_value((this.value << F) / other.value); break;
+            case "+": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value + (cast(long) other << F)));
+            case "-": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value - (cast(long) other << F)));
+            case "*": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) this.value * (cast(long) other << F)) >> F));
+            case "/": return FixedPoint!(I, F).from_repr(cast(int) ((cast(float) this.value / cast(float) (other << F)) * (1 << F)));
         }
-
-        return result; 
     }
 
-    FixedPoint!(I, F) opBinaryRight(string s)(int other) {
-        return this.opBinary!s(other);
-    }
 
-    FixedPoint!(I, F) opBinary(string s)(int other) {
-        return opBinary!(s)(FixedPoint!(I, F)(other));
-    }
+    FixedPoint!(I, F) opBinaryRight(string s)(int other)
+        if (s == "+" || s == "-" || s == "*" || s == "/") {
+        FixedPoint!(I, F) result;
 
-    FixedPoint!(I, F) opUnary(string s : "-")() {
-        this.value ^= (1 << (I + F - 1));
-        return this;
+        final switch (s) {
+            case "+": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) other << F) + cast(long) this.value));
+            case "-": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) other << F) - cast(long) this.value));
+            case "*": return FixedPoint!(I, F).from_repr(cast(int) (((cast(long) other << F) * cast(long) this.value)) >> F);
+            case "/": return FixedPoint!(I, F).from_repr(cast(int) ((cast(float) (other << F) / cast(float) this.value) * (1 << F)));
+        }
     }
 
     T opCast(T)()
-        if (is(T == float)) {
-        int sign = !util.bit(this.value, I + F - 1) * 2 - 1;
-        auto unsigned_value = ((sign * sext_32(this.integral_part, I)) << F) | this.fractional_part; 
-        return sign * (cast(float) (unsigned_value >> F)) + (cast(float) (unsigned_value & util.create_mask(0, F - 1))) / (1 << F);
+    if (is(T == float)) {
+        return cast(float) this.value / (1 << F);
+    }
+
+    float to_unsigned_float() {
+        return (cast(float) cast(ulong) this.repr) / (cast(float) (1 << F));
+    }
+
+    T opCast(T)()
+    if (is(T == int)) {
+        return this.integral_part;
+    }
+
+    T opCast(T)()
+    if (is(T == uint)) {
+        return this.integral_part & ((1 << I) - 1);
     }
 
     FixedPoint!(I2, F2) convert(int I2, int F2)() {
@@ -72,11 +104,11 @@ struct FixedPoint(uint I, uint F) {
         }
 
         int value = (integral_part << F2) | fractional_part;
-        return FixedPoint!(I2, F2)(value);
+        return FixedPoint!(I2, F2).from_repr(value);
     }
 
     void set_value(int value) {
-        this.value = sext_32(value, I + F - 1);
+        this.value = sext_32(value, I + F);
     }
 
     int integral_part() {
@@ -87,12 +119,12 @@ struct FixedPoint(uint I, uint F) {
         return value & util.create_mask(0, F - 1);
     }
 
-    int opCmp(FixedPoint!(I, F) other) {
-        return this.value - other.value;
+    float opCmp(FixedPoint!(I, F) other) {
+        return cast(float) this - cast(float) other;
     }
 
-    int opCmp(int other) {
-        return this.value - (other << F);
+    float opCmp(int other) {
+        return cast(float) this.value - (other << F);
     }
 
     bool opEquals(FixedPoint!(I, F) other) {

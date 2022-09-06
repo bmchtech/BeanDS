@@ -104,7 +104,7 @@ final class SPI {
 
         if (offset == 0) {
             result = selected_device.write(Byte(data));
-             if (!chipselect_hold) selected_device.chipselect_fall();
+            if (!chipselect_hold) selected_device.chipselect_fall();
         }
 
         if (!chipselect_hold) {
