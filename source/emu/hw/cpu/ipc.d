@@ -86,12 +86,24 @@ final class IPC {
     }
 
     Byte read_IPCSYNC(int target_byte) {
+        Byte value = 0;
+
         final switch (target_byte) {
-            case 0: return sync_data;
-            case 1: return remote.sync_data;
-            case 2: return Byte(0);
-            case 3: return Byte(sync_irq_enable);
+            case 0: 
+                value = sync_data;
+                break;
+
+            case 1: 
+                value[0..3] = remote.sync_data;
+                value[6]    = sync_irq_enable;
+                break;
+
+            case 2:
+            case 3:
+                break;
         }
+
+        return value;
     }
 
     void write_IPCSYNC(int target_byte, Byte data) {
