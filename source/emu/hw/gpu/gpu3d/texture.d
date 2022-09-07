@@ -35,9 +35,9 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     }
     
     // if ((wrapped_s & 16) ^ (wrapped_t & 16)) {
-        // return [31, 0, 0, 31];
+    //     return [31, 0, 0, 31];
     // } else {
-        // return [31, 31, 31, 31];
+    //     return [31, 31, 31, 31];
     // }
 
     int texel_index = cast(int) (wrapped_t * texture_s_size + wrapped_s);
@@ -195,7 +195,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         default:
-            // log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
+            log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
     }
     
     // TODO: this return never trigger once the above switch case is made into a final switch

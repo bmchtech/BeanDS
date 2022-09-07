@@ -152,7 +152,7 @@ final class GeometryEngine {
     bool texture_mapped;
     
     Point_20_12 texcoord_prime;
-    Point_4_12 texcoord;
+    Point_20_12 texcoord;
     Point_4_12 normal_vector;
 
     Point_4_12 vec_test_result;
@@ -628,23 +628,23 @@ final class GeometryEngine {
     }
 
     void handle_TEXCOORD(Word* args) {
-        auto convert = (Word x) => signed_fixed_point_to_float!4(sext_32!Word(Word(x), 16));
-        texcoord = Point_4_12([
-            Coord_4_12(convert(args[0][0 ..15])), 
-            Coord_4_12(convert(args[0][16..31])), 
-            Coord_4_12(0.0f), 
-            Coord_4_12(0.0f)
+        auto convert = (Word x) => FixedPoint!(12, 4).from_repr(sext_32!Word(Word(x), 16)).convert!(20, 12);
+        texcoord = Point_20_12([
+            convert(args[0][0 ..15]), 
+            convert(args[0][16..31]), 
+            Coord_20_12(0.0f), 
+            Coord_20_12(0.0f)
         ]);
 
         switch (texture_transformation_mode) {
             case TextureTransformationMode.NONE:
-                texcoord_prime = expand_point(texcoord);
+                texcoord_prime = texcoord;
                 break;
 
             case TextureTransformationMode.TEXCOORD:
-                texcoord[2] = Coord_4_12(0.0625f);
-                texcoord[3] = Coord_4_12(0.0625f);
-                texcoord_prime = texture_matrix * expand_point(texcoord);
+                texcoord[2] = Coord_20_12(0.0625f);
+                texcoord[3] = Coord_20_12(0.0625f);
+                texcoord_prime = texture_matrix * texcoord;
                 break;
             
             default: break;

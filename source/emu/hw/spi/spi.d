@@ -5,7 +5,7 @@ import util;
 
 __gshared SPI spi;
 final class SPI {
-    int baudrate; // we don't really care about you but we need to save your value anyway
+    int baudrate;
     int selected_device_index;
     SPIDevice selected_device;
     bool busy;
@@ -13,7 +13,6 @@ final class SPI {
     bool chipselect_hold = false;
     bool irq_enable;
     bool bus_enable;
-
     Half result;
 
     SPIDevice[4] spi_devices;
@@ -106,6 +105,11 @@ final class SPI {
             result = selected_device.write(Byte(data));
             if (!chipselect_hold) selected_device.chipselect_fall();
         }
+
+        scheduler.add_event_relative_to_clock(
+            () => interrupt7.raise_interrupt(Interrupt.SPI_BUS),
+            8 << (baudrate)
+        );
 
         if (!chipselect_hold) {
             busy = false;

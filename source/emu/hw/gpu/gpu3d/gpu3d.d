@@ -203,7 +203,7 @@ final class GPU3D {
     }
 
     Byte read_RAM_COUNT(int target_byte) {
-        Byte result;
+        Byte result = 0;
 
         final switch (target_byte) {
             case 0:
@@ -212,6 +212,11 @@ final class GPU3D {
             
             case 2:
                 result = geometry_engine.vertex_index;
+                break;
+
+            case 1:
+            case 3:
+                break;
         }
 
         return result;

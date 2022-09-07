@@ -378,6 +378,9 @@ final class RenderingEngine {
                     int b;
                     int a = 0;
 
+                    factor_l = clamp(factor_l, Coord_14_18(0.0f), Coord_14_18(1.0f));
+                    factor_r = clamp(factor_r, Coord_14_18(0.0f), Coord_14_18(1.0f));
+
                     if (p.orig.uses_textures) {
                         auto texcoord_s_l = interpolate(p.orig.vertices[p.previous_left_index].texcoord[0].convert!(14, 18), p.orig.vertices[p.left_index].texcoord[0].convert!(14, 18), factor_l);
                         auto texcoord_s_r = interpolate(p.orig.vertices[p.previous_right_index].texcoord[0].convert!(14, 18), p.orig.vertices[p.right_index].texcoord[0].convert!(14, 18), factor_r);
@@ -400,7 +403,17 @@ final class RenderingEngine {
                         auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
                         auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
 
-                        log_gpu3d("The result of interpolation: %s %s %d %s %s %s", end_x, start_x, x, w_l, w_r, factor_scanline);
+                        log_gpu3d("The result of interpolation: %f %f %d %f %f %f %f %f %f", 
+                            cast(float) end_x,
+                            cast(float) start_x, 
+                            x, 
+                            cast(float) r_l, 
+                            cast(float) r_r, 
+                            cast(float) p.orig.vertices[p.previous_left_index].r,
+                            cast(float) p.orig.vertices[p.left_index].r,
+                            cast(float) factor_l,
+                            cast(float) factor_scanline
+                        );
 
                         r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
                         g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
