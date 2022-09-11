@@ -399,6 +399,8 @@ final class RenderingEngine {
                 for (int x = effective_start_x; x < effective_end_x; x++) {
                     auto w_l = interpolate(p.viewport_coords[p.previous_left_index][3], p.viewport_coords[p.left_index][3], factor_l);
                     auto w_r = interpolate(p.viewport_coords[p.previous_right_index][3], p.viewport_coords[p.right_index][3], factor_r);
+                    auto z_l = interpolate(p.viewport_coords[p.previous_left_index][2], p.viewport_coords[p.left_index][2], factor_l);
+                    auto z_r = interpolate(p.viewport_coords[p.previous_right_index][2], p.viewport_coords[p.right_index][2], factor_r);
 
                     auto factor_scanline = get_interpolation_factor(
                         Coord_14_18(cast(int) end_x - cast(int) start_x),
@@ -456,7 +458,7 @@ final class RenderingEngine {
                     }
                 
                     // TODO: we will only need either z or w, never both. only calculate the one we need (assuming interpolation is a bottleneck)
-                    Coord_14_18 z = 0; // ill implement you later.
+                    Coord_14_18 z = interpolate(z_l, z_r, 1 - factor_scanline);
                     Coord_14_18 w = interpolate(w_l, w_r, 1 - factor_scanline);
                     parent.plot(Pixel(r, g, b, a), x, z, w);
                 }
