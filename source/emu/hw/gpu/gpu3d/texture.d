@@ -50,7 +50,9 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             texel >>= (2 * (texel_index % 4));
             texel &= 3;
             Half color = read_slot!Half(SlotType.TEXTURE_PAL, Word(palette_base_address) * 8 + Word(texel) * 2);
-            
+            log_gpu3d("color palette 4: texel_index: %x, texel: %x, color: %x, texture_vram_offset: %x", texel_index, texel, color, p.orig.texture_vram_offset);
+            // log_gpu3d("dickless: %x", Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
+
             return [
                 color[0..4],
                 color[5..9],

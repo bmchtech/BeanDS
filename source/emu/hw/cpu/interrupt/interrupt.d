@@ -43,11 +43,20 @@ final class InterruptManager {
     }
 
     void raise_interrupt(Interrupt code) {
+        if (code == Interrupt.GEOMETRY_COMMAND_FIFO) {
+            log_gpu3d("received interrupt %s. enabled: %x", code, enable[code]);
+        }
+
         status[code] = 1;
         if (enable & status) cpu.unhalt();
     }
 
     bool irq_pending() {
+        if (this == interrupt9 && master_enable && (enable & status) == (1 << 21)) {
+            log_gpu3d("GXFIFO FIRE!");
+            // arm9.num_log = 1000;
+        }
+
         return master_enable && (enable & status);
     }
 
@@ -56,7 +65,14 @@ final class InterruptManager {
     }
 
     void write_IE(int target_byte, Byte data) {
+        Word old_enable = enable;
         enable.set_byte(target_byte, data);
+
+        if (rising_edge(old_enable[21], enable[21])) {
+            log_gpu3d("enabled gxfifo irqs");
+        } else if (falling_edge(old_enable[21], enable[21])) {
+            log_gpu3d("disabled gxfifo irqs");
+        }
     }
 
     void write_IME(int target_byte, Byte data) {

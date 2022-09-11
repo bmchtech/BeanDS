@@ -200,7 +200,7 @@ final class Cart {
     }
 
     private void write_ROMDATAOUT(int target_byte, Byte value) {
-        log_cart("writing to rom data out: %x %x", target_byte, value);
+        // log_cart("writing to rom data out: %x %x", target_byte, value);
         command &= ~((cast(u64) 0xFF)  << cast(u64) (target_byte * 8));
         command |=  ((cast(u64) value) << cast(u64) (target_byte * 8));
     }

@@ -132,7 +132,7 @@ final class VRAM {
                 for (int j = 0; j < 5; j++) {
                     if (block.slot.bit(j)) {
                         all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * SLOT_SIZE_BG]);
-                        log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE_BG * (j - block.slot_ofs), block.slot_ofs);
+                        // log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE_BG * (j - block.slot_ofs), block.slot_ofs);
                         num_times_mapped++;
                     }
                 }
@@ -233,6 +233,22 @@ final class VRAM {
                 block.write!T(address, value);
                 performed_write = true;
             }
+        }
+
+        if (address == 0x0689_0038) {
+            log_gpu3d("VRAM_F WRITE: %x", value);
+        }
+
+        if (address == 0x0689_003A) {
+            log_gpu3d("VRAM_F WRITE: %x", value);
+        }
+
+        if (address == 0x0689_003C) {
+            log_gpu3d("VRAM_F WRITE: %x", value);
+        }
+
+        if (address == 0x0689_003E) {
+            log_gpu3d("VRAM_F WRITE: %x", value);
         }
 
         if (!performed_write) log_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
@@ -396,6 +412,7 @@ final class VRAM {
         vram_f.offset      = offset;
         vram_f.slot_mapped = mst > 2;
 
+        log_gpu3d("remapping vram_F: mst=%d, offset=%d", mst, offset);
         final switch (mst) {
             case 0: vram_f.address = 0x0689_0000; break;
             case 1: vram_f.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
@@ -417,7 +434,7 @@ final class VRAM {
             case 0: vram_g.address = 0x0689_4000; break;
             case 1: vram_g.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
             case 2: vram_g.address = 0x0640_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;
-            case 3: vram_g.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_f.slot_ofs = offset.bit(1) * 4; vram_g.slot_type = SlotType.TEXTURE_PAL; break;
+            case 3: vram_g.slot = 1 << (offset.bit(0) + offset.bit(1) * 4); vram_g.slot_ofs = offset.bit(1) * 4; vram_g.slot_type = SlotType.TEXTURE_PAL; break;
             case 4: vram_g.slot = 0b11 << (offset.bit(0) * 2); vram_g.slot_ofs = offset.bit(0) * 2; vram_g.slot_type = SlotType.BG_PAL_A; break;
             case 5: vram_g.slot = 1; vram_g.slot_ofs = 0; vram_g.slot_type = SlotType.OBJ_PAL_A; break;
         }

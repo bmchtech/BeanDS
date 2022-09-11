@@ -319,6 +319,46 @@ final class ARM946E_S : ArmCPU {
     }
 
     void refill_pipeline() {
+        if (regs[pc] == 0x020CB57C) {
+            log_arm9("FUNCTION: OS_CreateThread()");
+        }
+
+        if (regs[pc] == 0x020CB2E4) {
+            log_arm9("FUNCTION: OS_SleepThread()");
+        }
+
+        if (regs[pc] == 0x020CDEB8) {
+            log_arm9("FUNCTION: MI_SendGXCommandAsyncFast()");
+        }
+
+        if (regs[pc] == 0x020CD8E4) {
+            log_arm9("FUNCTION: MIi_CheckAnotherAutoDMA()");
+        }
+
+        if (regs[pc] == 0x020CD874) {
+            log_arm9("FUNCTION: MIi_CheckDma0SourceAddress()");
+        }
+
+        if (regs[pc] == 0x020CDA1C) {
+            log_arm9("FUNCTION: MI_WaitDma()");
+        }
+
+        if (regs[pc] == 0x020C9F14) {
+            log_arm9("FUNCTION: OSi_EnterDmaCallback()");
+        }
+
+        if (regs[pc] == 0x01FF85F0) {
+            log_arm9("FUNCTION: MIi_DmaSetParams(dma_id: %x src: %x dest: %x cnt: %x)", regs[0], regs[1], regs[2], regs[3]);
+        }
+
+        if (regs[pc] == 0x020CDF78) {
+            log_arm9("FUNCTION: MIi_DMACallback()");
+        }
+
+        if (regs[pc] == 0x020CDFEC) {
+            log_arm9("FUNCTION: MIi_FIFOCallback()");
+        }
+
         if (instruction_set == InstructionSet.ARM) {
             fetch!Word();
             fetch!Word();
@@ -358,6 +398,10 @@ final class ARM946E_S : ArmCPU {
         if ((exception == CpuException.IRQ && cpsr[7]) ||
             (exception == CpuException.FIQ && cpsr[6])) {
             return;
+        }
+
+        if (exception == CpuException.IRQ && interrupt9.status & interrupt9.enable & Interrupt.TIMER_0_OVERFLOW) {
+            log_gpu3d("Switching threads!");
         }
 
         enum mode = get_mode_from_exception!(exception);

@@ -31,7 +31,7 @@ struct FixedPoint(uint I, uint F) {
         if (s == "+" || s == "-" || s == "*" || s == "/") {
 
         // if (s == "*") {
-        //     log_gpu3d("performing a multiplication: %f %f %x %x %x %x",
+        //     // log_gpu3d("performing a multiplication: %f %f %x %x %x %x",
         //         cast(float) other.value,
         //         cast(float) this.value,
         //         other.repr,

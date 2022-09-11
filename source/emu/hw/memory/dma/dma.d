@@ -38,15 +38,15 @@ final class DMA(HwType H) {
     void handle_dma(int current_channel) {
         auto bytes_to_transfer = dma_channels[current_channel].size_buf;
 
-        // if (current_channel == 3) log_dma(
-        //     "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
-        //     current_channel,
-        //     bytes_to_transfer,
-        //     dma_channels[current_channel].transferring_words ? "words" : "halfwords",
-        //     dma_channels[current_channel].source_buf,
-        //     dma_channels[current_channel].dest_buf,
-        //     read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
-        // );
+        if (current_channel == 3) log_dma(
+            "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
+            current_channel,
+            bytes_to_transfer,
+            dma_channels[current_channel].transferring_words ? "words" : "halfwords",
+            dma_channels[current_channel].source_buf,
+            dma_channels[current_channel].dest_buf,
+            read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
+        );
 
         auto source_increment = 0;
         auto dest_increment = 0;
@@ -107,7 +107,7 @@ final class DMA(HwType H) {
         dma_channels[current_channel].dest_buf   += dest_offset;
         
         if (dma_channels[current_channel].irq_on_end) {
-            Interrupt interrupt_id = cast(Interrupt) 1 << (Interrupt.DMA_0_COMPLETION + current_channel);
+            Interrupt interrupt_id = cast(Interrupt) (Interrupt.DMA_0_COMPLETION + current_channel);
             
             final switch (H) {
                 case HwType.NDS7:
@@ -149,7 +149,7 @@ final class DMA(HwType H) {
         }
 
         if (dma_channels[ds_cart_transfer_channel].irq_on_end) {
-            Interrupt interrupt_id = cast(Interrupt) 1 << (Interrupt.DMA_0_COMPLETION + ds_cart_transfer_channel);
+            Interrupt interrupt_id = cast(Interrupt) (Interrupt.DMA_0_COMPLETION + ds_cart_transfer_channel);
             
             final switch (H) {
                 case HwType.NDS7:
@@ -342,6 +342,7 @@ final class DMA(HwType H) {
                     case HwType.NDS7: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[4..5]; break;
                     case HwType.NDS9: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[3..5]; break;
                 }
+                    log_dma("%s", dma_channels[x].dma_start_timing);
 
                 dma_channels[x].irq_on_end          =  data[6];
                 dma_channels[x].enabled             =  data[7];
