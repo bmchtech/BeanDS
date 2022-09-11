@@ -196,6 +196,23 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                 texel[15]
             ];
         
+        case TextureFormat.A3I5_TRANSLUCENT:
+            int slot = (Word((p.orig.texture_vram_offset << 3) + texel_index)) >> 17;
+            Byte texel = read_slot!Byte(SlotType.TEXTURE, Word((p.orig.texture_vram_offset << 3) + texel_index));
+
+            int index = texel[0..4];
+            int alpha = texel[5..7];
+            alpha = alpha * 4 + alpha / 2;
+            
+            Half color = read_slot!Half(SlotType.TEXTURE_PAL, Word(palette_base_address) * 16 + Word(index) * 2);
+
+            return [
+                color[0..4],
+                color[5..9],
+                color[10..14],
+                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : alpha
+            ];
+        
         default:
             log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
     }
