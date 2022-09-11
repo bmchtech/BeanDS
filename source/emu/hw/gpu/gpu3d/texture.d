@@ -42,9 +42,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
 
     int texel_index = cast(int) (wrapped_t * texture_s_size + wrapped_s);
 
-
-    // TODO: make this a final switch when i've actually implemented all the texture formats
-    switch (p.orig.texture_format) {
+    final switch (p.orig.texture_format) {
         case TextureFormat.COLOR_PALETTE_4:
             Byte texel = read_slot!Byte(SlotType.TEXTURE, Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
             texel >>= (2 * (texel_index % 4));
@@ -213,8 +211,24 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                 (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : alpha
             ];
         
-        default:
-            log_gpu3d("Tried to decode an unimplemented texture: %x", cast(int) p.orig.texture_format);
+        case TextureFormat.A5I3_TRANSLUCENT:
+            int slot = (Word((p.orig.texture_vram_offset << 3) + texel_index)) >> 17;
+            Byte texel = read_slot!Byte(SlotType.TEXTURE, Word((p.orig.texture_vram_offset << 3) + texel_index));
+
+            int index = texel[0..2];
+            int alpha = texel[3..7];
+            
+            Half color = read_slot!Half(SlotType.TEXTURE_PAL, Word(palette_base_address) * 16 + Word(index) * 2);
+
+            return [
+                color[0..4],
+                color[5..9],
+                color[10..14],
+                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : alpha
+            ];
+        
+        case TextureFormat.NONE:
+            log_gpu3d("this can never happen");
     }
     
     // TODO: this return never trigger once the above switch case is made into a final switch
