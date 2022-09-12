@@ -86,19 +86,24 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         case TextureFormat.TEXEL_COMPRESSED_4x4:
-            int compressed_block_idx = texel_index / 16;
-            Word compressed_block_base_address = (p.orig.texture_vram_offset << 3) + compressed_block_idx * 4;
+            int blocks_per_row = texture_s_size / 4;
+            int block_x = wrapped_s / 4;
+            int block_y = wrapped_t / 4;
+            int block_fine_x = wrapped_s % 4;
+            int block_fine_y = t % 4;
+            int block_index = block_y * blocks_per_row + block_x;
 
-            Word compressed_block = read_slot!Word(SlotType.TEXTURE, compressed_block_base_address);
-            int texel_idx = texel_index % 16;
-            int texel = (compressed_block >> (2 * texel_idx)) & 3;
-            log_gpu3d("texelinfo: %x %x %x %x %x %x %x %x", compressed_block, texel, texel_idx, texel_index, s, t, texture_s_size, texture_t_size);
+            Word compressed_block_base_address = (Word(p.orig.texture_vram_offset) << 3) + block_index * 4 + block_fine_y;
+
+            Word compressed_block = read_slot!Byte(SlotType.TEXTURE, compressed_block_base_address);
+            int texel = (compressed_block >> (2 * block_fine_x)) & 3;
+            // log_gpu3d("texelinfo: %x %x %x %x %x %x %x %x", compressed_block, texel, texel_idx, block_fine_index, s, t, texture_s_size, texture_t_size);
 
             int compressed_block_slot = compressed_block_base_address >> 17;
             if (compressed_block_slot != 0 && compressed_block_slot != 2) error_gpu3d("Invalid slot for compressed texture: (address: %x offset: %x, idx: %x)", compressed_block_base_address, p.orig.texture_vram_offset, texel_index);
             
-            Word palette_info_address = (1 << 17) + compressed_block_slot * 0x8000 + 2 * compressed_block_idx + compressed_block_base_address / 2;
-            Half palette_info = read_slot!Half(SlotType.TEXTURE_PAL, palette_info_address);
+            Word palette_info_address = (1 << 17) + compressed_block_slot * 0x8000 + compressed_block_base_address / 2;
+            Half palette_info = read_slot!Half(SlotType.TEXTURE, palette_info_address);
             int palette_offset = palette_info[0 ..13];
             int palette_mode   = palette_info[14..15];
 
@@ -122,7 +127,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                     h[0..4],
                     h[5..9],
                     h[10..14],
-                    (h == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+                    31.0,
                 ];
             }
 
@@ -208,7 +213,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                 color[0..4],
                 color[5..9],
                 color[10..14],
-                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : alpha
+                alpha
             ];
         
         case TextureFormat.A5I3_TRANSLUCENT:
@@ -224,7 +229,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
                 color[0..4],
                 color[5..9],
                 color[10..14],
-                (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : alpha
+                alpha
             ];
         
         case TextureFormat.NONE:
