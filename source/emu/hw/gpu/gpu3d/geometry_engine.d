@@ -809,6 +809,8 @@ final class GeometryEngine {
         
         // only do this if this not our first time scheduling the interrupt
         if (last_reschedule_timestamp == 0) {
+            auto elapsed = scheduler.get_current_time_relative_to_cpu();
+        } else {
             auto elapsed = scheduler.get_current_time_relative_to_cpu() - last_reschedule_timestamp;
             
             if (cycles_till_complete < elapsed) {
