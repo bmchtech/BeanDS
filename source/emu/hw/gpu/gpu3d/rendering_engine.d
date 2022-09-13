@@ -216,6 +216,7 @@ final class RenderingEngine {
 
     Mutex     rendering_scanline_mutex;
     int       rendering_scanline;
+    bool      is_rendering;
 
     this(GPU3D parent) {
         this.parent = parent;
@@ -223,6 +224,7 @@ final class RenderingEngine {
         this.start_rendering_condvar  = new Condition(start_rendering_mutex);
         this.rendering_thread         = new Thread(&rendering_thread_handler).start();
         this.rendering_scanline_mutex = new Mutex();
+        this.is_rendering             = false;
     }
 
     void vblank() {
@@ -305,6 +307,7 @@ final class RenderingEngine {
                 
             synchronized (rendering_scanline_mutex) {
                 rendering_scanline = 0;
+                is_rendering       = true;
             }
             
             annotate_polygons();
@@ -314,6 +317,7 @@ final class RenderingEngine {
                 
                 synchronized (rendering_scanline_mutex) {
                     rendering_scanline = scanline;
+                    is_rendering       = false;
                 }
             }
         }
@@ -328,7 +332,7 @@ final class RenderingEngine {
     void wait_for_rendering_to_finish(int scanline) {
         while (true) {
             synchronized (rendering_scanline_mutex) {
-                if (rendering_scanline >= scanline) return;
+                if (!is_rendering || rendering_scanline >= scanline) return;
             }
         }
     }

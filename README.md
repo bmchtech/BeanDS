@@ -28,4 +28,4 @@ Currently I'm working on booting the firmware. Other plans include proper audio 
 + [RockPolish](https://github.com/RockPolish), for creating the excellent [Rockwrestler test suite](https://github.com/RockPolish/rockwrestler)
 + [PSI](https://github.com/PSI-Rockin) for creating an [article on the 3D GPU's interpolation](https://corgids.wordpress.com/2017/09/27/interpolation/)
 + [Powerlated](https://github.com/powerlated), for creating a [test rom](https://github.com/Powerlated/amogus.nds) for testing audio
-+ [StrikerX3](https://github.com/StrikerX3/), [fleroviux](https://github.com/fleroviux/), [PSI](https://github.com/PSI-Rockin), [Kelpsy](https://github.com/Kelpsy/), and [Dillon](https://github.com/Dillonb) for answering my questions on the Emudev discord server.
++ [StrikerX3](https://github.com/StrikerX3/), [fleroviux](https://github.com/fleroviux/), [PSI](https://github.com/PSI-Rockin), [Kelpsy](https://github.com/Kelpsy/), [Dillon](https://github.com/Dillonb), and [Ace314159](https://github.com/Ace314159) for answering my questions on the Emudev discord server.
