@@ -138,8 +138,10 @@ final class ARM946E_S : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
         
-        cpu_trace.capture();
-
+        version (release) {
+            cpu_trace.capture();
+        }
+        
         if (num_log > 0) {
             log_state();
             num_log--;

@@ -346,6 +346,10 @@ template execute_arm(T : ArmCPU) {
         Reg rd = opcode[12..15];
         Reg rn = opcode[16..19];
 
+        // 37881100
+        // rn = 8
+        // rd = 1
+
         static if (is_register_offset) {
             Reg rm = opcode[0..3];
 
@@ -359,6 +363,10 @@ template execute_arm(T : ArmCPU) {
         enum dir = up ? 1 : -1;
         Word writeback_value = address + dir * offset;
         static if (pre) address = writeback_value;
+
+        if (opcode == 0x37881100) {
+            log_arm9("info: single data transfer: rn = %x, rd = %x, offset = %x, pre = %x, up = %x, byte_access = %x, writeback = %x, load = %x, address = %x", rn, rd, offset, pre, up, byte_access, writeback, load, address);
+        }
 
         static if (load && writeback) cpu.set_reg(rn, writeback_value);
 

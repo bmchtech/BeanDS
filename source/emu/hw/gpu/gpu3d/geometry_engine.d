@@ -153,7 +153,7 @@ final class GeometryEngine {
     
     Point_20_12 texcoord_prime;
     Point_20_12 texcoord;
-    Point_4_12 normal_vector;
+    Point_20_12 normal_vector;
 
     Point_4_12 vec_test_result;
 
@@ -593,6 +593,8 @@ final class GeometryEngine {
         texture_format              = cast(TextureFormat) args[0][26..28];
         texture_color_0_transparent = args[0][29];
         texture_transformation_mode = cast(TextureTransformationMode) args[0][30..31];
+
+        if (texture_format == TextureFormat.NONE) log_gpu3d("WTF!!! %X", args[0]);
     }
 
     void submit_polygon() {
@@ -600,7 +602,7 @@ final class GeometryEngine {
         Polygon!Point_20_12 polygon;
         polygon = assembler.get_polygon(polygon);
 
-        polygon.uses_textures               = texture_mapped;
+        polygon.uses_textures               = texture_format != TextureFormat.NONE;
         polygon.texture_vram_offset         = texture_vram_offset;
         polygon.texture_repeat_s_direction  = texture_repeat_s_direction;
         polygon.texture_repeat_t_direction  = texture_repeat_t_direction;
@@ -659,20 +661,23 @@ final class GeometryEngine {
     }
 
     void handle_NORMAL(Word* args) {
-        // auto convert = (Word x) => signed_fixed_point_to_float!9(sext_32!Word(Word(x), 10));
-        // normal_vector = position_vector_matrix * Vec4([
-        //     convert(args[0][0..9]),
-        //     convert(args[0][10..19]),
-        //     convert(args[0][20..29]),
-        //     1.0f
-        // ]);
+        auto convert = (Word x) => FixedPoint!(23, 9).from_repr(sext_32!Word(Word(x), 10)).convert!(20, 12);
+        normal_vector = Point_20_12([
+            convert(args[0][0..9]),
+            convert(args[0][10..19]),
+            convert(args[0][20..29]),
+            Coord_20_12(1.0f)
+        ]);
 
-        // if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
-        //     // log_gpu3d("transforming via NORMAL: %s %s %s", texture_matrix[0][0], texture_matrix[0][1], texture_matrix[1][0]);
-        //     texture_matrix[3][0] = texcoord[0];
-        //     texture_matrix[3][1] = texcoord[1];
-        //     texcoord_prime = texture_matrix * normal_vector;
-        // }
+        // perhaps can be optimized...
+        Matrix texture_matrix_dup = texture_matrix;
+
+        if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
+            log_gpu3d("transforming via NORMAL: %s %s %s", texture_matrix[0][0], texture_matrix[0][1], texture_matrix[1][0]);
+            texture_matrix_dup[3][0] = texcoord[0];
+            texture_matrix_dup[3][1] = texcoord[1];
+            texcoord_prime = texture_matrix_dup * normal_vector;
+        }
     }
 
     void handle_VEC_TEST(Word* args) {
@@ -800,6 +805,8 @@ final class GeometryEngine {
     }
 
     void reschedule_interrupt() {
+        if (parent.irq_mode == IRQMode.NEVER) return;
+        
         // only do this if this not our first time scheduling the interrupt
         if (last_reschedule_timestamp == 0) {
             auto elapsed = scheduler.get_current_time_relative_to_cpu() - last_reschedule_timestamp;

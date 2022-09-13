@@ -58,10 +58,14 @@ static ulong get_largest_logsource_length()(){
 
 // thanks https://github.com/dlang/phobos/blob/4239ed8ebd3525206453784908f5d37c82d338ee/std/outbuffer.d
 private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)[] fmt, A args) {
+    import core.stdc.stdlib;
+    import core.stdc.stdio;
+    import core.runtime;
+
     import std.conv;
     import std.format.write : formattedWrite;
     import std.stdio : writef, writefln;
-
+    
     version (silent) {
         return;
     } else
@@ -87,7 +91,13 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
             dump(wram.shared_bank_1, "wram_bank1.dump");
             dump(wram.shared_bank_2, "wram_bank2.dump");
             dump(main_memory.data, "main_memory.dump");
-            assert(0);
+
+            auto trace = defaultTraceHandler(null);
+            foreach (line; trace) {
+                printf("%.*s\n", cast(int) line.length, line.ptr);
+            }
+
+            exit(-1);
         }
     }
 }

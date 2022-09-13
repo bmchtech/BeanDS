@@ -25,8 +25,8 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     auto texture_s_size = (8 << p.orig.texture_s_size);
     auto texture_t_size = (8 << p.orig.texture_t_size);
 
-    auto wrapped_s = s & (texture_s_size - 1);
-    auto wrapped_t = t & (texture_t_size - 1);
+    uint wrapped_s = s & (texture_s_size - 1);
+    uint wrapped_t = t & (texture_t_size - 1);
 
     if ((s != wrapped_s && !p.orig.texture_repeat_s_direction) ||
         (t != wrapped_t && !p.orig.texture_repeat_t_direction)) {
@@ -86,12 +86,12 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         case TextureFormat.TEXEL_COMPRESSED_4x4:
-            int blocks_per_row = texture_s_size / 4;
-            int block_x = wrapped_s / 4;
-            int block_y = wrapped_t / 4;
-            int block_fine_x = wrapped_s % 4;
-            int block_fine_y = t % 4;
-            int block_index = block_y * blocks_per_row + block_x;
+            uint blocks_per_row = texture_s_size / 4;
+            uint block_x = wrapped_s / 4;
+            uint block_y = wrapped_t / 4;
+            uint block_fine_x = wrapped_s % 4;
+            uint block_fine_y = wrapped_t % 4;
+            uint block_index = block_y * blocks_per_row + block_x;
 
             Word compressed_block_base_address = (Word(p.orig.texture_vram_offset) << 3) + block_index * 4 + block_fine_y;
 
@@ -233,7 +233,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             ];
         
         case TextureFormat.NONE:
-            log_gpu3d("this can never happen");
+            error_gpu3d("this can never happen");
     }
     
     // TODO: this return never trigger once the above switch case is made into a final switch

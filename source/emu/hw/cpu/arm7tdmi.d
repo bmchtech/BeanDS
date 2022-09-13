@@ -118,7 +118,9 @@ final class ARM7TDMI : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
 
-        cpu_trace.capture();
+        version (release) {
+            cpu_trace.capture();
+        }
 
         if (num_log > 0) {
             num_log--;
