@@ -1,5 +1,9 @@
 module emu.hw.gpu.gpu3d.rendering_engine;
 
+import core.sync.condition;
+import core.sync.mutex;
+import core.thread;
+
 import std.algorithm;
 
 import emu;
@@ -206,8 +210,19 @@ final class RenderingEngine {
 
     AnnotatedPolygon[0x1000] annotated_polygons;
 
+    Mutex     start_rendering_mutex;
+    Condition start_rendering_condvar;
+    Thread    rendering_thread;
+
+    Mutex     rendering_scanline_mutex;
+    int       rendering_scanline;
+
     this(GPU3D parent) {
         this.parent = parent;
+        this.start_rendering_mutex    = new Mutex();
+        this.start_rendering_condvar  = new Condition(start_rendering_mutex);
+        this.rendering_thread         = new Thread(&rendering_thread_handler).start();
+        this.rendering_scanline_mutex = new Mutex();
     }
 
     void vblank() {
@@ -282,21 +297,53 @@ final class RenderingEngine {
         return (1 - factor) * a0 + factor * a1;
     }
 
+    void rendering_thread_handler() {
+        while (true) {
+            synchronized (start_rendering_mutex) {
+                start_rendering_condvar.wait();
+            }
+                
+            synchronized (rendering_scanline_mutex) {
+                rendering_scanline = 0;
+            }
+            
+            annotate_polygons();
+
+            for (int scanline = 0; scanline < 192; scanline++) {
+                render(scanline);
+                
+                synchronized (rendering_scanline_mutex) {
+                    rendering_scanline = scanline;
+                }
+            }
+        }
+    }
+
+    void begin_rendering_frame() {
+        synchronized (start_rendering_mutex) {
+            start_rendering_condvar.notify();
+        }
+    }
+
+    void wait_for_rendering_to_finish(int scanline) {
+        while (true) {
+            synchronized (rendering_scanline_mutex) {
+                if (rendering_scanline >= scanline) return;
+            }
+        }
+    }
+
     // ya this is NOT correct at all and WILL break games (e.g. mario kart).
     // TODO: make the timings of the rendering engine actually decent
     void render(int scanline) {
-        if (scanline == 0) {
-            annotate_polygons();
-        }
-        
-        parent.start_rendering_scanline();
+        parent.start_rendering_scanline(scanline);
         
         auto effective_scanline = 192 - scanline;
 
         // if (num_polygons>15) num_polygons = 15;
 
         for (int i = 0; i < num_polygons; i++) {
-            // log_gpu3d("rendering funky polygon #%d", i);
+            log_gpu3d("rendering funky polygon #%d", i);
             auto p = annotated_polygons[i];
             auto left_xy  = p.viewport_coords[p.left_index] [0..2];
             auto right_xy = p.viewport_coords[p.right_index][0..2];
@@ -460,7 +507,7 @@ final class RenderingEngine {
                     // TODO: we will only need either z or w, never both. only calculate the one we need (assuming interpolation is a bottleneck)
                     Coord_14_18 z = interpolate(z_l, z_r, 1 - factor_scanline);
                     Coord_14_18 w = interpolate(w_l, w_r, 1 - factor_scanline);
-                    parent.plot(Pixel(r, g, b, a), x, z, w);
+                    parent.plot(scanline, Pixel(r, g, b, a), x, z, w);
                 }
             }
 

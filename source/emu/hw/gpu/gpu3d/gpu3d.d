@@ -26,9 +26,6 @@ final class GPU3D {
     bool polygon_vertex_ram_overflow;
     bool rear_plane_mode;
 
-    Coord_14_18[256] depth_buffer;
-    bool depth_buffering_mode;
-
     GeometryEngine geometry_engine;
     RenderingEngine rendering_engine;
 
@@ -43,10 +40,12 @@ final class GPU3D {
     Polygon!Point_20_12* geometry_buffer;
     Polygon!Point_20_12* rendering_buffer;
 
-    Pixel[256][48] scanline_cache;
+    Pixel      [256][192] framebuffer;
+    Coord_14_18[256][192] depth_buffer;
+    bool depth_buffering_mode;
 
-    int scanline_cache_head = 0;
-    int scanline_cache_tail = 0;
+    int framebuffer_head = 0;
+    int framebuffer_tail = 0;
 
     IRQMode irq_mode;
 
@@ -59,47 +58,45 @@ final class GPU3D {
     }
 
     void vblank() {
-        scanline_cache_head = 0;
-        scanline_cache_tail = 0;
+        framebuffer_head = 0;
+        framebuffer_tail = 0;
     }
 
-    void render(int scanline) {
-        rendering_engine.render(scanline);
+    void render(int scanline) { 
+        // may end up being useless
     }
 
-    void plot(Pixel p, int x, Coord_14_18 z, Coord_14_18 w) {
+    void plot(int scanline, Pixel p, int x, Coord_14_18 z, Coord_14_18 w) {
         Coord_14_18 depth_value = depth_buffering_mode ? w : z;
         
-        if (depth_buffer[x] >= depth_value && p.a != 0) {
-            scanline_cache[scanline_cache_head][x] = p;
-            depth_buffer[x] = depth_value;
+        if (depth_buffer[scanline][x] >= depth_value && p.a != 0) {
+            framebuffer [scanline][x] = p;
+            depth_buffer[scanline][x] = depth_value;
         }
     }
 
-    void start_rendering_scanline() {
+    void start_rendering_scanline(int scanline) {
         for (int x = 0; x < 256; x++) {
-            scanline_cache[scanline_cache_head][x] = Pixel(0, 0, 0, 0);
+            framebuffer[scanline][x] = Pixel(0, 0, 0, 0);
 
             // TODO: what should the reset value be?
-            depth_buffer[x] = Coord_14_18.from_repr(0x7FFFFFFF);
+            depth_buffer[scanline][x] = Coord_14_18.from_repr(0x7FFFFFFF);
         }
     }
 
     void stop_rendering_scanline() {
-        scanline_cache_head++;
-        if (scanline_cache_head == 48) scanline_cache_head = 0;
+        // i'll keep this around in case i need to put something here later
     }
 
-    void draw_scanline_to_canvas() {
-        int y = scanline_cache_head + 1;
+    void draw_scanline_to_canvas(int scanline) {
+        rendering_engine.wait_for_rendering_to_finish(scanline);
+
+        int y = framebuffer_head + 1;
         if (y == 48) y = 0;
         for (int x = 0; x < 256; x++) {
-            auto pixel = scanline_cache[scanline_cache_tail][x];
+            auto pixel = framebuffer[scanline][x];
             gpu_engine_a.ppu.canvas.draw_3d_pixel(x, pixel, pixel.a == 0);
         }
-
-        scanline_cache_tail++;
-        if (scanline_cache_tail == 48) scanline_cache_tail = 0;
     }
 
     void swap_buffers(int num_polygons, bool translucent_polygon_y_sorting, bool depth_buffering_mode) {
@@ -111,6 +108,8 @@ final class GPU3D {
 
         rendering_engine.num_polygons = num_polygons;
         this.depth_buffering_mode = depth_buffering_mode;
+        
+        rendering_engine.begin_rendering_frame();
     }
 
     Byte read_DISP3DCNT(int target_byte) {

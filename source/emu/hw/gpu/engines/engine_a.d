@@ -155,7 +155,7 @@ final class GPUEngineA {
     void hblank(int scanline) {
         if (bg0_selection && bg0_enable) {
             if (scanline < 191 || scanline == 262) {
-                gpu3d.draw_scanline_to_canvas();
+                gpu3d.draw_scanline_to_canvas(scanline == 262 ? 0 : scanline + 1);
             }
 
             // gpu3d rendering starts 48 scanlines in advance
