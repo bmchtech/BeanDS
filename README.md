@@ -4,8 +4,7 @@ WIP DS Emulator written in D. Can boot a handful of games, though not many actua
 
 ## Demo Videos (turn audio up, but warning that the audio sounds awful)
 
-
-https://user-images.githubusercontent.com/15221993/178358376-2615c1a3-535b-455b-9cd4-20a30ba1d666.mp4
+https://user-images.githubusercontent.com/15221993/190197736-8e903641-1c51-485e-b66e-fa5b85205e76.mp4
 
 
 ## Usage
