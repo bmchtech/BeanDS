@@ -13,7 +13,6 @@ final class GPUEngineB {
         videobuffer = new Pixel[192][256];
     }
 
-    int bg_mode;
     int display_mode;
     int vram_block;
     int tile_obj_mapping;
@@ -32,7 +31,7 @@ final class GPUEngineB {
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                bg_mode                        = value[0..2];
+                ppu.bg_mode                    = value[0..2];
                 ppu.obj_character_vram_mapping = value[4];
                 bitmap_obj_dimension           = value[5];
                 bitmap_obj_mapping             = value[6];
@@ -63,6 +62,8 @@ final class GPUEngineB {
                 ppu.obj_extended_palettes = value[7];
                 break; 
         }
+        
+        ppu.update_bg_mode();
     }
 
     Pixel[192][256] videobuffer;
@@ -107,7 +108,7 @@ final class GPUEngineB {
 
         final switch (target_byte) {
             case 0:
-                result[0..2] = bg_mode;
+                result[0..2] = ppu.bg_mode;
                 result[4]    = ppu.obj_character_vram_mapping;
                 result[5]    = bitmap_obj_dimension;
                 result[6]    = bitmap_obj_mapping;

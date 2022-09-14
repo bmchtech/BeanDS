@@ -14,7 +14,6 @@ final class GPUEngineA {
         videobuffer = new Pixel[192][256];
     }
 
-    int bg_mode;
     int display_mode;
     int vram_block;
     int bg0_selection;
@@ -33,7 +32,7 @@ final class GPUEngineA {
     void write_DISPCNT(int target_byte, Byte value) {
         final switch (target_byte) {
             case 0:
-                bg_mode                        = value[0..2];
+                ppu.bg_mode                    = value[0..2];
                 bg0_selection                  = value[3];
                 ppu.obj_character_vram_mapping = value[4];
                 bitmap_obj_dimension           = value[5];
@@ -70,6 +69,7 @@ final class GPUEngineA {
         }
 
         ppu.backgrounds[0].enabled = bg0_enable & ~bg0_selection;
+        ppu.update_bg_mode();
     }
 
     Pixel[192][256] videobuffer;
@@ -114,7 +114,7 @@ final class GPUEngineA {
 
         final switch (target_byte) {
             case 0:
-                result[0..2] = bg_mode;
+                result[0..2] = ppu.bg_mode;
                 result[3]    = bg0_selection;
                 result[4]    = ppu.obj_character_vram_mapping;
                 result[5]    = bitmap_obj_dimension;

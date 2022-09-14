@@ -445,7 +445,7 @@ final class PPU(EngineType E) {
             int fine_x = truncated_texture_point.x & 0b111;
             int fine_y = truncated_texture_point.y & 0b111;
 
-            if (background.does_display_area_overflow ||
+            if ((background.does_display_area_overflow && background_id & 0b10) ||
                 ((0 <= tile_x && tile_x < tiles_per_row) &&
                  (0 <= tile_y && tile_y < tiles_per_row))) {
                 tile_x &= tile_mask;
@@ -892,7 +892,6 @@ public:
             ubyte result = 0x00;
             result |= backgrounds[x].priority                  << 0;
             result |= backgrounds[x].character_base_block      << 2;
-            result |= backgrounds[x].bgcnt_bits_4_and_5        << 4;
             result |= backgrounds[x].is_mosaic                 << 6;
             result |= backgrounds[x].doesnt_use_color_palettes << 7;
             return Byte(result);
@@ -903,10 +902,8 @@ public:
             // for the future?
             ubyte result = 0x00;
             result |= backgrounds[x].screen_base_block          << 0;
+            result |= backgrounds[x].does_display_area_overflow << 5;
             result |= backgrounds[x].screen_size                << 6;
-
-            // this bit is only used in bg 2/3
-            if (x == 2 || x == 3) result |= backgrounds[x].does_display_area_overflow << 5;
             return Byte(result);
         }
     }
