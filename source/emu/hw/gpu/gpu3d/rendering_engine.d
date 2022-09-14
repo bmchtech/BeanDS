@@ -306,7 +306,7 @@ final class RenderingEngine {
             }
                 
             synchronized (rendering_scanline_mutex) {
-                rendering_scanline = 0;
+                rendering_scanline = -1;
                 is_rendering       = true;
             }
             
@@ -317,8 +317,11 @@ final class RenderingEngine {
                 
                 synchronized (rendering_scanline_mutex) {
                     rendering_scanline = scanline;
-                    is_rendering       = false;
                 }
+            }
+
+            synchronized (rendering_scanline_mutex) {
+                is_rendering = false;
             }
         }
     }

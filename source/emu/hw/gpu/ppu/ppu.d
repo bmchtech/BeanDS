@@ -436,7 +436,7 @@ final class PPU(EngineType E) {
         int tiles_per_row = BG_ROTATION_SCALING_TILE_DIMENSIONS      [background.screen_size];
         int tile_mask     = BG_ROTATION_SCALING_TILE_DIMENSIONS_MASKS[background.screen_size];
 
-        for (int x = 0; x < 240; x++) {
+        for (int x = 0; x < 256; x++) {
             // truncate the decimal because texture_point is 8-bit fixed point
             Point truncated_texture_point = Point(cast(int) texture_point_x >> 8,
                                                   cast(int) texture_point_y >> 8);
