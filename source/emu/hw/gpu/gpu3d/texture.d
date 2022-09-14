@@ -1,5 +1,7 @@
 module emu.hw.gpu.gpu3d.texture;
 
+import std.algorithm.comparison;
+
 import emu;
 import util;
 
@@ -25,14 +27,39 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     auto texture_s_size = (8 << p.orig.texture_s_size);
     auto texture_t_size = (8 << p.orig.texture_t_size);
 
-    uint wrapped_s = s & (texture_s_size - 1);
-    uint wrapped_t = t & (texture_t_size - 1);
+    if (p.orig.texture_repeat_s_direction) {
+        if (p.orig.texture_flip_s_direction) {
+            if (s & texture_s_size) {
+                s = (s & ~(texture_s_size - 1)) | ((texture_s_size - 1) - (s & (texture_s_size - 1)));
+            }
 
-    if ((s != wrapped_s && !p.orig.texture_repeat_s_direction) ||
-        (t != wrapped_t && !p.orig.texture_repeat_t_direction)) {
-        // we are outside of the texture region, return a transparent object
-        return [0.0f, 0.0f, 0.0f, 0.0f];
+            s &= (texture_s_size << 1) - 1;
+        } else {
+            s &= texture_s_size - 1;
+        }
+    } else {
+        s = clamp(s, 0, texture_s_size - 1);
     }
+
+    if (p.orig.texture_repeat_t_direction) {
+        if (p.orig.texture_flip_t_direction) {
+            if (t & texture_t_size) {
+                t = (t & ~(texture_t_size - 1)) | ((texture_t_size - 1) - (t & (texture_t_size - 1)));
+            }
+
+            t &= (texture_t_size << 1) - 1;
+        } else {
+            t &= texture_t_size - 1;
+        }
+    } else {
+        t = clamp(t, 0, texture_t_size - 1);
+    }
+
+    // if (p.orig.texture_repeat_s_direction) ||
+    //     (t != wrapped_t && !p.orig.texture_repeat_t_direction)) {
+    //     // we are outside of the texture region, return a transparent object
+    //     return [0.0f, 0.0f, 0.0f, 0.0f];
+    // }
     
     // if ((wrapped_s & 16) ^ (wrapped_t & 16)) {
     //     return [31, 0, 0, 31];
@@ -40,7 +67,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     //     return [31, 31, 31, 31];
     // }
 
-    int texel_index = cast(int) (wrapped_t * texture_s_size + wrapped_s);
+    int texel_index = cast(int) (t * texture_s_size + s);
 
     final switch (p.orig.texture_format) {
         case TextureFormat.COLOR_PALETTE_4:
@@ -87,10 +114,10 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
         
         case TextureFormat.TEXEL_COMPRESSED_4x4:
             uint blocks_per_row = texture_s_size / 4;
-            uint block_x = wrapped_s / 4;
-            uint block_y = wrapped_t / 4;
-            uint block_fine_x = wrapped_s % 4;
-            uint block_fine_y = wrapped_t % 4;
+            uint block_x = s / 4;
+            uint block_y = t / 4;
+            uint block_fine_x = s % 4;
+            uint block_fine_y = t % 4;
             uint block_index = block_y * blocks_per_row + block_x;
 
             Word compressed_block_base_address = (Word(p.orig.texture_vram_offset) << 3) + block_index * 4 + block_fine_y;
