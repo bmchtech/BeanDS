@@ -56,6 +56,7 @@ struct Background {
 enum BackgroundMode {
     TEXT,
     ROTATION_SCALING,
+    EXTENDED,
     NONE
 }
 
@@ -123,7 +124,7 @@ final class PPU(EngineType E) {
 
         canvas.apply_horizontal_mosaic(bg_mosaic_h, obj_mosaic_h);
 
-        if (bg_mode < 3) canvas.composite(scanline);
+        canvas.composite(scanline);
 
         for (int x = 0; x < 256; x++) {
             scanline_buffer[x] = canvas.pixels_output[x];
@@ -141,21 +142,9 @@ final class PPU(EngineType E) {
     }
 
     void calculate_scanline() {
-        switch (bg_mode) {
-            case 0: 
-            case 1:
-            case 2:
-                render_sprites(0);
-                render_background(0);
-                render_sprites(1);
-                render_background(1);
-                render_sprites(2);
-                render_background(2);
-                render_sprites(3);
-                render_background(3);
-                break;
-                
-            default: error_ppu("tried to set ppu to invalid mode %x", bg_mode);
+        for (int i = 0; i < 4; i++) {
+            render_sprites(i);
+            render_background(i);
         }
     }
 
@@ -243,11 +232,15 @@ final class PPU(EngineType E) {
                 tile_data[i] = read_bg_vram!Byte(tile_address + i);
             }
 
-            int slot = (bg_extended_palettes) ? bg : -1;
-            int palette_size = (bg_extended_palettes) ? 256 : 16;
+            // int slot = (bg_extended_palettes) ? bg : -1;
+            // int palette_size = (bg_extended_palettes) ? 256 : 16;
 
-            if (bpp8 && !bg_extended_palettes) palette_size = 0;
-            
+            // if (bpp8 && !bg_extended_palettes) palette_size = 0;
+
+            int slot = (bg_extended_palettes) ? bg : -1;
+            int palette_size = 16;
+            if (bpp8) palette_size = 0; 
+
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
                 int draw_dx = 0;
@@ -358,6 +351,7 @@ final class PPU(EngineType E) {
         final switch (background.mode) {
             case BackgroundMode.TEXT:             render_background__text(i);             break;
             case BackgroundMode.ROTATION_SCALING: render_background__rotation_scaling(i); break;
+            case BackgroundMode.EXTENDED:         break;
             case BackgroundMode.NONE:             break;
         }
     }
@@ -610,10 +604,31 @@ final class PPU(EngineType E) {
                 break;
 
             case 2:
-                backgrounds[0].mode = BackgroundMode.NONE;
-                backgrounds[1].mode = BackgroundMode.NONE;
+                backgrounds[0].mode = BackgroundMode.TEXT;
+                backgrounds[1].mode = BackgroundMode.TEXT;
                 backgrounds[2].mode = BackgroundMode.ROTATION_SCALING;
                 backgrounds[3].mode = BackgroundMode.ROTATION_SCALING;
+                break;
+
+            case 3:
+                backgrounds[0].mode = BackgroundMode.TEXT;
+                backgrounds[1].mode = BackgroundMode.TEXT;
+                backgrounds[2].mode = BackgroundMode.TEXT;
+                backgrounds[3].mode = BackgroundMode.EXTENDED;
+                break;
+
+            case 4:
+                backgrounds[0].mode = BackgroundMode.TEXT;
+                backgrounds[1].mode = BackgroundMode.TEXT;
+                backgrounds[2].mode = BackgroundMode.ROTATION_SCALING;
+                backgrounds[3].mode = BackgroundMode.EXTENDED;
+                break;
+
+            case 5:
+                backgrounds[0].mode = BackgroundMode.TEXT;
+                backgrounds[1].mode = BackgroundMode.TEXT;
+                backgrounds[2].mode = BackgroundMode.EXTENDED;
+                backgrounds[3].mode = BackgroundMode.EXTENDED;
                 break;
         
             default:

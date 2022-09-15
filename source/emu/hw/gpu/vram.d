@@ -131,7 +131,7 @@ final class VRAM {
             if (block.slot_mapped) {
                 for (int j = 0; j < 5; j++) {
                     if (block.slot.bit(j)) {
-                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * SLOT_SIZE_BG]);
+                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * (SLOT_SIZE_BG)]);
                         log_vram("mapped: %s %x %x %x", block.slot_type, j, i, block.slot_ofs + num_times_mapped * SLOT_SIZE_BG);
                         num_times_mapped++;
                     }
