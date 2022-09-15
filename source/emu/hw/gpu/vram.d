@@ -132,7 +132,7 @@ final class VRAM {
                 for (int j = 0; j < 5; j++) {
                     if (block.slot.bit(j)) {
                         all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * SLOT_SIZE_BG]);
-                        // log_vram("mapped: %s %x %x %x %x", block.slot_type, j, i, SLOT_SIZE_BG * (j - block.slot_ofs), block.slot_ofs);
+                        log_vram("mapped: %s %x %x %x", block.slot_type, j, i, block.slot_ofs + num_times_mapped * SLOT_SIZE_BG);
                         num_times_mapped++;
                     }
                 }
@@ -154,7 +154,7 @@ final class VRAM {
                 }
                 break;
             case EngineType.B:
-                return vram_h.data.read!T(Word(SLOT_SIZE_BG * slot + address));
+                return vram_h.data.read!T(Word(address));
         }
 
         error_vram("Tried to draw from bg slot but no slots were mapped!");
@@ -162,8 +162,11 @@ final class VRAM {
     }
 
     T read_slot(T)(SlotType slot_type, int slot, Word address) {
+        if (slot_type == SlotType.BG_PAL_B) {
+            log_vram("we are doing a read from bg pal b %x", address);
+        }
         if (((all_slots[slot_type])[slot]) == null) {
-            // log_vram("tried to read from slot type %s at slot %d, though no slot was mapped :(", slot_type, slot);
+            log_vram("tried to read from slot type %s at slot %d, though no slot was mapped :(", slot_type, slot);
             return T(0);
         }
 
@@ -229,7 +232,8 @@ final class VRAM {
 
             if (block.slot_mapped) continue;
 
-            if (block.in_range(address)) {    
+            if (block.in_range(address)) {
+                if (i == 8) log_gpu3d("VRAM H WRITE: [%x] = %x",  address, value);   
                 block.write!T(address, value);
                 performed_write = true;
             }
@@ -438,9 +442,6 @@ final class VRAM {
             case 4: vram_g.slot = 0b11 << (offset.bit(0) * 2); vram_g.slot_ofs = offset.bit(0) * 2; vram_g.slot_type = SlotType.BG_PAL_A; break;
             case 5: vram_g.slot = 1; vram_g.slot_ofs = 0; vram_g.slot_type = SlotType.OBJ_PAL_A; break;
         }
-
-        // log_gpu3d("VRAMG: mst=%d, slot_mapped=%d, address=%x", mst, vram_g.slot_mapped, vram_g.address);
-        dump(vram_g.data, "vram_g.dump");
 
         remap_slots();
     }

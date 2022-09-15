@@ -243,7 +243,10 @@ final class PPU(EngineType E) {
                 tile_data[i] = read_bg_vram!Byte(tile_address + i);
             }
 
-            int slot = bg_extended_palettes ? bg : -1;
+            int slot = (bg_extended_palettes) ? bg : -1;
+            int palette_size = (bg_extended_palettes) ? 256 : 16;
+
+            if (bpp8 && !bg_extended_palettes) palette_size = 0;
             
             // hi. i hate this. but ive profiled it and it makes the code miles faster.
             static if (flipped_x) {
@@ -252,14 +255,14 @@ final class PPU(EngineType E) {
                 static if (bpp8) {
                     for (int tile_dx = 7; tile_dx >= 0; tile_dx--) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + draw_dx, bg, slot, index, priority, index == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx, bg, slot, palette * palette_size + index, priority, index == 0);
                         draw_dx++;
                     }
                 } else {
                     for (int tile_dx = 3; tile_dx >= 0; tile_dx--) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + draw_dx * 2 + 1, bg, -1, ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
-                        canvas.draw_bg_pixel(left_x + draw_dx * 2,     bg, -1, ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx * 2 + 1, bg, -1, ((index & 0xF) + (palette * palette_size)), priority, (index & 0xF) == 0);
+                        canvas.draw_bg_pixel(left_x + draw_dx * 2,     bg, -1, ((index >> 4)  + (palette * palette_size)), priority, (index >> 4)  == 0);
                         draw_dx++;
                     }
                 }
@@ -267,13 +270,13 @@ final class PPU(EngineType E) {
                 static if (bpp8) {
                     for (int tile_dx = 0; tile_dx < 8; tile_dx++) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + tile_dx, bg, slot, index, priority, index == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx, bg, slot, palette * palette_size + index, priority, index == 0);
                     }
                 } else {
                     for (int tile_dx = 0; tile_dx < 4; tile_dx++) {
                         ubyte index = tile_data[tile_dx];
-                        canvas.draw_bg_pixel(left_x + tile_dx * 2,     bg, -1, ((index & 0xF) + (palette * 16)), priority, (index & 0xF) == 0);
-                        canvas.draw_bg_pixel(left_x + tile_dx * 2 + 1, bg, -1, ((index >> 4)  + (palette * 16)), priority, (index >> 4)  == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx * 2,     bg, -1, ((index & 0xF) + (palette * palette_size)), priority, (index & 0xF) == 0);
+                        canvas.draw_bg_pixel(left_x + tile_dx * 2 + 1, bg, -1, ((index >> 4)  + (palette * palette_size)), priority, (index >> 4)  == 0);
 
                     }
                 }
