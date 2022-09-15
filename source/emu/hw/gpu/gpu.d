@@ -1,5 +1,7 @@
 module emu.hw.gpu.gpu;
 
+import std.algorithm;
+
 import emu.hw;
 import emu.scheduler;
 
@@ -95,6 +97,8 @@ final class GPU {
     void on_vblank_end() {
         vblank = false;
         scanline = 0;
+
+        apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
         if (display_swap) {
             present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
@@ -207,5 +211,77 @@ final class GPU {
                 display_swap = value[7];
                 break;
         }
+    }
+
+    enum MasterBrightMode {
+        DISABLED = 0,
+        UP       = 1,
+        DOWN     = 2,
+        RESERVED = 3
+    }
+
+    MasterBrightMode master_bright_mode;
+    int master_bright_factor;
+    int master_brightness;
+
+    void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
+        apply_master_brightness_to_video_buffer(top);
+        apply_master_brightness_to_video_buffer(bot);
+
+        log_ppu("Master brightness: %d Factor: %d Dir: %s", master_brightness, master_bright_factor, master_bright_mode);
+    }
+
+    void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer) {
+        if (master_bright_mode == MasterBrightMode.DISABLED) return;
+
+        log_ppu("Master brightness applied. Dx: %x -> %x", video_buffer[0][0].r, video_buffer[0][0].r * master_brightness);
+        for (int x = 0; x < 256; x++) {
+        for (int y = 0; y < 192; y++) {
+            video_buffer[x][y].r = (video_buffer[x][y].r * master_brightness) / 64;
+            video_buffer[x][y].g = (video_buffer[x][y].g * master_brightness) / 64;
+            video_buffer[x][y].b = (video_buffer[x][y].b * master_brightness) / 64;
+        }
+        }
+    }
+
+    void write_MASTER_BRIGHT(int target_byte, Byte value) {
+        final switch (target_byte) {
+            case 0:
+                master_bright_factor = clamp(cast(int) value, 0, 16);
+
+                switch (master_bright_mode) {
+                    case MasterBrightMode.UP:
+                        master_brightness += ((63 - master_brightness) * master_bright_factor) / 16;
+                        master_brightness = clamp(master_brightness, 0, 63);
+                        break;
+
+                    case MasterBrightMode.DOWN:
+                        master_brightness -= ((master_brightness) * master_bright_factor) / 16;
+                        master_brightness = clamp(master_brightness, 0, 63);
+                        break;
+                    
+                    default: break;
+                }
+                break;
+            
+            case 1:
+                master_bright_mode = cast(MasterBrightMode) value[6..7];
+        }
+    }
+
+    Byte read_MASTER_BRIGHT(int target_byte) {
+        Byte result;
+
+        final switch (target_byte) {
+            case 0:
+                result = Byte(master_bright_factor);
+                break;
+            
+            case 1:
+                result[6..7] = Byte(master_bright_mode);
+                break;
+        }
+
+        return result;
     }
 }

@@ -27,6 +27,7 @@ static const mmio9_registers = [
     MMIORegister("gpu_engine_a.ppu",      "BLDCNT",         0x0400_0050,  2, READ_WRITE),
     MMIORegister("gpu_engine_a.ppu",      "BLDALPHA",       0x0400_0052,  2, READ_WRITE),
     MMIORegister("gpu_engine_a.ppu",      "BLDY",           0x0400_0054,  2,      WRITE),
+    MMIORegister("gpu",                   "MASTER_BRIGHT",  0x0400_006C,  2, READ_WRITE),
     MMIORegister("dma9",                  "DMAxSAD",        0x0400_00B0,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma9",                  "DMAxDAD",        0x0400_00B4,  4, READ_WRITE).repeat(4, 12),
     MMIORegister("dma9",                  "DMAxCNT_L",      0x0400_00B8,  2, READ_WRITE).repeat(4, 12),
