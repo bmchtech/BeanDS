@@ -89,6 +89,17 @@ final class Firmware : SPIDevice {
 
     void load_firmware(Byte[] data) {
         this.data[0..FIRMWARE_SIZE] = data[0..FIRMWARE_SIZE];
+
+        user_settings.adc_x1 = data.read!Half(0x3FE58);
+        user_settings.adc_y1 = data.read!Half(0x3FE5A);
+        user_settings.scr_x1 = data.read!Byte(0x3FE5C);
+        user_settings.scr_y1 = data.read!Byte(0x3FE5D);
+        user_settings.adc_x2 = data.read!Half(0x3FE5E);
+        user_settings.adc_y2 = data.read!Half(0x3FE60);
+        user_settings.scr_x2 = data.read!Byte(0x3FE62);
+        user_settings.scr_y2 = data.read!Byte(0x3FE63);
+
+        touchscreen.recalibrate();
     }
 
     override Byte write(Byte b) {

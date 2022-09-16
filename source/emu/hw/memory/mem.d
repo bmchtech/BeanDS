@@ -43,6 +43,22 @@ pragma(inline, true) {
         (cast(T*) memory)[address >> get_shift!T] = value;
     }
 
+    T read(T)(Byte[] memory, int address) {
+        return (cast(T*) memory)[address >> get_shift!T];
+    }
+
+    void write(T)(Byte[] memory, int address, T value) {
+        (cast(T*) memory)[address >> get_shift!T] = value;
+    }
+
+    T read(T)(Byte* memory, int address) {
+        return (cast(T*) memory)[address >> get_shift!T];
+    }
+
+    void write(T)(Byte* memory, int address, T value) {
+        (cast(T*) memory)[address >> get_shift!T] = value;
+    }
+
     auto get_shift(T)() {
         static if (is(T == Word)) return 2;
         static if (is(T == Half)) return 1;

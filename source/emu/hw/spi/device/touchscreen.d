@@ -11,6 +11,10 @@ final class TouchScreen : SPIDevice {
     }
 
     void direct_boot() {
+        recalibrate();
+    }
+
+    void recalibrate() {
         scr_x1 = firmware.user_settings.scr_x1;
         scr_x2 = firmware.user_settings.scr_x2;
         scr_y1 = firmware.user_settings.scr_y1;
@@ -122,7 +126,7 @@ final class TouchScreen : SPIDevice {
                             break;
                         
                         case ChannelSelect.TOUCHSCREEN_Y:
-                            if ((scr_y2 - scr_y1) == 0) set_result(0);
+                            if ((scr_y2 - scr_y1) == 0) set_result(0xFFF);
                                 else {
                                 set_result( 
                                     input.keys[22] ? 
