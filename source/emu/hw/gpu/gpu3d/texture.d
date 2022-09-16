@@ -30,7 +30,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     if (p.orig.texture_repeat_s_direction) {
         if (p.orig.texture_flip_s_direction) {
             if (s & texture_s_size) {
-                s = (s & ~(texture_s_size - 1)) | ((texture_s_size - 1) - (s & (texture_s_size - 1)));
+                s = ((texture_s_size - 1) - (s & (texture_s_size - 1)));
             }
 
             s &= (texture_s_size << 1) - 1;
@@ -44,7 +44,7 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
     if (p.orig.texture_repeat_t_direction) {
         if (p.orig.texture_flip_t_direction) {
             if (t & texture_t_size) {
-                t = (t & ~(texture_t_size - 1)) | ((texture_t_size - 1) - (t & (texture_t_size - 1)));
+                t = ((texture_t_size - 1) - (t & (texture_t_size - 1)));
             }
 
             t &= (texture_t_size << 1) - 1;
