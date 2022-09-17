@@ -37,6 +37,7 @@ struct PaletteIndex {
     int r;
     int g;
     int b;
+    int a;
 
     Pixel resolve(EngineType E)(int pram_offset) {
         static if (E == EngineType.A) SlotType bg_slot_type  = SlotType.BG_PAL_A;
@@ -49,6 +50,7 @@ struct PaletteIndex {
             p.r = r;
             p.g = g;
             p.b = b;
+            p.a = a;
         } else {
             if (slot == -1) p = Pixel(pram.read!Half(Word(pram_offset + index * 2)));
             else {
@@ -177,7 +179,7 @@ final class Canvas(EngineType E) {
         public pragma(inline, true) void draw_3d_pixel(uint x, Pixel p, bool transparent) {
             if (x >= 256) return;
             bg_scanline[0][x].transparent = transparent;
-            bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, p.r, p.g, p.b);
+            bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, p.r, p.g, p.b, p.a);
             bg_scanline[0][x].priority    = gpu_engine_a.ppu.backgrounds[0].priority; // TODO: this whole canvas system needs a refactor.
         }
     }
@@ -292,9 +294,8 @@ final class Canvas(EngineType E) {
             int priority = 4;
 
             int blendable_pixels = 0;
-            int total_pixels     = 0;
-            bool processed_obj   = false;
-
+            int total_pixels = 0;
+            bool processed_obj = false;
             bool force_blend = false;
 
             // i hate it here
@@ -393,9 +394,19 @@ final class Canvas(EngineType E) {
                 Pixel input_B = index[1].resolve!E(pram_offset);
                 Pixel output;
 
-                output.r = min(63, (blend_a * input_A.r + blend_b * input_B.r) >> 4);
-                output.g = min(63, (blend_a * input_A.g + blend_b * input_B.g) >> 4);
-                output.b = min(63, (blend_a * input_A.b + blend_b * input_B.b) >> 4);
+                int effective_blend_a = blend_a;
+                int effective_blend_b = blend_b;
+
+                static if (E == EngineType.A) {
+                    if (bg_target_pixel[0][0]) {
+                        effective_blend_a = input_A.a / 2;
+                        effective_blend_b = 16 - (input_A.a / 2);
+                    }
+                }
+
+                output.r = min(63, (effective_blend_a * input_A.r + effective_blend_b * input_B.r) >> 4);
+                output.g = min(63, (effective_blend_a * input_A.g + effective_blend_b * input_B.g) >> 4);
+                output.b = min(63, (effective_blend_a * input_A.b + effective_blend_b * input_B.b) >> 4);
                 return output;
         }
     }
