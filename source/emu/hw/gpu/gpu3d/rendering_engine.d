@@ -301,14 +301,14 @@ final class RenderingEngine {
 
     void rendering_thread_handler() {
         while (true) {
-            synchronized (start_rendering_mutex) {
+            start_rendering_mutex.lock();
                 start_rendering_condvar.wait();
-            }
+            start_rendering_mutex.unlock();
                 
-            synchronized (rendering_scanline_mutex) {
+            rendering_scanline_mutex.lock();
                 rendering_scanline = -1;
                 is_rendering       = true;
-            }
+            rendering_scanline_mutex.unlock();
             
             annotate_polygons();
 
@@ -320,21 +320,24 @@ final class RenderingEngine {
                 }
             }
 
-            synchronized (rendering_scanline_mutex) {
+            rendering_scanline_mutex.lock();
                 is_rendering = false;
-            }
+            rendering_scanline_mutex.unlock();
         }
     }
 
     void begin_rendering_frame() {
-        synchronized (start_rendering_mutex) {
+        start_rendering_mutex.lock();
             start_rendering_condvar.notify();
-        }
+        start_rendering_mutex.unlock();
     }
 
     void wait_for_rendering_to_finish(int scanline) {
         while (true) {
-            synchronized (rendering_scanline_mutex) {
+            {
+                scope (exit) rendering_scanline_mutex.unlock();
+
+                rendering_scanline_mutex.lock();
                 if (!is_rendering || rendering_scanline >= scanline) return;
             }
         }
