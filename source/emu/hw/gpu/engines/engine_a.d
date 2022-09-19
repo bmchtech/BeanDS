@@ -26,7 +26,15 @@ final class GPUEngineA {
     bool bg0_enable;
 
     void vblank() {
+        gpu3d.draw_scanlines_to_canvas();
+        ppu.canvas.composite();
         ppu.vblank();
+
+        for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            videobuffer[x][y] = ppu.canvas.pixels_output[x][y];
+        }
+        }
     }
 
     void write_DISPCNT(int target_byte, Byte value) {
@@ -41,14 +49,14 @@ final class GPUEngineA {
                 break;
 
             case 1: 
-                bg0_enable                    = value[0];
-                ppu.backgrounds[1].enabled    = value[1];
-                ppu.backgrounds[2].enabled    = value[2];
-                ppu.backgrounds[3].enabled    = value[3];
-                ppu.sprites_enabled           = value[4];
-                ppu.canvas.windows[0].enabled = value[5];
-                ppu.canvas.windows[1].enabled = value[6];
-                ppu.canvas.obj_window_enable  = value[7];
+                bg0_enable                              = value[0];
+                ppu.backgrounds[1].enabled              = value[1];
+                ppu.backgrounds[2].enabled              = value[2];
+                ppu.backgrounds[3].enabled              = value[3];
+                ppu.sprites_enabled                     = value[4];
+                ppu.canvas.mmio_info.windows[0].enabled = value[5];
+                ppu.canvas.mmio_info.windows[1].enabled = value[6];
+                ppu.canvas.mmio_info.obj_window_enable  = value[7];
 
                 break;
 
@@ -83,10 +91,6 @@ final class GPUEngineA {
                 
             case 1:
                 ppu.render(scanline);
-                for (int x = 0; x < 256; x++) {
-                    videobuffer[x][scanline] = ppu.scanline_buffer[x];
-                }
-                ppu.reset_canvas();
                 break;
                 
             case 2:
@@ -128,9 +132,9 @@ final class GPUEngineA {
                 result[2] = ppu.backgrounds[2].enabled;
                 result[3] = ppu.backgrounds[3].enabled;
                 result[4] = ppu.sprites_enabled;
-                result[5] = ppu.canvas.windows[0].enabled;
-                result[6] = ppu.canvas.windows[0].enabled;
-                result[7] = ppu.canvas.obj_window_enable;
+                result[5] = ppu.canvas.mmio_info.windows[0].enabled;
+                result[6] = ppu.canvas.mmio_info.windows[0].enabled;
+                result[7] = ppu.canvas.mmio_info.obj_window_enable;
                 break;
 
             case 2:
@@ -154,10 +158,6 @@ final class GPUEngineA {
 
     void hblank(int scanline) {
         if (bg0_selection && bg0_enable) {
-            if (scanline < 191 || scanline == 262) {
-                gpu3d.draw_scanline_to_canvas(scanline == 262 ? 0 : scanline + 1);
-            }
-
             // gpu3d rendering starts 48 scanlines in advance
             if (scanline >= 214) {
                 gpu3d.render(scanline - 214);

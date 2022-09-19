@@ -35,14 +35,18 @@ final class GPU3D {
     int viewport_y2;
 
     // TODO: how big is this really?
-    Polygon!Point_20_12[0x1000] polygon_ram_1;
-    Polygon!Point_20_12[0x1000] polygon_ram_2;
+    Polygon!Point_20_12[0x10000] polygon_ram_1;
+    Polygon!Point_20_12[0x10000] polygon_ram_2;
     Polygon!Point_20_12* geometry_buffer;
     Polygon!Point_20_12* rendering_buffer;
 
     Pixel      [256][192] framebuffer;
     Coord_14_18[256][192] depth_buffer;
     bool depth_buffering_mode;
+
+    bool buffer_swap_queued;
+    int num_polygons;
+    bool translucent_polygon_y_sorting;
 
     int framebuffer_head = 0;
     int framebuffer_tail = 0;
@@ -60,6 +64,7 @@ final class GPU3D {
     void vblank() {
         framebuffer_head = 0;
         framebuffer_tail = 0;
+        maybe_swap_buffers();
     }
 
     void render(int scanline) { 
@@ -75,12 +80,14 @@ final class GPU3D {
         }
     }
 
-    void start_rendering_scanline(int scanline) {
+    void start_rendering() {
+        for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            framebuffer[scanline][x] = Pixel(0, 0, 0, 0);
+            framebuffer[y][x] = Pixel(0, 0, 0, 0);
 
             // TODO: what should the reset value be?
-            depth_buffer[scanline][x] = Coord_14_18.from_repr(0x7FFFFFFF);
+            depth_buffer[y][x] = Coord_14_18.from_repr(0x7FFFFFFF);
+        }
         }
     }
 
@@ -88,18 +95,27 @@ final class GPU3D {
         // i'll keep this around in case i need to put something here later
     }
 
-    void draw_scanline_to_canvas(int scanline) {
-        rendering_engine.wait_for_rendering_to_finish(scanline);
+    void draw_scanlines_to_canvas() {
+        rendering_engine.wait_for_rendering_to_finish();
 
-        int y = framebuffer_head + 1;
-        if (y == 48) y = 0;
+        for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            auto pixel = framebuffer[scanline][x];
-            gpu_engine_a.ppu.canvas.draw_3d_pixel(x, pixel, pixel.a == 0);
+            auto pixel = framebuffer[y][x];
+            gpu_engine_a.ppu.canvas.draw_3d_pixel(y, x, pixel, pixel.a == 0);
+        }
         }
     }
 
-    void swap_buffers(int num_polygons, bool translucent_polygon_y_sorting, bool depth_buffering_mode) {
+    void queue_buffer_swap(int num_polygons, bool translucent_polygon_y_sorting, bool depth_buffering_mode) {
+        this.num_polygons                  = num_polygons;
+        this.translucent_polygon_y_sorting = translucent_polygon_y_sorting;
+        this.depth_buffering_mode          = depth_buffering_mode;
+        buffer_swap_queued = true;
+    }
+
+    void maybe_swap_buffers() {
+        if (!buffer_swap_queued) return;
+
         auto temp = geometry_buffer;
         geometry_buffer = rendering_buffer;
         rendering_buffer = temp;
@@ -107,8 +123,8 @@ final class GPU3D {
         // TODO: translucent_polygon_y_sorting is unused
 
         rendering_engine.num_polygons = num_polygons;
-        this.depth_buffering_mode = depth_buffering_mode;
         
+        buffer_swap_queued = false;
         rendering_engine.begin_rendering_frame();
     }
 

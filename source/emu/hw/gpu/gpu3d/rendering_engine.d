@@ -33,14 +33,14 @@ final class RenderingEngine {
                 ]);
                 // log_gpu3d("conversion from %f to %f", cast(float) this.orig.vertices[i].pos[2], cast(float) this.orig.vertices[i].pos[2].convert!(14, 18));
 
-                // if (deboog) log_gpu3d("[DEBOOG]    funnycoords: (%f, %f) reprs: (%x %x)",
-                //     cast(float) viewport_coords[i][0], 
-                //     cast(float) viewport_coords[i][1],
-                //     viewport_coords[i][0].repr, 
-                //     viewport_coords[i][1].repr,
-                // );
+                if (deboog) log_gpu3d("[DEBOOG]    funnycoords: (%f, %f) reprs: (%x %x)",
+                    cast(float) viewport_coords[i][0], 
+                    cast(float) viewport_coords[i][1],
+                    viewport_coords[i][0].repr, 
+                    viewport_coords[i][1].repr,
+                );
 
-                // // log_gpu3d("coord: (%s, %s)", viewport_coords[i][0], viewport_coords[i][1]);
+                log_gpu3d("coord: (%s, %s)", viewport_coords[i][0], viewport_coords[i][1]);
 
                 // if (viewport_coords[i][0])
             }
@@ -98,6 +98,7 @@ final class RenderingEngine {
             annotated_vertices[0] = AnnotatedVertex(topleft_vertex_index, clockwise);
             // log_gpu3d("topleft vtx: %d", topleft_vertex_index);
             top_y = cast(int) viewport_coords[topleft_vertex_index][1];
+            bot_y_lower = cast(int) viewport_coords[botright_vertex_index][1];
 
             int max_left_vertex_y  = cast(int) viewport_coords[botright_vertex_index][1];
             int max_right_vertex_y = cast(int) viewport_coords[botright_vertex_index][1];
@@ -196,6 +197,7 @@ final class RenderingEngine {
         int right_index;
         int top_y;
         int bot_y;
+        int bot_y_lower;
         
         Polygon!Point_20_12 orig;
         bool clockwise;
@@ -241,7 +243,7 @@ final class RenderingEngine {
     void annotate_polygons() {
         // // log_gpu3d("annotating %x polygons", num_polygons);
         for (int i = 0; i < num_polygons; i++) {
-            // log_gpu3d("Annotating Polygon #%d!", i);
+            log_gpu3d("Annotating Polygon #%d!", i);
             deboog = true || i == 1;
             annotated_polygons[i] = AnnotatedPolygon(parent.rendering_buffer[i], this);
         }
@@ -301,51 +303,48 @@ final class RenderingEngine {
 
     void rendering_thread_handler() {
         while (true) {
-            synchronized (start_rendering_mutex) {
+            start_rendering_mutex.lock();
+            log_gpu3d("rendering engine wait!");
                 start_rendering_condvar.wait();
-            }
+            start_rendering_mutex.unlock();
+            log_gpu3d("rendering engine go!");
                 
-            synchronized (rendering_scanline_mutex) {
+            rendering_scanline_mutex.lock();
                 rendering_scanline = -1;
                 is_rendering       = true;
-            }
+            rendering_scanline_mutex.unlock();
             
-            annotate_polygons();
-
-            for (int scanline = 0; scanline < 192; scanline++) {
-                render(scanline);
-                
-                synchronized (rendering_scanline_mutex) {
-                    rendering_scanline = scanline;
-                }
-            }
-
-            synchronized (rendering_scanline_mutex) {
+            rendering_scanline_mutex.lock();
+                annotate_polygons();
+                render();
                 is_rendering = false;
-            }
+            rendering_scanline_mutex.unlock();
         }
     }
 
     void begin_rendering_frame() {
-        synchronized (start_rendering_mutex) {
+        start_rendering_mutex.lock();
             start_rendering_condvar.notify();
-        }
+        start_rendering_mutex.unlock();
     }
 
-    void wait_for_rendering_to_finish(int scanline) {
+    void wait_for_rendering_to_finish() {
         while (true) {
-            synchronized (rendering_scanline_mutex) {
-                if (!is_rendering || rendering_scanline >= scanline) return;
-            }
+            rendering_scanline_mutex.lock();
+                if (!is_rendering) {
+                    rendering_scanline_mutex.unlock();
+                    return;
+                }
+            rendering_scanline_mutex.unlock();
         }
     }
 
     // ya this is NOT correct at all and WILL break games (e.g. mario kart).
     // TODO: make the timings of the rendering engine actually decent
-    void render(int scanline) {
-        parent.start_rendering_scanline(scanline);
+    void render() {
+        parent.start_rendering();
         
-        auto effective_scanline = 192 - scanline;
+        // auto effective_scanline = 192 - scanline;
 
         // if (num_polygons>15) num_polygons = 15;
 
@@ -355,8 +354,11 @@ final class RenderingEngine {
             auto left_xy  = p.viewport_coords[p.left_index] [0..2];
             auto right_xy = p.viewport_coords[p.right_index][0..2];
 
-            // log_gpu3d("determined. do we even render? %d >= %d >= %d.", p.top_y, effective_scanline, p.bot_y);
-            if (p.top_y >= effective_scanline && effective_scanline >= p.bot_y) {
+            log_gpu3d("determined. do we even render? %d >= %d >= %d.", p.top_y, 0, p.bot_y);
+
+            auto effective_top_y = clamp(p.top_y, 0, 192);
+            auto effective_bot_y = clamp(p.bot_y, 0, 192);
+            for (int effective_scanline = effective_top_y; effective_scanline >= effective_bot_y; effective_scanline--) {
                 auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
                     get_slope(
                         p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
@@ -396,9 +398,9 @@ final class RenderingEngine {
                 int effective_end_x   = end_x.integral_part;
 
                 if (start_x < 0)   effective_start_x = 0;
-                if (start_x > 255) effective_start_x = 255;
+                if (start_x > 256) effective_start_x = 256;
                 if (end_x < 0)     effective_end_x = 0;
-                if (end_x > 255)   effective_end_x = 255;
+                if (end_x > 256)   effective_end_x = 256;
 
                 // stupid hack
                 // if (start_x <= )
@@ -514,25 +516,26 @@ final class RenderingEngine {
                     // TODO: we will only need either z or w, never both. only calculate the one we need (assuming interpolation is a bottleneck)
                     Coord_14_18 z = interpolate(z_l, z_r, 1 - factor_scanline);
                     Coord_14_18 w = interpolate(w_l, w_r, 1 - factor_scanline);
-                    parent.plot(scanline, Pixel(r, g, b, a), x, z, w);
-                }
-            }
-
-            if (effective_scanline == p.bot_y) {
-                p.top_y = p.bot_y;
-
-                if (p.annotated_vertices[p.annotated_vertex_next].left) {
-                    p.previous_left_index = p.left_index;
-                    p.left_index = p.annotated_vertices[p.annotated_vertex_next].index;
-                } else {
-                    p.previous_right_index = p.right_index;
-                    p.right_index = p.annotated_vertices[p.annotated_vertex_next].index;
+                    parent.plot(192 - effective_scanline, Pixel(r, g, b, a), x, z, w);
                 }
 
-                p.bot_y = max(cast(int) p.viewport_coords[p.left_index][1], cast(int) p.viewport_coords[p.right_index][1]);
-                p.annotated_vertex_next++;
+                if (effective_scanline == p.bot_y) {
+                    p.top_y = p.bot_y;
 
-                // log_gpu3d("determined annotated vertex next: %d, %d, %d, %d, %d", p.annotated_vertex_next, p.top_y, p.bot_y, p.left_index, p.right_index);
+                    if (p.annotated_vertices[p.annotated_vertex_next].left) {
+                        p.previous_left_index = p.left_index;
+                        p.left_index = p.annotated_vertices[p.annotated_vertex_next].index;
+                    } else {
+                        p.previous_right_index = p.right_index;
+                        p.right_index = p.annotated_vertices[p.annotated_vertex_next].index;
+                    }
+
+                    p.bot_y = max(cast(int) p.viewport_coords[p.left_index][1], cast(int) p.viewport_coords[p.right_index][1]);
+                    effective_bot_y = max(p.bot_y, 0);
+                    p.annotated_vertex_next++;
+
+                    // log_gpu3d("determined annotated vertex next: %d, %d, %d, %d, %d", p.annotated_vertex_next, p.top_y, p.bot_y, p.left_index, p.right_index);
+                }
             }
 
             annotated_polygons[i] = p;

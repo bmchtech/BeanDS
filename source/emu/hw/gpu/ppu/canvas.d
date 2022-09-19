@@ -106,90 +106,117 @@ struct Window {
 final class Canvas(EngineType E) {
     
     public:
-        PixelData[256][4] bg_scanline;
-        PixelData[256]    obj_scanline;
-        Pixel    [256]    pixels_output;
+        struct MMIOInfo {
+            // fields for blending
+            Blending blending_type;
+            uint evy_coeff;
+            
+            // these are the blend values given to us
+            uint blend_a;
+            uint blend_b;
 
-        // fields for windowing
-        Window[2] windows;
-        int outside_window_bg_enable;
-        bool outside_window_obj_enable;
+            // accessed as bg_target_pixel[layer][bg_id]. tells you if
+            // the bg is a target pixel on that layer
+            bool[4][2] bg_target_pixel;
 
-        bool[256] obj_window;
-        int  obj_window_bg_enable;
-        bool obj_window_obj_enable;
-        bool obj_window_enable;
+            // these are the same as bg_target_pixel, just without the need for a bg_id
+            bool[2]    obj_target_pixel;
+            bool[2]    backdrop_target_pixel;
 
-        // fields for blending
-        Blending blending_type;
-        uint evy_coeff;
-        
-        // these are the blend values given to us
-        uint blend_a;
-        uint blend_b;
+            // fields for windowing
+            Window[2] windows;
+            int outside_window_bg_enable;
+            bool outside_window_obj_enable;
+            int  obj_window_bg_enable;
+            bool obj_window_obj_enable;
+            bool obj_window_enable;
 
-        bool obj_window_blended;
-        bool outside_window_blended;
+            bool obj_window_blended;
+            bool outside_window_blended;
+        }
 
-        bool[256] obj_semitransparent;
+        struct ScanlineCompositingInfo {
+            MMIOInfo mmio_info;
 
-        // accessed as bg_target_pixel[layer][bg_id]. tells you if
-        // the bg is a target pixel on that layer
-        bool[4][2] bg_target_pixel;
+            PixelData[256][4] bg_scanline;
+            PixelData[256]    obj_scanline;
 
-        // these are the same as bg_target_pixel, just without the need for a bg_id
-        bool[2]    obj_target_pixel;
-        bool[2]    backdrop_target_pixel;
+            bool[256] obj_window;
+            bool[256] obj_semitransparent;
 
-        int pram_offset;
+            void reset() {
+                for (int x = 0; x < 256; x++) {
+                    for (int bg = 0; bg < 4; bg++) {
+                        bg_scanline[bg][x].transparent = true;
+                    }
+
+                    obj_scanline       [x].transparent = true;
+                    obj_scanline       [x].priority    = 4;
+                    obj_window         [x]             = false;
+                    obj_semitransparent[x]             = false;
+                }
+            }
+        }
+
+        MMIOInfo mmio_info;
+        ScanlineCompositingInfo*     scanline_compositing_info;
+        ScanlineCompositingInfo[192] scanline_compositing_infos;
+        Pixel[192][256] pixels_output;
+
 
     private:
         PPU!E ppu;
         Background[4] sorted_backgrounds;
+        int pram_offset;
 
     public this(PPU!E ppu, int pram_offset) {
-        this.ppu           = ppu;
-        this.bg_scanline   = new PixelData[256][4];
-        this.obj_scanline  = new PixelData[256];
-        this.pixels_output = new Pixel    [256];
-
+        this.ppu         = ppu;
         this.pram_offset = pram_offset;
+        
         reset();
     }
 
     public void reset() {
-        for (int x = 0; x < 256; x++) {
-            for (int bg = 0; bg < 4; bg++) {
-                bg_scanline[bg][x].transparent = true;
-            }
-
-            obj_scanline       [x].transparent = true;
-            obj_scanline       [x].priority    = 4;
-            obj_window         [x]             = false;
-            obj_semitransparent[x]             = false;
+        for (int i = 0; i < 192; i++) {
+            scanline_compositing_infos[i].reset();
         }
+
+        scanline_compositing_info = &scanline_compositing_infos[0];
+    }
+
+    public void on_hblank_start() {
+        log_ppu("canvas on_hblank_start");
+        scanline_compositing_info.mmio_info = mmio_info;
+    }
+
+    public void on_hblank_end(int scanline) {
+        log_ppu("canvas on_hblank_end");
+        if (scanline >= 192) return;
+
+        scanline_compositing_info = &scanline_compositing_infos[scanline];
+        scanline_compositing_info.reset();
     }
 
     public pragma(inline, true) void set_obj_window(uint x) {
         if (x >= 256) return;
-        obj_window[x] = true;
+        scanline_compositing_info.obj_window[x] = true;
     }
 
     static if (E == EngineType.A) {
-        public pragma(inline, true) void draw_3d_pixel(uint x, Pixel p, bool transparent) {
+        public pragma(inline, true) void draw_3d_pixel(int scanline, uint x, Pixel p, bool transparent) {
             if (x >= 256) return;
-            bg_scanline[0][x].transparent = transparent;
-            bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, p.r, p.g, p.b, p.a);
-            bg_scanline[0][x].priority    = gpu_engine_a.ppu.backgrounds[0].priority; // TODO: this whole canvas system needs a refactor.
+            scanline_compositing_infos[scanline].bg_scanline[0][x].transparent = transparent;
+            scanline_compositing_infos[scanline].bg_scanline[0][x].index       = PaletteIndex(-1, 0, false, true, p.r, p.g, p.b, p.a);
+            scanline_compositing_infos[scanline].bg_scanline[0][x].priority    = gpu_engine_a.ppu.backgrounds[0].priority; // TODO: this whole canvas system needs a refactor.
         }
     }
 
     public pragma(inline, true) void draw_bg_pixel(uint x, int bg, int slot, int index, int priority, bool transparent) {
         if (x >= 256) return;
 
-        bg_scanline[bg][x].transparent = transparent;
-        bg_scanline[bg][x].index       = PaletteIndex(slot, index, false, false, 0, 0, 0);
-        bg_scanline[bg][x].priority    = priority;
+        scanline_compositing_info.bg_scanline[bg][x].transparent = transparent;
+        scanline_compositing_info.bg_scanline[bg][x].index       = PaletteIndex(slot, index, false, false, 0, 0, 0);
+        scanline_compositing_info.bg_scanline[bg][x].priority    = priority;
     }
 
     public pragma(inline, true) void draw_obj_pixel(uint x, int slot, int index, int priority, bool transparent, bool semi_transparent) {
@@ -201,12 +228,12 @@ final class Canvas(EngineType E) {
         // priority is overwritten anyway. which is why we don't care if this obj pixel is transparent
         // or not, we just care about its priority
 
-        if (obj_scanline[x].transparent ||
-            priority < obj_scanline[x].priority) {
-            obj_scanline[x].transparent = transparent;
-            obj_scanline[x].index       = PaletteIndex(slot, index, true, false, 0, 0, 0);
-            obj_scanline[x].priority    = priority;
-            obj_semitransparent[x]      = semi_transparent;
+        if (scanline_compositing_info.obj_scanline[x].transparent ||
+            priority < scanline_compositing_info.obj_scanline[x].priority) {
+            scanline_compositing_info.obj_scanline[x].transparent = transparent;
+            scanline_compositing_info.obj_scanline[x].index       = PaletteIndex(slot, index, true, false, 0, 0, 0);
+            scanline_compositing_info.obj_scanline[x].priority    = priority;
+            scanline_compositing_info.obj_semitransparent[x]      = semi_transparent;
         }
     }
 
@@ -225,7 +252,7 @@ final class Canvas(EngineType E) {
                 }
 
                 for (int bg = 0; bg < 4; bg++) {
-                    if (ppu.backgrounds[bg].is_mosaic) bg_scanline[bg][x] = bg_scanline[bg][mosaic_x];
+                    if (ppu.backgrounds[bg].is_mosaic) scanline_compositing_info.bg_scanline[bg][x] = scanline_compositing_info.bg_scanline[bg][mosaic_x];
                 }
             }
         } 
@@ -242,122 +269,134 @@ final class Canvas(EngineType E) {
                     mosaic_x = x;
                 }
 
-                obj_scanline[x] = obj_scanline[mosaic_x];
+                scanline_compositing_info.obj_scanline[x] = scanline_compositing_info.obj_scanline[mosaic_x];
             }
         }
     }
 
-    public void composite(int scanline) {
-        // step 1: sort the backgrounds by priority
-        sorted_backgrounds = ppu.backgrounds;
+    public void composite() {
+        for (int scanline = 0; scanline < 192; scanline++) {
+            ScanlineCompositingInfo* scanline_compositing_info = &scanline_compositing_infos[scanline];
 
-        // insertion sort
-        // the important part of insertion sort is that we need two backgrounds of the same priority
-        // to be *also* sorted by index. i.e. if bg0 and bg1 had the same priorities, bg0 must appear
-        // in sorted_backgrounds before bg1. insertion sort guarantees this.
+            // step 1: sort the backgrounds by priority
+            sorted_backgrounds = ppu.backgrounds;
 
-        // https://www.geeksforgeeks.org/insertion-sort/
-        for (int i = 1; i < 4; i++) {
-            Background temp = sorted_backgrounds[i];
-            int key = temp.priority;
-            int j = i - 1;
+            // insertion sort
+            // the important part of insertion sort is that we need two backgrounds of the same priority
+            // to be *also* sorted by index. i.e. if bg0 and bg1 had the same priorities, bg0 must appear
+            // in sorted_backgrounds before bg1. insertion sort guarantees this.
 
-            while (j >= 0 && sorted_backgrounds[j].priority > key) {
-                sorted_backgrounds[j + 1] = sorted_backgrounds[j];
-                j--;
+            // https://www.geeksforgeeks.org/insertion-sort/
+            for (int i = 1; i < 4; i++) {
+                Background temp = sorted_backgrounds[i];
+                int key = temp.priority;
+                int j = i - 1;
+
+                while (j >= 0 && sorted_backgrounds[j].priority > key) {
+                    sorted_backgrounds[j + 1] = sorted_backgrounds[j];
+                    j--;
+                }
+                sorted_backgrounds[j + 1] = temp;
             }
-            sorted_backgrounds[j + 1] = temp;
-        }
 
 
-        // step 2: loop through the backgrounds, and get the first non transparent pixel
-        WindowType default_window_type = (obj_window_enable || windows[0].enabled || windows[1].enabled) ? WindowType.OUTSIDE : WindowType.NONE;
+            // step 2: loop through the backgrounds, and get the first non transparent pixel
+            WindowType default_window_type = (scanline_compositing_info.mmio_info.obj_window_enable || 
+                                            scanline_compositing_info.mmio_info.windows[0].enabled || 
+                                            scanline_compositing_info.mmio_info.windows[1].enabled)
+                                            ? WindowType.OUTSIDE
+                                            : WindowType.NONE;
 
-        for (int x = 0; x < 256; x++) {
-            // which window are we in?
-            WindowType current_window_type = default_window_type;
-            if (obj_window[x] && obj_window_enable) current_window_type = WindowType.OBJ;
+            for (int x = 0; x < 256; x++) {
+                // which window are we in?
+                WindowType current_window_type = default_window_type;
+                if (scanline_compositing_info.obj_window[x] && scanline_compositing_info.mmio_info.obj_window_enable) current_window_type = WindowType.OBJ;
 
-            for (int i = 0; i < 2; i++) {
-                if (windows[i].enabled) {
-                    if (windows[i].left <= x        && x        < windows[i].right  && 
-                        windows[i].top  <= scanline && scanline < windows[i].bottom) {
-                        current_window_type = cast(WindowType) i;
-                        break;
+                for (int i = 0; i < 2; i++) {
+                    if (scanline_compositing_info.mmio_info.windows[i].enabled) {
+                        if (scanline_compositing_info.mmio_info.windows[i].left <= x        && x        < scanline_compositing_info.mmio_info.windows[i].right  && 
+                            scanline_compositing_info.mmio_info.windows[i].top  <= scanline && scanline < scanline_compositing_info.mmio_info.windows[i].bottom) {
+                            current_window_type = cast(WindowType) i;
+                            break;
+                        }
                     }
                 }
-            }
 
-            // now that we know which window type we're in, let's calculate the color index for this pixel
+                // now that we know which window type we're in, let's calculate the color index for this pixel
 
-            PaletteIndex[2] index = [PaletteIndex(-1, 0, false, false, 0, 0, 0), PaletteIndex(-1, 0, false, false, 0, 0, 0)];
-            int priority = 4;
+                PaletteIndex[2] index = [PaletteIndex(-1, 0, false, false, 0, 0, 0), PaletteIndex(-1, 0, false, false, 0, 0, 0)];
+                int priority = 4;
 
-            int blendable_pixels = 0;
-            int total_pixels = 0;
-            bool processed_obj = false;
-            bool force_blend = false;
+                int blendable_pixels = 0;
+                int total_pixels = 0;
+                bool processed_obj = false;
+                bool force_blend = false;
 
-            // i hate it here
-            int current_bg_id;
-            for (int i = 0; i < 4; i++) {
-                if (total_pixels == 2) break;
+                // i hate it here
+                int current_bg_id;
+                for (int i = 0; i < 4; i++) {
+                    if (total_pixels == 2) break;
 
-                if (!processed_obj && !obj_scanline[x].transparent && is_obj_pixel_visible(current_window_type) &&
-                        sorted_backgrounds[i].priority >= obj_scanline[x].priority) {
-                    index[total_pixels] = obj_scanline[x].index;
+                    if (!processed_obj && !scanline_compositing_info.obj_scanline[x].transparent && is_obj_pixel_visible(current_window_type) &&
+                            sorted_backgrounds[i].priority >= scanline_compositing_info.obj_scanline[x].priority) {
+                        index[total_pixels] = scanline_compositing_info.obj_scanline[x].index;
 
-                    processed_obj = true;
-                    if (obj_target_pixel[total_pixels] || obj_semitransparent[x]) {
+                        processed_obj = true;
+                        if (scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || scanline_compositing_info.obj_semitransparent[x]) {
+                            blendable_pixels++;
+                            force_blend = scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
+                        }
+                        total_pixels++;
+                    }
+
+                    if (total_pixels == 2) break;
+
+                    current_bg_id = sorted_backgrounds[i].id;
+                    if (!scanline_compositing_info.bg_scanline[current_bg_id][x].transparent) {
+                        if (is_bg_pixel_visible(current_bg_id, current_window_type)) {
+                            index[total_pixels] = scanline_compositing_info.bg_scanline[current_bg_id][x].index;
+                            priority = sorted_backgrounds[i].priority;
+
+                            if (scanline_compositing_info.mmio_info.bg_target_pixel[total_pixels][current_bg_id]) {
+                                blendable_pixels++;
+                                total_pixels++;
+                                continue;
+                            }
+                            total_pixels++;
+                            break; 
+                        }
+                    }
+
+                    if (total_pixels == 2) break;
+                }
+
+                if (priority >= scanline_compositing_info.obj_scanline[x].priority && 
+                    total_pixels < 2 && 
+                    !processed_obj && 
+                    !scanline_compositing_info.obj_scanline[x].transparent && 
+                    is_obj_pixel_visible(current_window_type)) {
+                    index[total_pixels] = scanline_compositing_info.obj_scanline[x].index;
+
+                    if (scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || scanline_compositing_info.obj_semitransparent[x]) {
                         blendable_pixels++;
-                        force_blend = obj_semitransparent[x] && total_pixels == 0;
+                        force_blend = scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
                     }
                     total_pixels++;
                 }
 
-                if (total_pixels == 2) break;
-
-                current_bg_id = sorted_backgrounds[i].id;
-                if (!bg_scanline[current_bg_id][x].transparent) {
-                    if (is_bg_pixel_visible(current_bg_id, current_window_type)) {
-                        index[total_pixels] = bg_scanline[current_bg_id][x].index;
-                        priority = sorted_backgrounds[i].priority;
-
-                        if (bg_target_pixel[total_pixels][current_bg_id]) {
-                            blendable_pixels++;
-                            total_pixels++;
-                            continue;
-                        }
-                        total_pixels++;
-                        break; 
+                // add the backdrop
+                if (total_pixels < 2) {
+                    // total_pixels++; we can increment this, but it wont affect the rest of the loop
+                    if (scanline_compositing_info.mmio_info.backdrop_target_pixel[blendable_pixels]) {
+                        blendable_pixels++;
                     }
                 }
-
-                if (total_pixels == 2) break;
+                
+                Blending effective_blending_type = is_blended(current_window_type) ? scanline_compositing_info.mmio_info.blending_type : Blending.NONE;
+                if (force_blend) { effective_blending_type = Blending.ALPHA; }
+                // now to blend the two values together
+                pixels_output[x][scanline] = blend(index, blendable_pixels, effective_blending_type);
             }
-
-            if (priority >= obj_scanline[x].priority && total_pixels < 2 && !processed_obj && !obj_scanline[x].transparent && is_obj_pixel_visible(current_window_type)) {
-                index[total_pixels] = obj_scanline[x].index;
-
-                if (obj_target_pixel[total_pixels] || obj_semitransparent[x]) {
-                    blendable_pixels++;
-                    force_blend = obj_semitransparent[x] && total_pixels == 0;
-                }
-                total_pixels++;
-            }
-
-            // add the backdrop
-            if (total_pixels < 2) {
-                // total_pixels++; we can increment this, but it wont affect the rest of the loop
-                if (backdrop_target_pixel[blendable_pixels]) {
-                    blendable_pixels++;
-                }
-            }
-            
-            Blending effective_blending_type = is_blended(current_window_type) ? blending_type : Blending.NONE;
-            if (force_blend) { effective_blending_type = Blending.ALPHA; }
-            // now to blend the two values together
-            pixels_output[x] = blend(index, blendable_pixels, effective_blending_type);
         }
     }
 
@@ -372,9 +411,9 @@ final class Canvas(EngineType E) {
 
                 Pixel output = index[0].resolve!E(pram_offset);
 
-                output.r += cast(ubyte) (((63 - output.r) * evy_coeff) >> 4);
-                output.g += cast(ubyte) (((63 - output.g) * evy_coeff) >> 4);
-                output.b += cast(ubyte) (((63 - output.b) * evy_coeff) >> 4);
+                output.r += cast(ubyte) (((63 - output.r) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
+                output.g += cast(ubyte) (((63 - output.g) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
+                output.b += cast(ubyte) (((63 - output.b) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
                 return output;
 
             case Blending.BRIGHTNESS_DECREASE:
@@ -382,9 +421,9 @@ final class Canvas(EngineType E) {
 
                 Pixel output = index[0].resolve!E(pram_offset);
 
-                output.r -= cast(ubyte) (((output.r) * evy_coeff) >> 4);
-                output.g -= cast(ubyte) (((output.g) * evy_coeff) >> 4);
-                output.b -= cast(ubyte) (((output.b) * evy_coeff) >> 4);
+                output.r -= cast(ubyte) (((output.r) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
+                output.g -= cast(ubyte) (((output.g) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
+                output.b -= cast(ubyte) (((output.b) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
                 return output;
 
             case Blending.ALPHA:
@@ -394,11 +433,11 @@ final class Canvas(EngineType E) {
                 Pixel input_B = index[1].resolve!E(pram_offset);
                 Pixel output;
 
-                int effective_blend_a = blend_a;
-                int effective_blend_b = blend_b;
+                int effective_blend_a = scanline_compositing_info.mmio_info.blend_a;
+                int effective_blend_b = scanline_compositing_info.mmio_info.blend_b;
 
                 static if (E == EngineType.A) {
-                    if (bg_target_pixel[0][0]) {
+                    if (scanline_compositing_info.mmio_info.bg_target_pixel[0][0]) {
                         effective_blend_a = input_A.a / 2;
                         effective_blend_b = 16 - (input_A.a / 2);
                     }
@@ -413,10 +452,10 @@ final class Canvas(EngineType E) {
 
     private pragma(inline, true) bool is_blended(WindowType window_type) {
         final switch (window_type) {
-            case WindowType.ZERO:    return windows[0].blended;
-            case WindowType.ONE:     return windows[1].blended;
-            case WindowType.OBJ:     return obj_window_blended;
-            case WindowType.OUTSIDE: return outside_window_blended;
+            case WindowType.ZERO:    return scanline_compositing_info.mmio_info.windows[0].blended;
+            case WindowType.ONE:     return scanline_compositing_info.mmio_info.windows[1].blended;
+            case WindowType.OBJ:     return scanline_compositing_info.mmio_info.obj_window_blended;
+            case WindowType.OUTSIDE: return scanline_compositing_info.mmio_info.outside_window_blended;
             case WindowType.NONE:    return true;
         }
     }
@@ -424,10 +463,10 @@ final class Canvas(EngineType E) {
     // calculates if the bg pixel is visible under the effects of windowing
     private pragma(inline, true) bool is_bg_pixel_visible(int bg_id, WindowType window_type) {
         final switch (window_type) {
-            case WindowType.ZERO:    return bit(windows[0].bg_enable,     bg_id);
-            case WindowType.ONE:     return bit(windows[1].bg_enable,     bg_id);
-            case WindowType.OBJ:     return bit(obj_window_bg_enable,     bg_id);
-            case WindowType.OUTSIDE: return bit(outside_window_bg_enable, bg_id);
+            case WindowType.ZERO:    return bit(scanline_compositing_info.mmio_info.windows[0].bg_enable,     bg_id);
+            case WindowType.ONE:     return bit(scanline_compositing_info.mmio_info.windows[1].bg_enable,     bg_id);
+            case WindowType.OBJ:     return bit(scanline_compositing_info.mmio_info.obj_window_bg_enable,     bg_id);
+            case WindowType.OUTSIDE: return bit(scanline_compositing_info.mmio_info.outside_window_bg_enable, bg_id);
             case WindowType.NONE:    return true;
         }
     }
@@ -435,10 +474,10 @@ final class Canvas(EngineType E) {
     // calculates if the obj pixel is visible under the effects of windowing
     private pragma(inline, true) bool is_obj_pixel_visible(WindowType window_type) {
         final switch (window_type) {
-            case WindowType.ZERO:    return windows[0].obj_enable;
-            case WindowType.ONE:     return windows[1].obj_enable;
-            case WindowType.OBJ:     return obj_window_obj_enable;
-            case WindowType.OUTSIDE: return outside_window_obj_enable;
+            case WindowType.ZERO:    return scanline_compositing_info.mmio_info.windows[0].obj_enable;
+            case WindowType.ONE:     return scanline_compositing_info.mmio_info.windows[1].obj_enable;
+            case WindowType.OBJ:     return scanline_compositing_info.mmio_info.obj_window_obj_enable;
+            case WindowType.OUTSIDE: return scanline_compositing_info.mmio_info.outside_window_obj_enable;
             case WindowType.NONE:    return true;
         }
     }

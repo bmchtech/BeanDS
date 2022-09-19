@@ -68,16 +68,6 @@ final class TCM {
     }
 
     void write_dtcm(T)(Word address, T value) {
-        if (((address - dtcm_region_base) & (DTCM_PHYSICAL_SIZE - 1)) == ((0x27e0054 - dtcm_region_base) & (DTCM_PHYSICAL_SIZE - 1))) {
-            log_arm9("wrote to GXFIFO irq handler: %x (LR: %x)", value, arm9.regs[lr]);
-            if (value == 0x20cdfec) {
-                for (int i = 0; i < 64; i++) {
-                    arm9.num_log = 100;
-                    log_arm9("stack contents: %x", mem9.read!Word(arm9.regs[sp] + i * 4));
-                }
-            }
-        }
-
         dtcm.write!T((address - dtcm_region_base) % DTCM_PHYSICAL_SIZE, value);
     }
 }
