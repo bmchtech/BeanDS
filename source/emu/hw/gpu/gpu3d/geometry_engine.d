@@ -787,7 +787,7 @@ final class GeometryEngine {
                 static if (commands[i].valid) {
                     case i:
                         static if (commands[i].implemented) {
-                            cycles_till_complete += commands[i].cycles;
+                            cycles_till_complete += commands[i].cycles * 2;
                             reschedule_interrupt();
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
@@ -806,9 +806,7 @@ final class GeometryEngine {
         if (parent.irq_mode == IRQMode.NEVER) return;
         
         // only do this if this not our first time scheduling the interrupt
-        if (last_reschedule_timestamp == 0) {
-            auto elapsed = scheduler.get_current_time_relative_to_cpu();
-        } else {
+        if (last_reschedule_timestamp != 0) {
             auto elapsed = scheduler.get_current_time_relative_to_cpu() - last_reschedule_timestamp;
             
             if (cycles_till_complete < elapsed) {
@@ -843,6 +841,7 @@ final class GeometryEngine {
     }
 
     void raise_interrupt() {
+        log_gpu3d("raising GXFIFO interrupt");
         interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO);
     }
 }

@@ -64,20 +64,19 @@ BarrelShifter barrel_shift(int shift_type, bool is_immediate, T : ArmCPU)(T cpu,
     }
 
     static if (shift_type == 3) { // ROR
-        bool done = false;
-
         static if (!is_immediate) {
             if ((shift & 0xFF) == 0) {
                 result = operand;
                 carry  = cpu.get_flag(Flag.C);
-                done   = true;
+            } else if ((shift & 0x1F) == 0) {
+                result = operand;
+                carry  = operand[31];
             } else {
                 shift &= 0x1F;
-                if (shift == 0) shift = 32;
+                result = operand.rotate_right(shift);
+                carry  = operand[shift - 1];
             }
-        }
-
-        if (!done) {
+        } else {
             if (shift == 0) {
                 result = cpu.get_flag(Flag.C) << 31 | (operand >> 1);
                 carry  = operand[0];

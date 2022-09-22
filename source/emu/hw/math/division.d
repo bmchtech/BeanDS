@@ -102,7 +102,7 @@ public class DivController {
         } else if (numerator_is_max && denominator == -1) {
             division_by_zero = false;
             div_result       = max;
-            divrem_result    = numerator % denominator;
+            divrem_result    = 0;
 
             overflow_occurred = true;
         } else {

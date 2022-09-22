@@ -31,12 +31,6 @@ final class KeyInput {
     
     void update_key(DSKeyCode key, bool pressed) {
         keys[key] = !pressed;
-
-        if (key == DSKeyCode.SELECT && pressed) {
-            // arm9.num_log = 100;
-            // error_eeprom("a");
-            verbosity = pressed;
-        }
     }
 
     Byte read_KEYINPUT(int target_byte) {

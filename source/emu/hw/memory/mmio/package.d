@@ -88,7 +88,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
     T read(T)(Word address) {
         import std.format;
 
-        if (verbosity) log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d)", name, address, T.sizeof);
+        log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
         T value = T(0);
 
         static foreach (MMIORegister mr; mmio_registers) {
@@ -165,7 +165,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
     }
 
     void write(T)(Word address, T value) {
-        if (verbosity) log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d)",  name, value, address, T.sizeof);
+        log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
 
         import std.format;
         static foreach (MMIORegister mr; mmio_registers) {

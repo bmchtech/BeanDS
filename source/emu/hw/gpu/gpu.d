@@ -93,6 +93,8 @@ final class GPU {
     }
 
     void on_vblank_start() {
+        log_gpu3d("NEW FRAME");
+        
         vblank = true;
         gpu_engine_a.vblank();
         gpu_engine_b.vblank();

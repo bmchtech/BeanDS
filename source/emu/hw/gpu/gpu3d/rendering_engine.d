@@ -210,7 +210,7 @@ final class RenderingEngine {
 
     Pixel[] scanline;
 
-    AnnotatedPolygon[0x1000] annotated_polygons;
+    AnnotatedPolygon[0x10000] annotated_polygons;
 
     Mutex     start_rendering_mutex;
     Condition start_rendering_condvar;

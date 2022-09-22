@@ -56,7 +56,10 @@ final class TimerManager {
         // on_timer_overflow(x);
 
         if (timers[x].irq_enable) {
-            // log_timers("timer interrupt raised");
+            if (x == 1 && this == timers9) {
+                log_timers("timer interrupt raised");
+                arm9.num_log = 100;
+            }
             interrupt_manager.raise_interrupt(get_interrupt_from_timer_id(x));
         }
 
