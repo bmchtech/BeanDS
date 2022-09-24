@@ -304,10 +304,8 @@ final class RenderingEngine {
     void rendering_thread_handler() {
         while (true) {
             start_rendering_mutex.lock();
-            log_gpu3d("rendering engine wait!");
                 start_rendering_condvar.wait();
             start_rendering_mutex.unlock();
-            log_gpu3d("rendering engine go!");
                 
             rendering_scanline_mutex.lock();
                 rendering_scanline = -1;
