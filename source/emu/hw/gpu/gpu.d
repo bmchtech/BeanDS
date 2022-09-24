@@ -53,6 +53,9 @@ final class GPU {
         gpu_engine_a.hblank(scanline);
         gpu_engine_b.hblank(scanline);
 
+        gpu_engine_a.ppu.canvas.on_hblank_start();
+        gpu_engine_b.ppu.canvas.on_hblank_start();
+
         if (scanline >= 0 && scanline < 192) {
             render();
         }
@@ -65,6 +68,10 @@ final class GPU {
         hblank = false;
 
         scanline++;
+
+        gpu_engine_a.ppu.canvas.on_hblank_end(scanline);
+        gpu_engine_b.ppu.canvas.on_hblank_end(scanline);
+        
         if (scanline == 192) on_vblank_start();
         if (scanline == 263) on_vblank_end();
 
@@ -220,18 +227,20 @@ final class GPU {
         RESERVED = 3
     }
 
-    MasterBrightMode master_bright_mode;
-    int master_bright_factor;
-    int master_brightness;
+    MasterBrightMode master_bright_mode_a = MasterBrightMode.DISABLED;
+    int master_bright_factor_a;
+    int master_brightness_a;
+
+    MasterBrightMode master_bright_mode_b = MasterBrightMode.DISABLED;
+    int master_bright_factor_b;
+    int master_brightness_b;
 
     void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
-        apply_master_brightness_to_video_buffer(top);
-        apply_master_brightness_to_video_buffer(bot);
-
-        log_ppu("Master brightness: %d Factor: %d Dir: %s", master_brightness, master_bright_factor, master_bright_mode);
+        apply_master_brightness_to_video_buffer(top, master_brightness_a, master_bright_mode_a);
+        apply_master_brightness_to_video_buffer(bot, master_brightness_b, master_bright_mode_b);
     }
 
-    void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer) {
+    void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {
         if (master_bright_mode == MasterBrightMode.DISABLED) return;
 
         log_ppu("Master brightness applied. Dx: %x -> %x", video_buffer[0][0].r, video_buffer[0][0].r * master_brightness);
@@ -244,7 +253,15 @@ final class GPU {
         }
     }
 
-    void write_MASTER_BRIGHT(int target_byte, Byte value) {
+    void write_MASTER_BRIGHT_A(int target_byte, Byte value) {
+        modify_master_bright(target_byte, value, master_brightness_a, master_bright_factor_a, master_bright_mode_a);
+    }
+
+    void write_MASTER_BRIGHT_B(int target_byte, Byte value) {
+        modify_master_bright(target_byte, value, master_brightness_b, master_bright_factor_b, master_bright_mode_b);
+    }
+
+    void modify_master_bright(int target_byte, Byte value, ref int master_brightness, ref int master_bright_factor, ref MasterBrightMode master_bright_mode) {
         final switch (target_byte) {
             case 0:
                 master_bright_factor = clamp(cast(int) value, 0, 16);
@@ -269,16 +286,32 @@ final class GPU {
         }
     }
 
-    Byte read_MASTER_BRIGHT(int target_byte) {
+    Byte read_MASTER_BRIGHT_A(int target_byte) {
         Byte result;
 
         final switch (target_byte) {
             case 0:
-                result = Byte(master_bright_factor);
+                result = Byte(master_bright_factor_a);
                 break;
             
             case 1:
-                result[6..7] = Byte(master_bright_mode);
+                result[6..7] = Byte(master_bright_mode_a);
+                break;
+        }
+
+        return result;
+    }
+
+    Byte read_MASTER_BRIGHT_B(int target_byte) {
+        Byte result;
+
+        final switch (target_byte) {
+            case 0:
+                result = Byte(master_bright_factor_b);
+                break;
+            
+            case 1:
+                result[6..7] = Byte(master_bright_mode_b);
                 break;
         }
 

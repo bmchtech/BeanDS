@@ -43,7 +43,7 @@ final class Mem9 : Mem {
     void write(T)(Word address, T value) {
         check_memory_unit!T;
         scheduler.tick(1);
-
+        
         auto region = get_region(address);
 
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);

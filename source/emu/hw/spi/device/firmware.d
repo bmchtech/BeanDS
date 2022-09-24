@@ -188,6 +188,8 @@ final class Firmware : SPIDevice {
                 // TODO: im not sure this is actually how this command works but
                 //       i hope it's right? check this
 
+                log_firmware("page write: %x", address);
+
                 if (access_number < 3) {
                     // 3 - access_number because address is set in MSB -> LSB order
                     address.set_byte(2 - access_number, b);

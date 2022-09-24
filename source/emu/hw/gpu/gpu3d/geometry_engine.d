@@ -275,7 +275,7 @@ final class GeometryEngine {
                 break;
             
             case MatrixMode.TEXTURE:
-                // log_gpu3d("MTXOP setting texture matrix: %s", matrix[0][0]);
+                log_gpu3d("MTXOP setting texture matrix: %s", matrix[0][0]);
                 texture_matrix = matrix;
                 break;
         }
@@ -300,7 +300,7 @@ final class GeometryEngine {
                 break;
 
             case MatrixMode.TEXTURE:
-                // log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
+                log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_stack.push(texture_matrix);
                 break;
         }
@@ -321,7 +321,7 @@ final class GeometryEngine {
                 break;
 
             case MatrixMode.TEXTURE:
-                // log_gpu3d("MTXOP popping texture (ptr = %d)", texture_stack.stack_pointer);
+                log_gpu3d("MTXOP popping texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_matrix = texture_stack.pop(1);
                 break;
         }
@@ -342,7 +342,7 @@ final class GeometryEngine {
                 break;
 
             case MatrixMode.TEXTURE:
-                // log_gpu3d("MTXOP storing texture: %s", texture_matrix[0][0]);
+                log_gpu3d("MTXOP storing texture: %s", texture_matrix[0][0]);
                 texture_stack.store(texture_matrix, 0);
                 break;
         }
@@ -364,7 +364,7 @@ final class GeometryEngine {
 
             case MatrixMode.TEXTURE:
                 texture_matrix = texture_stack.restore(0);
-                // log_gpu3d("MTXOP restoring texture: %s", texture_matrix[0][0]);
+                log_gpu3d("MTXOP restoring texture: %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -386,7 +386,7 @@ final class GeometryEngine {
 
             case MatrixMode.TEXTURE:
                 texture_matrix = Matrix.identity();
-                // log_gpu3d("MTXOP texture matrix overwritten with identity %s", texture_matrix[0][0]);
+                log_gpu3d("MTXOP texture matrix overwritten with identity %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -568,9 +568,10 @@ final class GeometryEngine {
         bool translucent_polygon_y_sorting = args[0][0];
         bool depth_buffering_mode          = args[0][1];
 
-
+        log_gpu3d("SWAP BUFFERS AT SCANLINE %x", gpu.scanline);
         log_gpu3d("depth buffering mode: %x", depth_buffering_mode);
-        parent.swap_buffers(polygon_index, translucent_polygon_y_sorting, depth_buffering_mode);
+        parent.queue_buffer_swap(polygon_index, translucent_polygon_y_sorting, depth_buffering_mode);
+
         polygon_index = 0;
         vertex_index = 0;
     }
@@ -614,20 +615,20 @@ final class GeometryEngine {
         polygon.texture_color_0_transparent = texture_color_0_transparent;
         polygon.palette_base_address        = palette_base_address;
 
-        // log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
-        // log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
-        // log_gpu3d("    texture_vram_offset         : %x", polygon.texture_vram_offset         );
-        // log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
-        // log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
-        // log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
-        // log_gpu3d("    texture_flip_t_direction    : %d", polygon.texture_flip_t_direction    );
-        // log_gpu3d("    texture_s_size              : %d", polygon.texture_s_size              );
-        // log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
-        // log_gpu3d("    texture_format              : %s", polygon.texture_format              );
-        // log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
-        // log_gpu3d("    palette_base_address        : %x", polygon.palette_base_address        );
-        // log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
-        // log_gpu3d("    texture_transformation_mode : %s", texture_transformation_mode);
+        log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
+        log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
+        log_gpu3d("    texture_vram_offset         : %x", polygon.texture_vram_offset         );
+        log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
+        log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
+        log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
+        log_gpu3d("    texture_flip_t_direction    : %d", polygon.texture_flip_t_direction    );
+        log_gpu3d("    texture_s_size              : %d", polygon.texture_s_size              );
+        log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
+        log_gpu3d("    texture_format              : %s", polygon.texture_format              );
+        log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
+        log_gpu3d("    palette_base_address        : %x", polygon.palette_base_address        );
+        log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
+        log_gpu3d("    texture_transformation_mode : %s", texture_transformation_mode);
 
         parent.geometry_buffer[polygon_index] = polygon;
         polygon_index++;
@@ -649,6 +650,7 @@ final class GeometryEngine {
                 break;
 
             case TextureTransformationMode.TEXCOORD:
+                log_gpu3d("transforming via TEXCOORD");
                 texcoord[2] = Coord_20_12(0.0625f);
                 texcoord[3] = Coord_20_12(0.0625f);
                 texcoord_prime = texture_matrix * texcoord;
@@ -669,14 +671,10 @@ final class GeometryEngine {
             Coord_20_12(1.0f)
         ]);
 
-        // perhaps can be optimized...
-        Matrix texture_matrix_dup = texture_matrix;
-
         if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
             log_gpu3d("transforming via NORMAL: %s %s %s", texture_matrix[0][0], texture_matrix[0][1], texture_matrix[1][0]);
-            texture_matrix_dup[3][0] = texcoord[0];
-            texture_matrix_dup[3][1] = texcoord[1];
-            texcoord_prime = texture_matrix_dup * normal_vector;
+            texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[0][1] * normal_vector[1] + texture_matrix[0][2] * normal_vector[2] + texcoord[0];
+            texcoord_prime[1] = texture_matrix[1][0] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[1][2] * normal_vector[2] + texcoord[1];
         }
     }
 

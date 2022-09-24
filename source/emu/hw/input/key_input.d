@@ -19,6 +19,8 @@ enum DSKeyCode {
     PEN_DOWN = 22
 }
 
+__gshared bool verbosity = false;
+
 __gshared KeyInput input;
 final class KeyInput {
     void reset() {
@@ -30,12 +32,20 @@ final class KeyInput {
     void update_key(DSKeyCode key, bool pressed) {
         keys[key] = !pressed;
 
-        // if (key == DSKeyCode.SELECT) {
-        //     arm9.num_log = 100;
-        // }
+        if (key == DSKeyCode.SELECT && pressed) {
+            // arm9.num_log = 100;
+            // error_eeprom("a");
+            verbosity = pressed;
+        }
     }
 
     Byte read_KEYINPUT(int target_byte) {
+        arm9.num_log = 1;
+        
+        for (int i = 0; i < 64; i++) {
+            log_arm9("stack contents: [%x] = %x", arm9.regs[sp] + i * 4, mem9.read!Word(arm9.regs[sp] + i * 4));
+        }
+
         return keys[0..15].get_byte(target_byte);
     }
 

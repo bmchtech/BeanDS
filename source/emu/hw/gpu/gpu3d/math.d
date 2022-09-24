@@ -83,6 +83,17 @@ struct SquareMatrix(int N,T) {
             [T(0), T(0), T(0), T(1)]
         ]);
     }
+
+    string opCast(T : string)() {
+        string result = "";
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                result ~= cast(string) cast(float) this[i][j];
+                if (j != N) result ~= ", ";
+            }
+            result ~= "\n";
+        }
+    }
 }
 
 float fixed_point_to_float(int fractional_part)(int fixed_point) {

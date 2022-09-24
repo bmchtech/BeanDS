@@ -106,7 +106,7 @@ final class TouchScreen : SPIDevice {
     bool sussine = true;
 
     override Byte write(Byte b) {
-        // log_touchscreen("write: %x", b);
+        log_touchscreen("write: %x", b);
         
         Byte return_value = result[0];
         result[0] = result[1];
@@ -118,6 +118,7 @@ final class TouchScreen : SPIDevice {
                     reference_select = cast(ReferenceSelect) b[2];
                     conversion_mode  = cast(ConversionMode)  b[3];
                     channel_select   = cast(ChannelSelect)   b[4..6];
+                    log_touchscreen("cmd: %s", cast(ChannelSelect) b[4..6]);
 
                     final switch (channel_select) {
                         case ChannelSelect.TEMPERATURE_0:
@@ -126,6 +127,11 @@ final class TouchScreen : SPIDevice {
                             break;
                         
                         case ChannelSelect.TOUCHSCREEN_Y:
+                            arm7.num_log = 100;
+                            for (int i = 0; i < 0x100; i++) {
+                                log_arm7("stack dump: %x", mem7.read!Word(arm7.regs[sp] + i * 4));
+                            }
+
                             if ((scr_y2 - scr_y1) == 0) set_result(0xFFF);
                                 else {
                                 set_result( 

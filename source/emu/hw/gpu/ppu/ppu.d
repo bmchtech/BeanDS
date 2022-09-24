@@ -108,10 +108,6 @@ final class PPU(EngineType E) {
         }
     }
 
-    void reset_canvas() {
-        canvas.reset();
-    }
-
     void render(int scanline) {
         this.scanline = cast(ushort) scanline;
 
@@ -124,12 +120,6 @@ final class PPU(EngineType E) {
 
         canvas.apply_horizontal_mosaic(bg_mosaic_h, obj_mosaic_h);
 
-        canvas.composite(scanline);
-
-        for (int x = 0; x < 256; x++) {
-            scanline_buffer[x] = canvas.pixels_output[x];
-        }
-
         backgrounds[2].internal_reference_x += backgrounds[2].p[AffineParameter.B];
         backgrounds[2].internal_reference_y += backgrounds[2].p[AffineParameter.D];
         backgrounds[3].internal_reference_x += backgrounds[3].p[AffineParameter.B];
@@ -139,6 +129,7 @@ final class PPU(EngineType E) {
     void vblank() {
         reload_background_internal_affine_registers(2);
         reload_background_internal_affine_registers(3);
+        canvas.reset();
     }
 
     void calculate_scanline() {
@@ -701,40 +692,40 @@ public:
 
     void write_WINxH(int target_byte, Byte data, int x) {
         if (target_byte == 0) {
-            canvas.windows[x].right = data;
-            if (data == 0) canvas.windows[x].right = 0x100;
+            canvas.mmio_info.windows[x].right = data;
+            if (data == 0) canvas.mmio_info.windows[x].right = 0x100;
         } else { // target_byte == 1
-            canvas.windows[x].left = data;
+            canvas.mmio_info.windows[x].left = data;
         }
     }
 
     void write_WINxV(int target_byte, Byte data, int x) {
         if (target_byte == 0) {
-            canvas.windows[x].bottom = data;
+            canvas.mmio_info.windows[x].bottom = data;
         } else { // target_byte == 1
-            canvas.windows[x].top = data;
+            canvas.mmio_info.windows[x].top = data;
         }
     }
 
     void write_WININ(int target_byte, Byte data) {
         // the target_byte happens to specify the window here
-        canvas.windows[target_byte].bg_enable  = data[0..3];
-        canvas.windows[target_byte].obj_enable = data[4];
-        canvas.windows[target_byte].blended    = data[5];
+        canvas.mmio_info.windows[target_byte].bg_enable  = data[0..3];
+        canvas.mmio_info.windows[target_byte].obj_enable = data[4];
+        canvas.mmio_info.windows[target_byte].blended    = data[5];
     }
 
     void write_WINOUT(int target_byte, Byte data) {
         final switch (target_byte) {
             case 0b0:
-                canvas.outside_window_bg_enable  = data[0..3];
-                canvas.outside_window_obj_enable = data[4];
-                canvas.outside_window_blended    = data[5];
+                canvas.mmio_info.outside_window_bg_enable  = data[0..3];
+                canvas.mmio_info.outside_window_obj_enable = data[4];
+                canvas.mmio_info.outside_window_blended    = data[5];
                 break;
 
             case 0b1:
-                canvas.obj_window_bg_enable      = data[0..3];
-                canvas.obj_window_obj_enable     = data[4];
-                canvas.obj_window_blended        = data[5];
+                canvas.mmio_info.obj_window_bg_enable      = data[0..3];
+                canvas.mmio_info.obj_window_obj_enable     = data[4];
+                canvas.mmio_info.obj_window_blended        = data[5];
                 break;
         }
     }
@@ -834,18 +825,18 @@ public:
         final switch (target_byte) {
             case 0b0:
                 for (int bg = 0; bg < 4; bg++)
-                    canvas.bg_target_pixel[Layer.A][bg] = data[bg];
-                canvas.obj_target_pixel[Layer.A] = data[4];
-                canvas.backdrop_target_pixel[Layer.A] = data[5];
+                    canvas.mmio_info.bg_target_pixel[Layer.A][bg] = data[bg];
+                canvas.mmio_info.obj_target_pixel[Layer.A] = data[4];
+                canvas.mmio_info.backdrop_target_pixel[Layer.A] = data[5];
 
-                canvas.blending_type = cast(Blending) data[6..7];
+                canvas.mmio_info.blending_type = cast(Blending) data[6..7];
 
                 break;
             case 0b1:
                 for (int bg = 0; bg < 4; bg++)
-                    canvas.bg_target_pixel[Layer.B][bg] = data[bg];
-                canvas.obj_target_pixel[Layer.B] = data[4];
-                canvas.backdrop_target_pixel[Layer.B] = data[5];
+                    canvas.mmio_info.bg_target_pixel[Layer.B][bg] = data[bg];
+                canvas.mmio_info.obj_target_pixel[Layer.B] = data[4];
+                canvas.mmio_info.backdrop_target_pixel[Layer.B] = data[5];
 
                 break;
         }
@@ -861,11 +852,11 @@ public:
         final switch (target_byte) {
             case 0b0:
                 raw_blend_a = data[0..4];
-                canvas.blend_a = min(raw_blend_a, 16);
+                canvas.mmio_info.blend_a = min(raw_blend_a, 16);
                 break;
             case 0b1:
                 raw_blend_b = data[0..4];
-                canvas.blend_b = min(raw_blend_b, 16);
+                canvas.mmio_info.blend_b = min(raw_blend_b, 16);
                 break;
         }
     }
@@ -873,8 +864,8 @@ public:
     void write_BLDY(int target_byte, Byte data) {
         final switch (target_byte) {
             case 0b0:
-                canvas.evy_coeff = data[0..4];
-                if (canvas.evy_coeff > 16) canvas.evy_coeff = 16;
+                canvas.mmio_info.evy_coeff = data[0..4];
+                if (canvas.mmio_info.evy_coeff > 16) canvas.mmio_info.evy_coeff = 16;
                 break;
             case 0b1:
                 break;
@@ -931,19 +922,19 @@ public:
             case 0b0:
                 ubyte return_value;
                 for (int bg = 0; bg < 4; bg++)
-                    return_value |= (canvas.bg_target_pixel[Layer.A][bg] << bg);
-                return_value |= canvas.obj_target_pixel[Layer.A] << 4;
-                return_value |= (canvas.backdrop_target_pixel[Layer.A] << 5);
-                return_value |= (cast(ubyte) canvas.blending_type) << 6;
+                    return_value |= (canvas.mmio_info.bg_target_pixel[Layer.A][bg] << bg);
+                return_value |= canvas.mmio_info.obj_target_pixel[Layer.A] << 4;
+                return_value |= (canvas.mmio_info.backdrop_target_pixel[Layer.A] << 5);
+                return_value |= (cast(ubyte) canvas.mmio_info.blending_type) << 6;
 
                 return Byte(return_value);
 
             case 0b1:
                 ubyte return_value;
                 for (int bg = 0; bg < 4; bg++)
-                    return_value |= (canvas.bg_target_pixel[Layer.B][bg] << bg);
-                return_value |= (canvas.obj_target_pixel[Layer.B] << 4);
-                return_value |= (canvas.backdrop_target_pixel[Layer.B] << 5);
+                    return_value |= (canvas.mmio_info.bg_target_pixel[Layer.B][bg] << bg);
+                return_value |= (canvas.mmio_info.obj_target_pixel[Layer.B] << 4);
+                return_value |= (canvas.mmio_info.backdrop_target_pixel[Layer.B] << 5);
 
                 return Byte(return_value);
         }
@@ -960,21 +951,21 @@ public:
 
     Byte read_WININ(int target_byte) {
         // target_byte here is conveniently the window index
-        return cast(Byte) ((canvas.windows[target_byte].bg_enable) |
-                           (canvas.windows[target_byte].obj_enable << 4) |
-                           (canvas.windows[target_byte].blended    << 5));
+        return cast(Byte) ((canvas.mmio_info.windows[target_byte].bg_enable) |
+                           (canvas.mmio_info.windows[target_byte].obj_enable << 4) |
+                           (canvas.mmio_info.windows[target_byte].blended    << 5));
     }
 
     Byte read_WINOUT(int target_byte) {
         final switch (target_byte) {
             case 0b0:
-                return cast(Byte) ((canvas.outside_window_bg_enable) |
-                                   (canvas.outside_window_obj_enable << 4) |
-                                   (canvas.outside_window_blended    << 5));
+                return cast(Byte) ((canvas.mmio_info.outside_window_bg_enable) |
+                                   (canvas.mmio_info.outside_window_obj_enable << 4) |
+                                   (canvas.mmio_info.outside_window_blended    << 5));
             case 0b1:
-                return cast(Byte) ((canvas.obj_window_bg_enable) |
-                                   (canvas.obj_window_obj_enable << 4) |
-                                   (canvas.obj_window_blended    << 5));
+                return cast(Byte) ((canvas.mmio_info.obj_window_bg_enable) |
+                                   (canvas.mmio_info.obj_window_obj_enable << 4) |
+                                   (canvas.mmio_info.obj_window_blended    << 5));
         }
     }
 }

@@ -68,13 +68,7 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     
     version (silent) {
         return;
-    } else
-
-    version (quiet) {
-        if (!fatal) return;
-    } else
-
-    {
+    } else {
         if (fatal) {
             writefln("===== ARM7 TRACE =====");
             arm7.cpu_trace.print_trace();
@@ -82,9 +76,12 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
             arm9.cpu_trace.print_trace();
         }
 
-        ulong timestamp = scheduler.get_current_time_relative_to_cpu();
-        writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
-        writefln(fmt, args);
+        version (quiet) {
+        } else {
+            ulong timestamp = scheduler.get_current_time_relative_to_cpu();
+            writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
+            writefln(fmt, args);
+        }
 
         if (fatal) {
             dump(wram.arm7_only_wram, "arm7_wram.dump");

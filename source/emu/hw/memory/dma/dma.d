@@ -361,12 +361,7 @@ final class DMA(HwType H) {
     }
 
     Byte read_DMAxSAD(int target_byte, int x) {
-        final switch (target_byte) {
-            case 0: return cast(Byte) dma_channels[x].source[0.. 7];
-            case 1: return cast(Byte) dma_channels[x].source[8.. 15];
-            case 2: return cast(Byte) dma_channels[x].source[16..23];
-            case 3: return cast(Byte) dma_channels[x].source[24..31];
-        }
+        return dma_channels[x].source.get_byte(target_byte);
     }
 
     Byte read_DMAxDAD(int target_byte, int x) {

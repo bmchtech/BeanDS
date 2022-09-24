@@ -18,6 +18,10 @@ final class MainMemory {
             // log_main_memory("OSi_CurrentThreadPtr = %x", value);
         }
 
+        if ((address & (MAIN_MEMORY_SIZE - 1)) == (0x27FFFA8 & (MAIN_MEMORY_SIZE - 1))) {
+            log_arm9("ARM9 wrote: %x[%d] to %x", value, T.sizeof, address);
+        }
+
         if ((address & (MAIN_MEMORY_SIZE - 1)) == (0x21d349c & (MAIN_MEMORY_SIZE - 1))) {
             // Word current_thread_addr = value;
             // Word id = mem9.read!Word(current_thread_addr + emu.debugger.hle.types.OSThread.id.offsetof);
