@@ -46,21 +46,26 @@ final class TCM {
         return dtcm_enabled && in_dtcm(address);
     }
 
-
     bool in_itcm(Word address) {
-        return address >= itcm_region_base && address < itcm_region_base + itcm_virtual_size;
+        return address < itcm_virtual_size;
     }
 
     bool in_dtcm(Word address) {
+        // say the address is 32 bits
+        // the upper 20 bits encode the region base. if these upper 20 bits are equal to the region base, 
+        // then the address is in dtcm. the bottom 12 bits are a bit trickier. they encode the offset into
+        // the region. the region size is always a power of two, therefore we can check that every bit that
+        // is set outside the region size is zero.
+
         return address >= dtcm_region_base && address < dtcm_region_base + dtcm_virtual_size;
     }
 
     T read_itcm(T)(Word address) {
-        return itcm.read!T((address - itcm_region_base) % ITCM_PHYSICAL_SIZE);
+        return itcm.read!T(address & (ITCM_PHYSICAL_SIZE - 1));
     }
 
     void write_itcm(T)(Word address, T value) {
-        itcm.write!T((address - itcm_region_base) % ITCM_PHYSICAL_SIZE, value);
+        itcm.write!T(address & (ITCM_PHYSICAL_SIZE - 1), value);
     }
 
     T read_dtcm(T)(Word address) {

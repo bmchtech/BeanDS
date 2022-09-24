@@ -386,11 +386,11 @@ template execute_arm(T : ArmCPU) {
         Word address = cpu.get_reg(rn);
 
         static if (byte_swap) {
-            Word value = cpu.read_byte(address, AccessType.NONSEQUENTIAL);
-            cpu.write_byte(address, cast(Byte) (cpu.get_reg(rm) & 0xFF), AccessType.NONSEQUENTIAL);
+            Word value = cpu.read_byte(address);
+            cpu.write_byte(address, cast(Byte) (cpu.get_reg(rm) & 0xFF));
         } else {
-            Word value = cpu.read_word_and_rotate(address, AccessType.NONSEQUENTIAL);
-            cpu.write_word(address, cpu.get_reg(rm), AccessType.NONSEQUENTIAL);
+            Word value = cpu.read_word_and_rotate(address);
+            cpu.write_word(address, cpu.get_reg(rm));
         }
 
         cpu.set_reg(rd, value);
@@ -412,10 +412,10 @@ template execute_arm(T : ArmCPU) {
             
             if (v4T!T) {
                 static if (load) {
-                    cpu.set_reg(pc, cpu.read_word(address & ~3, AccessType.NONSEQUENTIAL));
+                    cpu.set_reg(pc, cpu.read_word(address & ~3));
                     cpu.run_idle_cycle();
                 } else {
-                    cpu.write_word(address & ~3, cpu.get_reg(pc) + 4, AccessType.NONSEQUENTIAL);
+                    cpu.write_word(address & ~3, cpu.get_reg(pc) + 4);
                 }
             }
 
@@ -440,8 +440,6 @@ template execute_arm(T : ArmCPU) {
         bool register_in_rlist = cast(bool) ((opcode >> rn) & 1);
         bool is_first_access = true;
 
-        AccessType access_type = AccessType.NONSEQUENTIAL;
-
         static if (s) {
             Word old_cpsr = cpu.get_cpsr();
 
@@ -457,22 +455,22 @@ template execute_arm(T : ArmCPU) {
                 static if (s) {
                     import std.stdio;
                     static if (load) {
-                        if (pc_included) cpu.set_reg(i, cpu.read_word(address, access_type));
-                        else             cpu.set_reg(i, cpu.read_word(address, access_type), MODE_USER);
+                        if (pc_included) cpu.set_reg(i, cpu.read_word(address));
+                        else             cpu.set_reg(i, cpu.read_word(address), MODE_USER);
                     } else {
-                        if (i == pc) cpu.write_word(address, cpu.get_reg(pc, MODE_USER) + 4, access_type);
-                        else         cpu.write_word(address, cpu.get_reg(i,  MODE_USER),     access_type);
+                        if (i == pc) cpu.write_word(address, cpu.get_reg(pc, MODE_USER) + 4);
+                        else         cpu.write_word(address, cpu.get_reg(i,  MODE_USER));
                     }
                 } else {
                     static if (load) {
                         if (i == pc) {
-                            Word value = cpu.read_word(address, access_type);
+                            Word value = cpu.read_word(address);
                             static if (v5TE!T) cpu.set_flag(Flag.T, value[0]);
                             cpu.set_reg(i, value);
-                        } else cpu.set_reg(i, cpu.read_word(address, access_type));
+                        } else cpu.set_reg(i, cpu.read_word(address));
                     } else {
-                        if (i == pc) cpu.write_word(address, cpu.get_reg(pc) + 4, access_type);
-                        else         cpu.write_word(address, cpu.get_reg(i), access_type);
+                        if (i == pc) cpu.write_word(address, cpu.get_reg(pc) + 4);
+                        else         cpu.write_word(address, cpu.get_reg(i));
                     }
                 }
 
@@ -489,8 +487,6 @@ template execute_arm(T : ArmCPU) {
                     if (is_first_access) cpu.set_reg(rn, writeback_address);
                     is_first_access = false;
                 }
-
-                access_type = AccessType.SEQUENTIAL;
             }
 
             mask <<= 1; 

@@ -72,8 +72,6 @@ final class DMA(HwType H) {
         int source_offset = 0;
         int dest_offset   = 0;
 
-        AccessType access_type = AccessType.NONSEQUENTIAL;
-
         if (dma_channels[current_channel].transferring_words) {
             bytes_to_transfer *= 4;
             for (int i = 0; i < bytes_to_transfer; i += 4) {

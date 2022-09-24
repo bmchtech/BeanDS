@@ -5,10 +5,26 @@ import emu.hw.memory;
 
 import util;
 
-void add(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void set_reg_wrapper(T : ArmCPU, bool lower_regs)(T cpu, int reg, Word value) {
+    static if (lower_regs) {
+        cpu.set_reg__thumb(reg, value);
+    } else {
+        cpu.set_reg(reg, value);
+    }
+}
+
+Word get_reg_wrapper(T : ArmCPU, bool lower_regs)(T cpu, int reg) {
+    static if (lower_regs) {
+        return cpu.get_reg__thumb(reg);
+    } else {
+        return cpu.get_reg(reg);
+    }
+}
+
+void add(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 + operand2;
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 
     if (set_flags) {
         cpu.set_flag(Flag.N, result[31]);
@@ -19,10 +35,10 @@ void add(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback
     }
 }
 
-void sub(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void sub(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 - operand2;
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 
     if (set_flags) {
         cpu.set_flags_NZ(result);
@@ -32,10 +48,10 @@ void sub(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback
     }
 }
 
-void adc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void adc(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 + operand2 + cpu.get_flag(Flag.C);
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 
     if (set_flags) {
         cpu.set_flags_NZ(result);
@@ -45,11 +61,11 @@ void adc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback
     }
 }
 
-void sbc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void sbc(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     u64 operand2_carry = cast(u64) operand2 + cast(u64) (cpu.get_flag(Flag.C) ? 0 : 1);
     Word result = operand1 - cast(u32) operand2_carry;
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 
     if (set_flags) {
         cpu.set_flags_NZ(result);
@@ -59,44 +75,44 @@ void sbc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback
     }
 }
 
-void mov(T : ArmCPU)(T cpu, Reg rd, Word immediate, bool set_flags = true) {
-    cpu.set_reg(rd, immediate);
+void mov(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word immediate, bool set_flags = true) {
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, immediate);
     if (set_flags) cpu.set_flags_NZ(immediate);
 }
 
-void cmp(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
+void cmp(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
     sub(cpu, rd, operand1, operand2, false, set_flags);
 }
 
-void and(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void and(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 & operand2;
     if (set_flags) cpu.set_flags_NZ(result);
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void rsb(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void rsb(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     sub(cpu, rd, operand2, operand1, writeback, set_flags);
 }
 
-void rsc(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void rsc(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     sbc(cpu, rd, operand2, operand1, writeback, set_flags);
 }
 
-void tst(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
+void tst(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
     and(cpu, rd, operand1, operand2, false, set_flags);
 }
 
-void teq(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
+void teq(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
     eor(cpu, rd, operand1, operand2, false, set_flags);
 }
 
-void eor(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void eor(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 ^ operand2;
     if (set_flags) cpu.set_flags_NZ(result);
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void lsl(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
+void lsl(T : ArmCPU, bool lower_regs = false, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
     Word result;
     bool carry;
 
@@ -116,10 +132,10 @@ void lsl(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
         cpu.set_flag(Flag.C, carry);
     }
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void lsr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
+void lsr(T : ArmCPU, bool lower_regs = false, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
     Word result;
     bool carry;
 
@@ -143,10 +159,10 @@ void lsr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
         cpu.set_flag(Flag.C, carry);
     }
     
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void asr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
+void asr(T : ArmCPU, bool lower_regs = false, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
     Word result;
     bool carry;
 
@@ -166,10 +182,10 @@ void asr(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
         cpu.set_flag(Flag.C, carry);
     }
     
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void ror(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
+void ror(T : ArmCPU, bool lower_regs = false, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = true, bool set_flags = true) {
     Word result = operand.rotate_right(shift & 0x1F);
 
     if (shift == 0) {
@@ -183,85 +199,85 @@ void ror(T : ArmCPU, S)(T cpu, Reg rd, Word operand, S shift, bool writeback = t
         cpu.set_flag(Flag.C, operand[(shift & 0x1F) - 1]);
     }
 
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
     if (set_flags) cpu.set_flags_NZ(result);
 }
 
-void tst(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2) {
+void tst(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2) {
     cpu.and(rd, operand1, operand2, false);
 }
 
-void neg(T : ArmCPU)(T cpu, Reg rd, Word immediate, bool writeback = true, bool set_flags = true) {
+void neg(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word immediate, bool writeback = true, bool set_flags = true) {
     sub(cpu, rd, Word(0), immediate, writeback, set_flags);
 }
 
-void cmn(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
+void cmn(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool set_flags = true) {
     cpu.add(rd, operand1, operand2, false, set_flags);
 }
 
-void orr(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void orr(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 | operand2;
     if (set_flags) cpu.set_flags_NZ(result);
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void mul(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void mul(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 * operand2;
 
     int idle_cycles = calculate_multiply_cycles!true(operand1);
     for (int i = 0; i < idle_cycles; i++) cpu.run_idle_cycle();
 
     if (set_flags) cpu.set_flags_NZ(result);
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void bic(T : ArmCPU)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
+void bic(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 & ~operand2;
     if (set_flags) cpu.set_flags_NZ(result);
-    if (writeback) cpu.set_reg(rd, result);
+    if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 
-void mvn(T : ArmCPU)(T cpu, Reg rd, Word immediate, bool set_flags = true) {
-    cpu.set_reg(rd, ~immediate);
+void mvn(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word immediate, bool set_flags = true) {
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, ~immediate);
     if (set_flags) cpu.set_flags_NZ(~immediate);
 }
 
-void set_flags_NZ(T : ArmCPU)(T cpu, Word result) {
+void set_flags_NZ(T : ArmCPU, bool lower_regs = false)(T cpu, Word result) {
     cpu.set_flag(Flag.Z, result == 0);
     cpu.set_flag(Flag.N, result[31]);
 }
 
-void ldr(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    Word value = cpu.read_word_and_rotate(address, AccessType.NONSEQUENTIAL);
+void ldr(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    Word value = cpu.read_word_and_rotate(address);
     if (v5TE!T && rd == pc) cpu.set_flag(Flag.T, value[0]);
 
-    cpu.set_reg(rd, value);
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, value);
     cpu.run_idle_cycle();
 }
 
-void ldrh(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    cpu.set_reg(rd, cpu.read_half_and_rotate(address, AccessType.NONSEQUENTIAL));
+void ldrh(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, cpu.read_half_and_rotate(address));
     cpu.run_idle_cycle();
 }
 
-void ldrb(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    cpu.set_reg(rd, cast(Word) cpu.read_byte(address, AccessType.NONSEQUENTIAL));
+void ldrb(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, cast(Word) cpu.read_byte(address));
     cpu.run_idle_cycle();
 }
 
-void ldrsb(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    cpu.set_reg(rd, cast(Word) sext_32(cpu.read_byte(address, AccessType.NONSEQUENTIAL), 8));
+void ldrsb(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    cpu.set_reg_wrapper!(T, lower_regs)(rd, cast(Word) sext_32(cpu.read_byte(address), 8));
     cpu.run_idle_cycle();
 }
 
-void ldrd(T : ArmCPU)(T cpu, Reg rd, Word address) {
+void ldrd(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
     if (rd & 1) error_arm9("LDRD with an odd numbered RD was attempted.");
 
     cpu.ldr(rd,     address);
     cpu.ldr(rd + 1, address + 4);
 }
 
-void ldrsh(T : ArmCPU)(T cpu, Reg rd, Word address) {
+void ldrsh(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
     if (address & 1) {
         static if (v5TE!T) {
             ldrsh(cpu, rd, address & ~1);
@@ -269,37 +285,33 @@ void ldrsh(T : ArmCPU)(T cpu, Reg rd, Word address) {
             ldrsb(cpu, rd, address);
         }
     } else {
-        cpu.set_reg(rd, cast(Word) sext_32(cpu.read_half(address, AccessType.NONSEQUENTIAL), 16));
+        cpu.set_reg_wrapper!(T, lower_regs)(rd, cast(Word) sext_32(cpu.read_half(address), 16));
         cpu.run_idle_cycle();
-        cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
     }
 }
 
-void str(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    Word value = cpu.get_reg(rd);
+void str(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    Word value = cpu.get_reg_wrapper!(T, lower_regs)(rd);
     if (unlikely(rd == pc)) value += 4;
 
-    cpu.write_word(address & ~3, value, AccessType.NONSEQUENTIAL);
-    cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
+    cpu.write_word(address & ~3, value);
 }
 
-void strh(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    Word value = cpu.get_reg(rd);
+void strh(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    Word value = cpu.get_reg_wrapper!(T, lower_regs)(rd);
     if (unlikely(rd == pc)) value += 4;
 
-    cpu.write_half(address & ~1, cast(Half) (value & 0xFFFF), AccessType.NONSEQUENTIAL);
-    cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
+    cpu.write_half(address & ~1, cast(Half) (value & 0xFFFF));
 }
 
-void strb(T : ArmCPU)(T cpu, Reg rd, Word address) {
-    Word value = cpu.get_reg(rd);
+void strb(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
+    Word value = cpu.get_reg_wrapper!(T, lower_regs)(rd);
     if (unlikely(rd == pc)) value += 4;
 
-    cpu.write_byte(address, cast(Byte) (value & 0xFF), AccessType.NONSEQUENTIAL);
-    cpu.set_pipeline_access_type(AccessType.NONSEQUENTIAL);
+    cpu.write_byte(address, cast(Byte) (value & 0xFF));
 }
 
-void strd(T : ArmCPU)(T cpu, Reg rd, Word address) {
+void strd(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word address) {
     if (rd & 1) error_arm9("STRD with an odd numbered RD was attempted.");
 
     cpu.str(rd,     address);
@@ -307,18 +319,18 @@ void strd(T : ArmCPU)(T cpu, Reg rd, Word address) {
 }
 
 
-void swi(T : ArmCPU)(T cpu) {
+void swi(T : ArmCPU, bool lower_regs = false)(T cpu) {
     cpu.raise_exception!(CpuException.SoftwareInterrupt);
 }
 
-Word read_word_and_rotate(ArmCPU cpu, Word address, AccessType access_type) {
-    Word value = cpu.read_word(address & ~3, access_type);
+Word read_word_and_rotate(ArmCPU cpu, Word address) {
+    Word value = cpu.read_word(address & ~3);
     auto misalignment = address & 0b11;
     return value.rotate_right(misalignment * 8);
 }
 
-Word read_half_and_rotate(ArmCPU cpu, Word address, AccessType access_type) {
-    Word value = cast(Word) cpu.read_half(address & ~1, access_type);
+Word read_half_and_rotate(ArmCPU cpu, Word address) {
+    Word value = cast(Word) cpu.read_half(address & ~1);
     auto misalignment = address & 0b1;
     return value.rotate_right(misalignment * 8);
 }

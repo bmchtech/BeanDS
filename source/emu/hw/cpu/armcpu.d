@@ -24,8 +24,10 @@ enum Flag {
 interface ArmCPU {
     Word           get_reg(int i);
     Word           get_reg(int i, CpuMode mode);
+    Word           get_reg__thumb(int i);
     void           set_reg(int i, Word value);
     void           set_reg(int i, Word value, CpuMode mode);
+    void           set_reg__thumb(int i, Word value);
 
     Word           get_cpsr();
     Word           get_spsr();
@@ -39,16 +41,15 @@ interface ArmCPU {
     void           set_flag(Flag flag, bool value);
     bool           get_flag(Flag flag);
 
-    Word           read_word(Word address, AccessType access_type);
-    Half           read_half(Word address, AccessType access_type);
-    Byte           read_byte(Word address, AccessType access_type);
+    Word           read_word(Word address);
+    Half           read_half(Word address);
+    Byte           read_byte(Word address);
 
-    void           write_word(Word address, Word value, AccessType access_type);
-    void           write_half(Word address, Half value, AccessType access_type);
-    void           write_byte(Word address, Byte value, AccessType access_type);
+    void           write_word(Word address, Word value);
+    void           write_half(Word address, Half value);
+    void           write_byte(Word address, Byte value);
 
     void           run_idle_cycle();
-    void           set_pipeline_access_type(AccessType access_type);
 
     bool           in_a_privileged_mode();
     void           update_mode();
