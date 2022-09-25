@@ -12,6 +12,17 @@ alias sp   = Alias!13;
 
 alias Reg = int;
 
+enum INSTRUCTION_BLOCK_SIZE = 1 << 10; // must be a power of 2
+
+struct InstructionBlock {
+    alias code this;
+
+    align(1):
+    Byte[INSTRUCTION_BLOCK_SIZE] code;
+}
+
+static assert (InstructionBlock.sizeof == INSTRUCTION_BLOCK_SIZE);
+
 enum Flag {
     N = 31,
     Z = 30,

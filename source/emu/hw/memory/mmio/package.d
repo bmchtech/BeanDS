@@ -86,41 +86,46 @@ final class MMIO(MMIORegister[] mmio_registers) {
     // }
 
     T read(T)(Word address) {
-        import std.format;
+        static if (!is_memory_unit!T) {
+            error_mmio("Tried to write to MMIO with wrong type (size: %d)", T.sizeof);
+            return T();
+        } else {
+            import std.format;
 
-        log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
-        T value = T(0);
+            log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
+            T value = T(0);
 
-        static foreach (MMIORegister mr; mmio_registers) {
-            static if (mr.readable && mr.all_at_once) {
-                if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
-                    static if (mr.implemented) {
-                        mixin("value |= %s.read_%s!T(address %% %d) << (8 * (address - mr.address));".format(mr.component, mr.name, mr.size));
-                        static if (is(T == Byte)) return value;
-                    } else {
-                        log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
-                        return T(0);
+            static foreach (MMIORegister mr; mmio_registers) {
+                static if (mr.readable && mr.all_at_once) {
+                    if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
+                        static if (mr.implemented) {
+                            mixin("value |= %s.read_%s!T(address %% %d) << (8 * (address - mr.address));".format(mr.component, mr.name, mr.size));
+                            static if (is(T == Byte)) return value;
+                        } else {
+                            log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
+                            return T(0);
+                        }
                     }
                 }
             }
-        }
 
-        static if (is(T == Word)) {
-            value[0 .. 7] = value[0 .. 7] | read_byte(address + 0);
-            value[8 ..15] = value[8 ..15] | read_byte(address + 1); 
-            value[16..23] = value[16..23] | read_byte(address + 2); 
-            value[24..31] = value[24..31] | read_byte(address + 3);
-            return value;  
-        }
+            static if (is(T == Word)) {
+                value[0 .. 7] = value[0 .. 7] | read_byte(address + 0);
+                value[8 ..15] = value[8 ..15] | read_byte(address + 1); 
+                value[16..23] = value[16..23] | read_byte(address + 2); 
+                value[24..31] = value[24..31] | read_byte(address + 3);
+                return value;  
+            }
 
-        static if (is(T == Half)) {
-            value[0.. 7] = value[0.. 7] | read_byte(address + 0); 
-            value[8..15] = value[8..15] | read_byte(address + 1);
-            return value;
-        }
+            static if (is(T == Half)) {
+                value[0.. 7] = value[0.. 7] | read_byte(address + 0); 
+                value[8..15] = value[8..15] | read_byte(address + 1);
+                return value;
+            }
 
-        static if (is(T == Byte)) {
-            return read_byte(address);
+            static if (is(T == Byte)) {
+                return read_byte(address);
+            }
         }
     }
 
@@ -165,36 +170,40 @@ final class MMIO(MMIORegister[] mmio_registers) {
     }
 
     void write(T)(Word address, T value) {
-        log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
+        static if (!is_memory_unit!T) {
+            error_mmio("Tried to write to MMIO with wrong type (size: %d)", T.sizeof);
+        } else {
+            log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
 
-        import std.format;
-        static foreach (MMIORegister mr; mmio_registers) {
-            static if (mr.writeable && mr.all_at_once) {
-                if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
-                    static if (mr.implemented) {
-                        mixin("%s.write_%s!T(cast(T) (value >> (8 * (address - mr.address))), address %% %d);".format(mr.component, mr.name, mr.size));
-                    } else {
-                        log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
-                        return;
+            import std.format;
+            static foreach (MMIORegister mr; mmio_registers) {
+                static if (mr.writeable && mr.all_at_once) {
+                    if (address + T.sizeof > mr.address && address < mr.address + mr.size) {
+                        static if (mr.implemented) {
+                            mixin("%s.write_%s!T(cast(T) (value >> (8 * (address - mr.address))), address %% %d);".format(mr.component, mr.name, mr.size));
+                        } else {
+                            log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
+                            return;
+                        }
                     }
                 }
             }
-        }
 
-        static if (is(T == Word)) {
-            write_byte(address + 0, cast(Byte) value[0 .. 7]);
-            write_byte(address + 1, cast(Byte) value[8 ..15]);
-            write_byte(address + 2, cast(Byte) value[16..23]);
-            write_byte(address + 3, cast(Byte) value[24..31]);
-        }
+            static if (is(T == Word)) {
+                write_byte(address + 0, cast(Byte) value[0 .. 7]);
+                write_byte(address + 1, cast(Byte) value[8 ..15]);
+                write_byte(address + 2, cast(Byte) value[16..23]);
+                write_byte(address + 3, cast(Byte) value[24..31]);
+            }
 
-        static if (is(T == Half)) {
-            write_byte(address + 0, cast(Byte) value[0 .. 7]);
-            write_byte(address + 1, cast(Byte) value[8 ..15]);
-        }
+            static if (is(T == Half)) {
+                write_byte(address + 0, cast(Byte) value[0 .. 7]);
+                write_byte(address + 1, cast(Byte) value[8 ..15]);
+            }
 
-        static if (is(T == Byte)) {
-            write_byte(address, value);
+            static if (is(T == Byte)) {
+                write_byte(address, value);
+            }
         }
     }
 

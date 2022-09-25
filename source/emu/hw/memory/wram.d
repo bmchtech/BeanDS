@@ -104,4 +104,17 @@ final class WRAM {
         if (!arm9_wram_enabled) error_wram("ARM9 tried to write %x to WRAM at %x when it wasn't allowed to.", value, address);
         (*(arm9_mapping[address[14]])).write!T(address % WRAM_SIZE, value);
     }
+
+    InstructionBlock* instruction_read7(Word address) {
+        if (address < 0x0380_0000 && arm7_wram_enabled) {
+            return (*(arm7_mapping[address[14]])).instruction_read(address % WRAM_SIZE);
+        } else {
+            return arm7_only_wram.instruction_read(address % ARM7_ONLY_WRAM_SIZE);
+        }
+    }
+
+    InstructionBlock* instruction_read9(Word address) {
+        if (!arm9_wram_enabled) error_wram("ARM9 tried to perform an instruction read from WRAM at %x when it wasn't allowed to.", address);
+        return (*(arm9_mapping[address[14]])).instruction_read(address % WRAM_SIZE);
+    }
 }

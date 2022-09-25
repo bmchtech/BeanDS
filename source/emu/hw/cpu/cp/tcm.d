@@ -60,6 +60,10 @@ final class TCM {
         return address >= dtcm_region_base && address < dtcm_region_base + dtcm_virtual_size;
     }
 
+    InstructionBlock* read_itcm_instruction(Word address) {
+        return cast(InstructionBlock*) &itcm[address & (ITCM_PHYSICAL_SIZE - 1)];
+    }
+
     T read_itcm(T)(Word address) {
         return itcm.read!T(address & (ITCM_PHYSICAL_SIZE - 1));
     }

@@ -8,6 +8,7 @@ enum LogSource {
     MEM7,
     MEM9,
     UNIMPLEMENTED,
+    MMIO,
     ARM7,
     ARM9,
     DMA7,
@@ -65,7 +66,7 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
     import std.conv;
     import std.format.write : formattedWrite;
     import std.stdio : writef, writefln;
-    
+
     version (silent) {
         return;
     } else {
@@ -76,12 +77,9 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
             arm9.cpu_trace.print_trace();
         }
 
-        version (quiet) {
-        } else {
-            ulong timestamp = scheduler.get_current_time_relative_to_cpu();
-            writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
-            writefln(fmt, args);
-        }
+        ulong timestamp = scheduler.get_current_time_relative_to_cpu();
+        writef("%016x [%s] : ", timestamp, pad_string_right!(to!string(log_source), logsource_padding));
+        writefln(fmt, args);
 
         if (fatal) {
             dump(wram.arm7_only_wram, "arm7_wram.dump");
@@ -123,7 +121,10 @@ static string generate_prettier_logging_functions() {
 
         mixed_in ~= "
             void log_%s(Char, A...)(scope const(Char)[] fmt, A args) {
-                log!(LogSource.%s, false, Char, A)(fmt, args);
+                version (quiet) {
+                } else {
+                    log!(LogSource.%s, false, Char, A)(fmt, args);
+                }
             }
         ".format(source_name.toLower(), source_name);
 

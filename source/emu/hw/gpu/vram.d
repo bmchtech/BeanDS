@@ -196,83 +196,99 @@ final class VRAM {
     }
 
     T read9(T)(Word address) {
-        T result = 0;
-        bool performed_read = false;
+        static if (!is_memory_unit!T) {
+            error_vram("Tried to write to VRAM with wrong type (size: %d)", T.sizeof);
+            return T();
+        } else {
+            T result = 0;
+            bool performed_read = false;
 
-        for (int i = 0; i < 10; i++) {
-            if (i == 2 && vram_c_in_ram) continue;
-            if (i == 3 && vram_d_in_ram) continue;
+            for (int i = 0; i < 10; i++) {
+                if (i == 2 && vram_c_in_ram) continue;
+                if (i == 3 && vram_d_in_ram) continue;
 
-            VRAMBlock block = blocks[i];
+                VRAMBlock block = blocks[i];
 
-            if (block.slot_mapped) continue;
+                if (block.slot_mapped) continue;
 
-            if (block.in_range(address)) {
-                result |= block.read!T(address);
-                performed_read = true;
+                if (block.in_range(address)) {
+                    result |= block.read!T(address);
+                    performed_read = true;
+                }
             }
-        }
 
-        if (!performed_read) log_vram("Read from VRAM from an unmapped region: %x", address);
-        return result;
+            if (!performed_read) log_vram("Read from VRAM from an unmapped region: %x", address);
+            return result;
+        }
     }
 
     void write9(T)(Word address, T value) {
-        static if (is(T == Byte)) {
-            log_vram("ARM9 tried to perform a byte write of %02x to VRAM at address %08x! Ignoring.", value, address);
-        }
-
-        bool performed_write = false;
-
-        for (int i = 0; i < 10; i++) {
-            if (i == 2 && vram_c_in_ram) continue;
-            if (i == 3 && vram_d_in_ram) continue;
-            
-            VRAMBlock block = blocks[i];
-
-            if (block.slot_mapped) continue;
-
-            if (block.in_range(address)) {
-                if (i == 8) log_gpu3d("VRAM H WRITE: [%x] = %x",  address, value);   
-                block.write!T(address, value);
-                performed_write = true;
+        static if (!is_memory_unit!T) {
+            static if (is(T == Byte)) {
+                log_vram("ARM9 tried to perform a byte write of %02x to VRAM at address %08x! Ignoring.", value, address);
             }
-        }
+        } else {
+            bool performed_write = false;
 
-        if (address == 0x0689_0038) {
-            log_gpu3d("VRAM_F WRITE: %x", value);
-        }
+            for (int i = 0; i < 10; i++) {
+                if (i == 2 && vram_c_in_ram) continue;
+                if (i == 3 && vram_d_in_ram) continue;
+                
+                VRAMBlock block = blocks[i];
 
-        if (address == 0x0689_003A) {
-            log_gpu3d("VRAM_F WRITE: %x", value);
-        }
+                if (block.slot_mapped) continue;
 
-        if (address == 0x0689_003C) {
-            log_gpu3d("VRAM_F WRITE: %x", value);
-        }
+                if (block.in_range(address)) {
+                    if (i == 8) log_gpu3d("VRAM H WRITE: [%x] = %x",  address, value);   
+                    block.write!T(address, value);
+                    performed_write = true;
+                }
+            }
 
-        if (address == 0x0689_003E) {
-            log_gpu3d("VRAM_F WRITE: %x", value);
-        }
+            if (address == 0x0689_0038) {
+                log_gpu3d("VRAM_F WRITE: %x", value);
+            }
 
-        if (!performed_write) log_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
+            if (address == 0x0689_003A) {
+                log_gpu3d("VRAM_F WRITE: %x", value);
+            }
+
+            if (address == 0x0689_003C) {
+                log_gpu3d("VRAM_F WRITE: %x", value);
+            }
+
+            if (address == 0x0689_003E) {
+                log_gpu3d("VRAM_F WRITE: %x", value);
+            }
+
+            if (!performed_write) log_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
+        }
     }
 
     T read7(T)(Word address) {
-        T result = 0;
+        static if (!is_memory_unit!T) {
+            error_vram("Tried to write to VRAM with wrong type (size: %d)", T.sizeof);
+            return T();
+        } else {
+            T result = 0;
 
-        for (int i = 2; i < 4; i++) {
-            if (i == 2 && vram_c_in_ram && vram_c.in_range(address)) result |= vram_c.read!T(address);
-            if (i == 2 && vram_d_in_ram && vram_d.in_range(address)) result |= vram_d.read!T(address);
+            for (int i = 2; i < 4; i++) {
+                if (i == 2 && vram_c_in_ram && vram_c.in_range(address)) result |= vram_c.read!T(address);
+                if (i == 2 && vram_d_in_ram && vram_d.in_range(address)) result |= vram_d.read!T(address);
+            }
+            
+            return result;
         }
-        
-        return result;
     }
 
     void write7(T)(Word address, T value) {
-        for (int i = 2; i < 4; i++) {
-            if (i == 2 && vram_c_in_ram && vram_c.in_range(address)) vram_c.write!T(address, value);
-            if (i == 2 && vram_d_in_ram && vram_d.in_range(address)) vram_d.write!T(address, value);
+        static if (!is_memory_unit!T) {
+            error_vram("Tried to write to VRAM with wrong type (size: %d)", T.sizeof);
+        } else {
+            for (int i = 2; i < 4; i++) {
+                if (i == 2 && vram_c_in_ram && vram_c.in_range(address)) vram_c.write!T(address, value);
+                if (i == 2 && vram_d_in_ram && vram_d.in_range(address)) vram_d.write!T(address, value);
+            }
         }
     }
 
