@@ -820,6 +820,10 @@ final class GeometryEngine {
 
         scheduler.remove_event(irq_event);
 
+        if ((cast(uint)parent.irq_mode) > 2) {
+            error_gpu3d("Invalid IRQ mode: %d", parent.irq_mode);
+        }
+
         final switch (parent.irq_mode) {
             case IRQMode.NEVER:
                 break;

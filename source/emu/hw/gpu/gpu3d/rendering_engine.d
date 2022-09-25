@@ -327,6 +327,10 @@ final class RenderingEngine {
     }
 
     void wait_for_rendering_to_finish() {
+        if (!rendering_thread.isRunning) {
+            error_gpu3d("The rendering thread has died. This is a bug.");
+        }
+
         while (true) {
             rendering_scanline_mutex.lock();
                 if (!is_rendering) {
@@ -341,6 +345,7 @@ final class RenderingEngine {
     // TODO: make the timings of the rendering engine actually decent
     void render() {
         parent.start_rendering();
+        log_gpu3d("rendering frame");
         
         // auto effective_scanline = 192 - scanline;
 
@@ -352,10 +357,11 @@ final class RenderingEngine {
             auto left_xy  = p.viewport_coords[p.left_index] [0..2];
             auto right_xy = p.viewport_coords[p.right_index][0..2];
 
-            log_gpu3d("determined. do we even render? %d >= %d >= %d.", p.top_y, 0, p.bot_y);
+            auto effective_top_y = clamp(p.top_y, 0, 191);
+            auto effective_bot_y = clamp(p.bot_y, 0, 191);
 
-            auto effective_top_y = clamp(p.top_y, 0, 192);
-            auto effective_bot_y = clamp(p.bot_y, 0, 192);
+            log_gpu3d("determined. do we even render? %d >= %d >= %d. (%d %d)", p.top_y, 0, p.bot_y, effective_top_y, effective_bot_y);
+
             for (int effective_scanline = effective_top_y; effective_scanline >= effective_bot_y; effective_scanline--) {
                 auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
                     get_slope(
@@ -449,6 +455,8 @@ final class RenderingEngine {
                     p.viewport_coords[p.previous_right_index][3],
                     p.viewport_coords[p.right_index][3]
                 );
+                
+                log_gpu3d("effective_start_x %d %d",effective_start_x, effective_end_x);
 
                 for (int x = effective_start_x; x < effective_end_x; x++) {
                     auto w_l = interpolate(p.viewport_coords[p.previous_left_index][3], p.viewport_coords[p.left_index][3], factor_l);
@@ -514,7 +522,8 @@ final class RenderingEngine {
                     // TODO: we will only need either z or w, never both. only calculate the one we need (assuming interpolation is a bottleneck)
                     Coord_14_18 z = interpolate(z_l, z_r, 1 - factor_scanline);
                     Coord_14_18 w = interpolate(w_l, w_r, 1 - factor_scanline);
-                    parent.plot(192 - effective_scanline, Pixel(r, g, b, a), x, z, w);
+                
+                    parent.plot(191 - effective_scanline, Pixel(r, g, b, a), x, z, w);
                 }
 
                 if (effective_scanline == p.bot_y) {
@@ -538,7 +547,8 @@ final class RenderingEngine {
 
             annotated_polygons[i] = p;
         }
-            
+        
+        log_gpu3d("finished rasterizing polygons");
         parent.stop_rendering_scanline();
     }
 }

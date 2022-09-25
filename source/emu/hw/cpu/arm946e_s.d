@@ -148,7 +148,7 @@ final class ARM946E_S : ArmCPU {
         
         // version (release) {
         // } else {
-            // cpu_trace.capture();
+            cpu_trace.capture();
         // }
         
         if (num_log > 0) {
