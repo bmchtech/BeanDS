@@ -34,9 +34,6 @@ final class GeometryEngine {
         void push(Matrix matrix) {
             if (stack_pointer == size) return;
 
-            if (stack_pointer == 2) {
-                // // log_gpu3d("MTXOP im going to shoot myself");
-            }
             stack[stack_pointer] = matrix;
             stack_pointer++;
         }
@@ -50,9 +47,6 @@ final class GeometryEngine {
         }
 
         void store(Matrix matrix, int index) {
-            if (index == 2) {
-                // // log_gpu3d("MTXOP im going to store myself");
-            }
             stack[index] = matrix;
         }
 
@@ -198,13 +192,11 @@ final class GeometryEngine {
             
             case MatrixMode.TEXTURE:
                 texture_matrix = texture_matrix * matrix;
-                // // log_gpu3d("MTXOP multiplying texture: %s", texture_matrix[0][0]);
                 break;
         }
     }
 
     PolygonAssembler get_assembler() {
-        // // // log_gpu3d("getting assembler %x", polygon_type);
         final switch (polygon_type) {
             case PolygonType.TRIANGLES:
                 return triangle_assembler;
@@ -231,10 +223,6 @@ final class GeometryEngine {
     
     void submit_vertex(Point_4_12 point) {
         previous_point = point;
-
-        for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++) {
-            // // log_gpu3d("PROJ_MATR[%d][%d] = %f", i, j, cast(float) projection_matrix[i][j]);
-        }
 
         auto clip_matrix_point = (projection_matrix * modelview_matrix) * expand_point(point);
 
@@ -275,7 +263,6 @@ final class GeometryEngine {
                 break;
             
             case MatrixMode.TEXTURE:
-                log_gpu3d("MTXOP setting texture matrix: %s", matrix[0][0]);
                 texture_matrix = matrix;
                 break;
         }
@@ -288,19 +275,16 @@ final class GeometryEngine {
     void handle_MTX_PUSH(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION:
-                // log_gpu3d("MTXOP pushing projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_stack.push(projection_matrix);
                 break;
 
             case MatrixMode.POSITION:
-            case MatrixMode.POSITION_VECTOR: 
-                // log_gpu3d("MTXOP pushing position + modelview (ptr = %d %d)", modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
+            case MatrixMode.POSITION_VECTOR:
                 modelview_stack.push(modelview_matrix);
                 position_vector_stack.push(position_vector_matrix);
                 break;
 
             case MatrixMode.TEXTURE:
-                log_gpu3d("MTXOP pushing texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_stack.push(texture_matrix);
                 break;
         }
@@ -309,19 +293,16 @@ final class GeometryEngine {
     void handle_MTX_POP(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                // log_gpu3d("MTXOP popping projection (ptr = %d)", projection_stack.stack_pointer);
                 projection_matrix = projection_stack.pop(1);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR:
-                // log_gpu3d("MTXOP popping position + modelview w/ idx %d, (ptr = %d %d)", sext_32(args[0][0..5], 6), modelview_stack.stack_pointer, position_vector_stack.stack_pointer);
                 modelview_matrix = modelview_stack.pop(sext_32(args[0][0..5], 6));
                 position_vector_matrix = position_vector_stack.pop(sext_32(args[0][0..5], 6));
                 break;
 
             case MatrixMode.TEXTURE:
-                log_gpu3d("MTXOP popping texture (ptr = %d)", texture_stack.stack_pointer);
                 texture_matrix = texture_stack.pop(1);
                 break;
         }
@@ -330,19 +311,16 @@ final class GeometryEngine {
     void handle_MTX_STORE(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                // // log_gpu3d("MTXOP storing projection");
                 projection_stack.store(projection_matrix, 0);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR: 
-                // log_gpu3d("MTXOP storing position + modelview w/ idx %d", args[0][0..4]);
                 modelview_stack.store(modelview_matrix, args[0][0..4]);
                 position_vector_stack.store(position_vector_matrix, args[0][0..4]);
                 break;
 
             case MatrixMode.TEXTURE:
-                log_gpu3d("MTXOP storing texture: %s", texture_matrix[0][0]);
                 texture_stack.store(texture_matrix, 0);
                 break;
         }
@@ -351,20 +329,17 @@ final class GeometryEngine {
     void handle_MTX_RESTORE(Word* args) {
         final switch (matrix_mode) {
             case MatrixMode.PROJECTION: 
-                // log_gpu3d("MTXOP restoring projection");
                 projection_matrix = projection_stack.restore(0);
                 break;
 
             case MatrixMode.POSITION:
             case MatrixMode.POSITION_VECTOR:
-                // log_gpu3d("MTXOP restoring position + modelview w/ idx %d", args[0][0..4]);
                 modelview_matrix = modelview_stack.restore(args[0][0..4]);
                 position_vector_matrix = position_vector_stack.restore(args[0][0..4]);
                 break;
 
             case MatrixMode.TEXTURE:
                 texture_matrix = texture_stack.restore(0);
-                log_gpu3d("MTXOP restoring texture: %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -386,7 +361,6 @@ final class GeometryEngine {
 
             case MatrixMode.TEXTURE:
                 texture_matrix = Matrix.identity();
-                log_gpu3d("MTXOP texture matrix overwritten with identity %s", texture_matrix[0][0]);
                 break;
         }
     }
@@ -403,7 +377,6 @@ final class GeometryEngine {
     }
 
     void handle_PLTT_BASE(Word* args) {
-        // // log_gpu3d("set palette base: %x", args[0][0..12]);
         palette_base_address = args[0][0..12];
     }
 
@@ -489,7 +462,6 @@ final class GeometryEngine {
     }
 
     void handle_BEGIN_VTXS(Word* args) {
-        // // log_gpu3d("BEGIN VTXS: %x", args[0]);
         polygon_type = cast(PolygonType) args[0][0..1];
         if (args[0][2..31]) {
             error_gpu3d("there's probably an issue with command decoding.");
@@ -505,7 +477,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_16(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_16: %x %x", args[0], args[1]);
         submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
@@ -515,7 +486,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_10(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_10: %x", args[0]);
         submit_vertex(Point_4_12([
             FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][0 .. 9]), 16)).convert!(4, 12),
             FixedPoint!(4, 6).from_repr(sext_32!Word(Word(args[0][10..19]), 16)).convert!(4, 12),
@@ -525,7 +495,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_XY(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_XY: %x", args[0]);
         submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][16..31]), 16)),
@@ -535,7 +504,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_XZ(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_XZ: %x", args[0]);
         submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
             previous_point[1],
@@ -545,7 +513,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_YZ(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_YZ: %x", args[0]);
         submit_vertex(Point_4_12([
             previous_point[0],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0 ..15]), 16)),
@@ -555,7 +522,6 @@ final class GeometryEngine {
     }
 
     void handle_VTX_DIFF(Word* args) {
-        // // log_gpu3d("[VTXASS] VTX_DIFF: %x", args[0]);
         submit_vertex(Point_4_12([
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][0..9]),   10)) + previous_point[0],
             FixedPoint!(4, 12).from_repr(sext_32!Word(Word(args[0][10..19]), 10)) + previous_point[1],
@@ -568,8 +534,6 @@ final class GeometryEngine {
         bool translucent_polygon_y_sorting = args[0][0];
         bool depth_buffering_mode          = args[0][1];
 
-        log_gpu3d("SWAP BUFFERS AT SCANLINE %x", gpu.scanline);
-        log_gpu3d("depth buffering mode: %x", depth_buffering_mode);
         parent.queue_buffer_swap(polygon_index, translucent_polygon_y_sorting, depth_buffering_mode);
 
         polygon_index = 0;
@@ -594,8 +558,6 @@ final class GeometryEngine {
         texture_format              = cast(TextureFormat) args[0][26..28];
         texture_color_0_transparent = args[0][29];
         texture_transformation_mode = cast(TextureTransformationMode) args[0][30..31];
-
-        if (texture_format == TextureFormat.NONE) log_gpu3d("WTF!!! %X", args[0]);
     }
 
     void submit_polygon() {
@@ -615,20 +577,20 @@ final class GeometryEngine {
         polygon.texture_color_0_transparent = texture_color_0_transparent;
         polygon.palette_base_address        = palette_base_address;
 
-        log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
-        log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
-        log_gpu3d("    texture_vram_offset         : %x", polygon.texture_vram_offset         );
-        log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
-        log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
-        log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
-        log_gpu3d("    texture_flip_t_direction    : %d", polygon.texture_flip_t_direction    );
-        log_gpu3d("    texture_s_size              : %d", polygon.texture_s_size              );
-        log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
-        log_gpu3d("    texture_format              : %s", polygon.texture_format              );
-        log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
-        log_gpu3d("    palette_base_address        : %x", polygon.palette_base_address        );
-        log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
-        log_gpu3d("    texture_transformation_mode : %s", texture_transformation_mode);
+        // log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
+        // log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
+        // log_gpu3d("    texture_vram_offset         : %x", polygon.texture_vram_offset         );
+        // log_gpu3d("    texture_repeat_s_direction  : %d", polygon.texture_repeat_s_direction  );
+        // log_gpu3d("    texture_repeat_t_direction  : %d", polygon.texture_repeat_t_direction  );
+        // log_gpu3d("    texture_flip_s_direction    : %d", polygon.texture_flip_s_direction    );
+        // log_gpu3d("    texture_flip_t_direction    : %d", polygon.texture_flip_t_direction    );
+        // log_gpu3d("    texture_s_size              : %d", polygon.texture_s_size              );
+        // log_gpu3d("    texture_t_size              : %d", polygon.texture_t_size              );
+        // log_gpu3d("    texture_format              : %s", polygon.texture_format              );
+        // log_gpu3d("    texture_color_0_transparent : %d", polygon.texture_color_0_transparent );
+        // log_gpu3d("    palette_base_address        : %x", polygon.palette_base_address        );
+        // log_gpu3d("    num_vertices                : %d", polygon.num_vertices                );
+        // log_gpu3d("    texture_transformation_mode : %s", texture_transformation_mode);
 
         parent.geometry_buffer[polygon_index] = polygon;
         polygon_index++;
@@ -650,7 +612,6 @@ final class GeometryEngine {
                 break;
 
             case TextureTransformationMode.TEXCOORD:
-                log_gpu3d("transforming via TEXCOORD");
                 texcoord[2] = Coord_20_12(0.0625f);
                 texcoord[3] = Coord_20_12(0.0625f);
                 texcoord_prime = texture_matrix * texcoord;
@@ -672,7 +633,6 @@ final class GeometryEngine {
         ]);
 
         if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
-            log_gpu3d("transforming via NORMAL: %s %s %s", texture_matrix[0][0], texture_matrix[0][1], texture_matrix[1][0]);
             texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[0][1] * normal_vector[1] + texture_matrix[0][2] * normal_vector[2] + texcoord[0];
             texcoord_prime[1] = texture_matrix[1][0] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[1][2] * normal_vector[2] + texcoord[1];
         }
@@ -708,7 +668,6 @@ final class GeometryEngine {
                 command_buffer_length = 0;
                 for (int i = 0; i < 4; i++) {
                     if (data.get_byte(i) != 0) {
-                        // // log_gpu3d("queueing command: %s", commands[data.get_byte(i)].name);
                         auto command = commands[data.get_byte(i)];
                         if (!command.valid) error_gpu3d("Invalid command! %x", data.get_byte(i));
 
@@ -735,7 +694,6 @@ final class GeometryEngine {
                 }
 
                 while (command_parameters_remaining == 0) {
-                    // // log_gpu3d("Received well-formed command: %s (head: %d)", command_buffer[current_command_index].name, command_parameters_head);
                     this.handle_command(command_buffer[current_command_index].id, cast(Word*) &command_parameters_buffer[command_parameters_head]);
 
                     command_parameters_head = command_parameters_length;
@@ -791,7 +749,7 @@ final class GeometryEngine {
                             reschedule_interrupt();
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
-                            // // log_gpu3d("Unhandled command: %s", commands[i].name);
+                            log_gpu3d("Unhandled command: %s", commands[i].name);
                         }
                         return;
                 }
@@ -820,21 +778,15 @@ final class GeometryEngine {
 
         scheduler.remove_event(irq_event);
 
-        if ((cast(uint)parent.irq_mode) > 2) {
-            error_gpu3d("Invalid IRQ mode: %d", parent.irq_mode);
-        }
-
         final switch (parent.irq_mode) {
             case IRQMode.NEVER:
                 break;
             
             case IRQMode.LESS_THAN_HALF_FULL:
-                log_gpu3d("scheduling an IRQ event in %d cycles", cycles_till_complete / 2);
                 irq_event = scheduler.add_event_relative_to_clock(&this.raise_interrupt, cycles_till_complete);
                 break;
             
             case IRQMode.EMPTY:
-                log_gpu3d("scheduling an IRQ event in %d cycles", cycles_till_complete);
                 irq_event = scheduler.add_event_relative_to_clock(&this.raise_interrupt, cycles_till_complete);
                 break;
             
@@ -845,7 +797,6 @@ final class GeometryEngine {
     }
 
     void raise_interrupt() {
-        log_gpu3d("raising GXFIFO interrupt");
         interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO);
     }
 }

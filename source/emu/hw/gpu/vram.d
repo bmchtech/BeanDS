@@ -132,7 +132,6 @@ final class VRAM {
                 for (int j = 0; j < 5; j++) {
                     if (block.slot.bit(j)) {
                         all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * (SLOT_SIZE_BG)]);
-                        log_vram("mapped: %s %x %x %x", block.slot_type, j, i, block.slot_ofs + num_times_mapped * SLOT_SIZE_BG);
                         num_times_mapped++;
                     }
                 }
@@ -162,9 +161,6 @@ final class VRAM {
     }
 
     T read_slot(T)(SlotType slot_type, int slot, Word address) {
-        if (slot_type == SlotType.BG_PAL_B) {
-            log_vram("we are doing a read from bg pal b %x", address);
-        }
         if (((all_slots[slot_type])[slot]) == null) {
             log_vram("tried to read from slot type %s at slot %d, though no slot was mapped :(", slot_type, slot);
             return T(0);
@@ -239,26 +235,9 @@ final class VRAM {
                 if (block.slot_mapped) continue;
 
                 if (block.in_range(address)) {
-                    if (i == 8) log_gpu3d("VRAM H WRITE: [%x] = %x",  address, value);   
                     block.write!T(address, value);
                     performed_write = true;
                 }
-            }
-
-            if (address == 0x0689_0038) {
-                log_gpu3d("VRAM_F WRITE: %x", value);
-            }
-
-            if (address == 0x0689_003A) {
-                log_gpu3d("VRAM_F WRITE: %x", value);
-            }
-
-            if (address == 0x0689_003C) {
-                log_gpu3d("VRAM_F WRITE: %x", value);
-            }
-
-            if (address == 0x0689_003E) {
-                log_gpu3d("VRAM_F WRITE: %x", value);
             }
 
             if (!performed_write) log_vram("Wrote %x to VRAM in an unmapped region: %x", value, address);
@@ -358,8 +337,6 @@ final class VRAM {
             case 3: vram_a.slot = 1 << offset; vram_a.slot_type = SlotType.TEXTURE; break;
         }
 
-        // log_gpu3d("VRAMA: mst=%d, slot_mapped=%d, address=%x", mst, vram_a.slot_mapped, vram_a.address);
-        dump(vram_a.data, "vram_a.dump");
         remap_slots();
     }
 
@@ -432,7 +409,6 @@ final class VRAM {
         vram_f.offset      = offset;
         vram_f.slot_mapped = mst > 2;
 
-        log_gpu3d("remapping vram_F: mst=%d, offset=%d", mst, offset);
         final switch (mst) {
             case 0: vram_f.address = 0x0689_0000; break;
             case 1: vram_f.address = 0x0600_0000 + 0x4000 * offset.bit(0) + 0x10000 * offset.bit(1); break;

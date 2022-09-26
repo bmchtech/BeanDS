@@ -188,8 +188,6 @@ final class Firmware : SPIDevice {
                 // TODO: im not sure this is actually how this command works but
                 //       i hope it's right? check this
 
-                log_firmware("page write: %x", address);
-
                 if (access_number < 3) {
                     // 3 - access_number because address is set in MSB -> LSB order
                     address.set_byte(2 - access_number, b);
@@ -218,7 +216,6 @@ final class Firmware : SPIDevice {
     // returns true if this command does further calculation past this write
     // (i.e. if it takes more arguments later)
     private bool parse_command(Byte b) {
-        // log_firmware("parsing cmd! %x", b);
         switch (b) {
             case 0x06: write_enable = true;                        return false;
             case 0x04: write_enable = false;                       return false;

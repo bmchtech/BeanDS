@@ -106,8 +106,6 @@ final class TouchScreen : SPIDevice {
     bool sussine = true;
 
     override Byte write(Byte b) {
-        log_touchscreen("write: %x", b);
-        
         Byte return_value = result[0];
         result[0] = result[1];
 
@@ -118,19 +116,13 @@ final class TouchScreen : SPIDevice {
                     reference_select = cast(ReferenceSelect) b[2];
                     conversion_mode  = cast(ConversionMode)  b[3];
                     channel_select   = cast(ChannelSelect)   b[4..6];
-                    log_touchscreen("cmd: %s", cast(ChannelSelect) b[4..6]);
 
                     final switch (channel_select) {
                         case ChannelSelect.TEMPERATURE_0:
-                            // log_touchscreen("tried to read temperature 0");
                             set_result(0x2F8);
                             break;
                         
                         case ChannelSelect.TOUCHSCREEN_Y:
-                            arm7.num_log = 100;
-                            for (int i = 0; i < 0x100; i++) {
-                                log_arm7("stack dump: %x", mem7.read!Word(arm7.regs[sp] + i * 4));
-                            }
 
                             if ((scr_y2 - scr_y1) == 0) set_result(0xFFF);
                                 else {
@@ -147,9 +139,6 @@ final class TouchScreen : SPIDevice {
                             }
                             
                             sussine = false;
-                            // log_touchscreen("tried to read touchscreen pos y: %x %x %x %x %x %x", 0x1F, scr_y1, scr_y2, adc_y1, adc_y2, input.keys[22] ? 
-                            //     0 : 
-                            //     ((y_position + 1 - scr_y1) * (adc_y2 - adc_y1)) / (scr_y2 - scr_y1) + adc_y1);
                             break;
                         
                         case ChannelSelect.BATTERY_VOLTAGE:
@@ -157,12 +146,10 @@ final class TouchScreen : SPIDevice {
                             break;
 
                         case ChannelSelect.TOUCHSCREEN_Z1:
-                            // log_touchscreen("tried to read touchscreen z1");
                             set_result(0);
                             break;
 
                         case ChannelSelect.TOUCHSCREEN_Z2:
-                            // log_touchscreen("tried to read touchscreen z2");
                             set_result(0);
                             break;
                         
@@ -175,19 +162,13 @@ final class TouchScreen : SPIDevice {
                                     ((x_position + 1 - scr_x1) * (adc_x2 - adc_x1)) / (scr_x2 - scr_x1) + adc_x1
                                 );
                             }
-                            // log_touchscreen("tried to read touchscreen pos x: %x %x", 
-                            //     input.keys[22] ? 
-                            //     0 : 
-                            //     ((x_position + 1 - scr_x1) * (adc_x2 - adc_x1)) / (scr_x2 - scr_x1) + adc_x1, arm7.regs[pc]);
                             break;
                         
                         case ChannelSelect.AUX_INPUT:
-                            // log_touchscreen("tried to read mic (auxinput)");
                             set_result(0);
                             break;
                         
                         case ChannelSelect.TEMPERATURE_1:
-                            // log_touchscreen("tried to read temperature 1");
                             set_result(0x384);
                             break;
                     }
@@ -199,18 +180,14 @@ final class TouchScreen : SPIDevice {
             }
         }
 
-        // log_touchscreen("returning %x", return_value);
-
         return return_value;
     }
 
     override void chipselect_fall() {
-        // log_touchscreen("chipselect fall");
         state = State.WAITING_FOR_COMMAND;
     }
 
     override void chipselect_rise() {
-        // log_touchscreen("chipselect rise");
         state = State.WAITING_FOR_CHIPSELECT;
     }
 

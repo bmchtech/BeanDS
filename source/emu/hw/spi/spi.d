@@ -52,7 +52,6 @@ final class SPI {
     }
 
     void write_SPICNT(int target_byte, Byte data) {
-        // log_spi("SPICNT: %x %x", target_byte, data);
         final switch (target_byte) {
             case 0:
                 baudrate = data[0..1];
@@ -72,7 +71,7 @@ final class SPI {
 
                     if (data[3] && !chipselect_hold) {
                         if (selected_device is null) {
-                            log_unimplemented("tried to chipselect an invalid chip");
+                            error_spi("tried to chipselect an invalid chip");
                         } else {
                             selected_device.chipselect_fall();
                         }
@@ -89,8 +88,6 @@ final class SPI {
     }
 
     T read_SPIDATA(T)(int offset) {
-        // log_spi("spidata?: %x %x", selected_device_index, result);
-
         return T(result);
     }
 

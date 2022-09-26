@@ -96,7 +96,6 @@ final class PowerMan : SPIDevice {
                 break;
         }
 
-        // log_powerman("Reading from register. [%s] = %x", register, result);
         return result;
     }
 
@@ -125,16 +124,13 @@ final class PowerMan : SPIDevice {
                 break;
         }
 
-        // log_powerman("Writing to register. [%s] = %x", register, b);
     }
 
     override void chipselect_rise() {
-        // log_touchscreen("chipselect fall");
         state = State.WAITING_FOR_CHIPSELECT;
     }
 
     override void chipselect_fall() {
-        // log_touchscreen("chipselect fall");
         state = State.WAITING_FOR_COMMAND;
     }
 }

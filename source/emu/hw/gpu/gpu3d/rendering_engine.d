@@ -31,16 +31,8 @@ final class RenderingEngine {
                     this.orig.vertices[i].pos[2].convert!(14, 18),
                     this.orig.vertices[i].pos[3].convert!(14, 18)
                 ]);
-                // log_gpu3d("conversion from %f to %f", cast(float) this.orig.vertices[i].pos[2], cast(float) this.orig.vertices[i].pos[2].convert!(14, 18));
 
-                if (deboog) log_gpu3d("[DEBOOG]    funnycoords: (%f, %f) reprs: (%x %x)",
-                    cast(float) viewport_coords[i][0], 
-                    cast(float) viewport_coords[i][1],
-                    viewport_coords[i][0].repr, 
-                    viewport_coords[i][1].repr,
-                );
-
-                log_gpu3d("coord: (%s, %s)", viewport_coords[i][0], viewport_coords[i][1]);
+                // log_gpu3d("coord: (%s, %s)", viewport_coords[i][0], viewport_coords[i][1]);
 
                 // if (viewport_coords[i][0])
             }
@@ -48,17 +40,7 @@ final class RenderingEngine {
             this.clockwise = (
                     (this.orig.vertices[1].pos[1] - this.orig.vertices[0].pos[1]) * (this.orig.vertices[2].pos[0] - this.orig.vertices[1].pos[0]) -
                     (this.orig.vertices[1].pos[0] - this.orig.vertices[0].pos[0]) * (this.orig.vertices[2].pos[1] - this.orig.vertices[1].pos[1])
-                ) > 0; //(
-                // (this.orig.vertices[1].pos[0] - this.orig.vertices[0].pos[0]) * (this.orig.vertices[2].pos[1] - this.orig.vertices[0].pos[1]) -
-                // (this.orig.vertices[1].pos[1] - this.orig.vertices[1].pos[0]) * (this.orig.vertices[2].pos[0] - this.orig.vertices[0].pos[0])
-            // ) < 0;
-
-            // if (deboog) // log_gpu3d("[DEBOOG] cockwise: %x %s", this.clockwise,
-            //     (
-            //         (this.orig.vertices[1].pos[1] - this.orig.vertices[0].pos[1]) * (this.orig.vertices[2].pos[0] - this.orig.vertices[1].pos[0]) -
-            //         (this.orig.vertices[1].pos[0] - this.orig.vertices[0].pos[0]) * (this.orig.vertices[2].pos[1] - this.orig.vertices[1].pos[1])
-            //     )
-            // );
+                ) > 0;
 
             int topleft_vertex_index  = 0;
             int botright_vertex_index = 0;
@@ -74,19 +56,7 @@ final class RenderingEngine {
                 float topright_dy = cast(float) viewport_coords[j][1] - cast(float) viewport_coords[topright_vertex_index][1];
                 float botleft_dx = cast(float) viewport_coords[j][0] - cast(float) viewport_coords[botleft_vertex_index][0];
                 float botleft_dy = cast(float) viewport_coords[j][1] - cast(float) viewport_coords[botleft_vertex_index][1];
-                // log_gpu3d("sussine[%d]: %f %f %f %f %f %f %f %f %f %f",
-                //     j,
-                //     cast(float) topleft_dx,
-                //     cast(float) topleft_dy,
-                //     cast(float) botright_dx,
-                //     cast(float) botright_dy,
-                //     cast(float) topright_dx,
-                //     cast(float) topright_dy,
-                //     cast(float) botleft_dx,
-                //     cast(float) botleft_dy,
-                //     cast(float) topleft_vertex_index,
-                //     cast(float) botright_vertex_index
-                // );
+
                 if (topleft_dy > 0 || (topleft_dy == 0 && topleft_dx < 0)) topleft_vertex_index = j;
                 if (botright_dy < 0 || (botright_dy == 0 && botright_dx > 0)) botright_vertex_index = j;
                 if (topright_dy > 0 || (topright_dy == 0 && topright_dx > 0)) topright_vertex_index = j;
@@ -96,7 +66,6 @@ final class RenderingEngine {
             annotated_vertices[orig.num_vertices - 1].left = annotated_vertices[orig.num_vertices - 2].left;
 
             annotated_vertices[0] = AnnotatedVertex(topleft_vertex_index, clockwise);
-            // log_gpu3d("topleft vtx: %d", topleft_vertex_index);
             top_y = cast(int) viewport_coords[topleft_vertex_index][1];
             bot_y_lower = cast(int) viewport_coords[botright_vertex_index][1];
 
@@ -174,17 +143,6 @@ final class RenderingEngine {
                 }
             }
 
-
-            for (int j = 0; j < p.num_vertices + 2; j++) {
-                // if (deboog)
-                    // log_gpu3d("[DEBOOG] annotatedcoords: %d %s", annotated_vertices[j].index, annotated_vertices[j].left ? "left" : "right");
-
-                // // log_gpu3d("coord: (%s, %s)", viewport_coords[i][0], viewport_coords[i][1]);
-
-                // if (viewport_coords[i][0])
-            }
-
-            // if (deboog) // log_gpu3d("[DEBOOG] BOT_Y OPTIONS! %s %s", viewport_coords[inc_index][1], viewport_coords[dec_index][1]);
             bot_y = viewport_coords[left_index][1] > viewport_coords[right_index][1] ? cast(int) viewport_coords[left_index][1] : cast(int) viewport_coords[right_index][1];
             annotated_vertex_next = 2;
         }
@@ -236,14 +194,12 @@ final class RenderingEngine {
     Coord_14_18 get_slope(Coord_14_18 dy, Coord_14_18 dx) {
         if (dx == 0) return Coord_14_18.from_repr(0x7FFFFFFF);
         if (dy == 0) return Coord_14_18.from_repr(0x00000001);
-        // log_gpu3d("getting slope from dx dy %f %f", cast(float) dx, cast(float) dy);
         return dy / dx;
     }
 
     void annotate_polygons() {
-        // // log_gpu3d("annotating %x polygons", num_polygons);
         for (int i = 0; i < num_polygons; i++) {
-            log_gpu3d("Annotating Polygon #%d!", i);
+            // log_gpu3d("Annotating Polygon #%d!", i);
             deboog = true || i == 1;
             annotated_polygons[i] = AnnotatedPolygon(parent.rendering_buffer[i], this);
         }
@@ -252,34 +208,12 @@ final class RenderingEngine {
     Coord_14_18 to_screen_coords_x(Coord_20_12 x, Coord_20_12 w) {
         Coord_14_18 xprime = x.convert!(14, 18);
         Coord_14_18 wprime = w.convert!(14, 18);
-        // log_gpu3d("prime stuff: %f %f %f %f", cast(float) x, cast(float) xprime,cast(float) w, cast(float) wprime);
-        // log_gpu3d("calculation stuff: %f %f %f %f %f %f",
-        //     cast(float) (xprime + wprime).to_unsigned_float,
-        //     cast(float) (wprime * 2).to_unsigned_float,
-        //     cast(float) ((parent.viewport_x2 - parent.viewport_x1)),
-        //     cast(float) (((parent.viewport_x2 - parent.viewport_x1) / (wprime * 2))).to_unsigned_float,
-        //     cast(float) ((xprime + wprime) * ((parent.viewport_x2 - parent.viewport_x1) / (wprime * 2))).to_unsigned_float,
-        //     cast(float) ((xprime + wprime) * ((parent.viewport_x2 - parent.viewport_x1) / (wprime * 2)) + parent.viewport_x1).to_unsigned_float
-        // );
-        auto blah = ((xprime + wprime) * ((parent.viewport_x2 - parent.viewport_x1) / (wprime * 2)));
-        // log_gpu3d("result: %f %x", blah.to_unsigned_float, blah.repr);
-        return blah;
+        return ((xprime + wprime) * ((parent.viewport_x2 - parent.viewport_x1) / (wprime * 2)) + parent.viewport_x1);
     }
 
     Coord_14_18 to_screen_coords_y(Coord_20_12 y, Coord_20_12 w) {
-        // log_gpu3d("viewport stuff: %d %d %d %d", parent.viewport_y1, parent.viewport_y2, parent.viewport_x1, parent.viewport_x2);
         Coord_14_18 yprime = y.convert!(14, 18);
         Coord_14_18 wprime = w.convert!(14, 18);
-        // log_gpu3d("prime stuff: %f %f %f %f", cast(float) y, cast(float) yprime,cast(float) w, cast(float) wprime);
-        // log_gpu3d("calculation stuff: %f %f %f %f %f %f", cast(float) yprime, cast(float) wprime, cast(float) yprime + wprime, cast(float) (yprime + wprime) * (parent.viewport_y2 - parent.viewport_y1),
-        // cast(float) (wprime * 2) + parent.viewport_y1), cast(float) ((yprime + wprime) * (parent.viewport_y2 - parent.viewport_y1) / (wprime * 2) + parent.viewport_y1));
-        // log_gpu3d("calculation stuff: %f %f %f %f %f",
-        //     cast(float) (yprime + wprime),
-        //     cast(float) (wprime * 2),
-        //     cast(float) ((parent.viewport_y2 - parent.viewport_y1)),
-        //     cast(float) (((parent.viewport_y2 - parent.viewport_y1) / (wprime * 2))),
-        //     cast(float) ((yprime + wprime) * ((parent.viewport_y2 - parent.viewport_y1) / (wprime * 2)))
-        // );
         return ((yprime + wprime) * ((parent.viewport_y2 - parent.viewport_y1) / (wprime * 2)) + parent.viewport_y1);
     }
 
@@ -345,14 +279,9 @@ final class RenderingEngine {
     // TODO: make the timings of the rendering engine actually decent
     void render() {
         parent.start_rendering();
-        log_gpu3d("rendering frame");
-        
-        // auto effective_scanline = 192 - scanline;
-
-        // if (num_polygons>15) num_polygons = 15;
 
         for (int i = 0; i < num_polygons; i++) {
-            log_gpu3d("rendering funky polygon #%d", i);
+            // log_gpu3d("rendering funky polygon #%d", i);
             auto p = annotated_polygons[i];
             auto left_xy  = p.viewport_coords[p.left_index] [0..2];
             auto right_xy = p.viewport_coords[p.right_index][0..2];
@@ -360,7 +289,7 @@ final class RenderingEngine {
             auto effective_top_y = clamp(p.top_y, 0, 191);
             auto effective_bot_y = clamp(p.bot_y, 0, 191);
 
-            log_gpu3d("determined. do we even render? %d >= %d >= %d. (%d %d)", p.top_y, 0, p.bot_y, effective_top_y, effective_bot_y);
+            // log_gpu3d("determined. do we even render? %d >= %d >= %d. (%d %d)", p.top_y, 0, p.bot_y, effective_top_y, effective_bot_y);
 
             for (int effective_scanline = effective_top_y; effective_scanline >= effective_bot_y; effective_scanline--) {
                 auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
@@ -406,40 +335,37 @@ final class RenderingEngine {
                 if (end_x < 0)     effective_end_x = 0;
                 if (end_x > 256)   effective_end_x = 256;
 
-                // stupid hack
-                // if (start_x <= )
-
                 if (effective_start_x == 0 && effective_end_x == 0) {
-                    log_gpu3d("bug!");
+                    // log_gpu3d("bug!");
 
-                    log_gpu3d("determined slopes: (left: %f, right: %f)", 
-                        cast(float) get_slope(
-                            p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
-                            p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
-                        ),
-                        cast(float) get_slope(
-                            p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
-                            p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
-                        )
-                    );
-                    log_gpu3d("determined components to calculate left slope: (%f %f), (%f %f)", 
-                        cast(float) p.viewport_coords[p.previous_left_index][0].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.previous_left_index][1].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.left_index][0].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.left_index][1].to_unsigned_float
-                    );
-                    log_gpu3d("determined components to calculate right slope: (%f %f), (%f %f)", 
-                        cast(float) p.viewport_coords[p.previous_right_index][0].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.previous_right_index][1].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.right_index][0].to_unsigned_float,
-                        cast(float) p.viewport_coords[p.right_index][1].to_unsigned_float
-                    );
-                    log_gpu3d("the sussy subtractions: %s %s %s %s", 
-                        p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
-                        p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0],
-                        p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
-                        p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
-                    );
+                    // log_gpu3d("determined slopes: (left: %f, right: %f)", 
+                    //     cast(float) get_slope(
+                    //         p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
+                    //         p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0]
+                    //     ),
+                    //     cast(float) get_slope(
+                    //         p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1], 
+                    //         p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
+                    //     )
+                    // );
+                    // log_gpu3d("determined components to calculate left slope: (%f %f), (%f %f)", 
+                    //     cast(float) p.viewport_coords[p.previous_left_index][0].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.previous_left_index][1].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.left_index][0].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.left_index][1].to_unsigned_float
+                    // );
+                    // log_gpu3d("determined components to calculate right slope: (%f %f), (%f %f)", 
+                    //     cast(float) p.viewport_coords[p.previous_right_index][0].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.previous_right_index][1].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.right_index][0].to_unsigned_float,
+                    //     cast(float) p.viewport_coords[p.right_index][1].to_unsigned_float
+                    // );
+                    // log_gpu3d("the sussy subtractions: %s %s %s %s", 
+                    //     p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1],
+                    //     p.viewport_coords[p.previous_left_index][0] - p.viewport_coords[p.left_index][0],
+                    //     p.viewport_coords[p.previous_right_index][1] - p.viewport_coords[p.right_index][1],
+                    //     p.viewport_coords[p.previous_right_index][0] - p.viewport_coords[p.right_index][0]
+                    // );
                 }
 
                 auto factor_l = get_interpolation_factor(
@@ -455,8 +381,6 @@ final class RenderingEngine {
                     p.viewport_coords[p.previous_right_index][3],
                     p.viewport_coords[p.right_index][3]
                 );
-                
-                log_gpu3d("effective_start_x %d %d",effective_start_x, effective_end_x);
 
                 for (int x = effective_start_x; x < effective_end_x; x++) {
                     auto w_l = interpolate(p.viewport_coords[p.previous_left_index][3], p.viewport_coords[p.left_index][3], factor_l);
@@ -501,18 +425,6 @@ final class RenderingEngine {
                         auto b_l = interpolate(p.orig.vertices[p.previous_left_index].b << 4, p.orig.vertices[p.left_index].b << 4, factor_l);
                         auto b_r = interpolate(p.orig.vertices[p.previous_right_index].b << 4, p.orig.vertices[p.right_index].b << 4, factor_r);
 
-                        // log_gpu3d("The result of interpolation: %f %f %d %f %f %f %f %f %f", 
-                        //     cast(float) end_x,
-                        //     cast(float) start_x, 
-                        //     x, 
-                        //     cast(float) r_l, 
-                        //     cast(float) r_r, 
-                        //     cast(float) p.orig.vertices[p.previous_left_index].r,
-                        //     cast(float) p.orig.vertices[p.left_index].r,
-                        //     cast(float) factor_l,
-                        //     cast(float) factor_scanline
-                        // );
-
                         r = cast(int) interpolate(r_l, r_r, 1 - factor_scanline) >> 3;
                         g = cast(int) interpolate(g_l, g_r, 1 - factor_scanline) >> 3;
                         b = cast(int) interpolate(b_l, b_r, 1 - factor_scanline) >> 3;
@@ -548,7 +460,6 @@ final class RenderingEngine {
             annotated_polygons[i] = p;
         }
         
-        log_gpu3d("finished rasterizing polygons");
         parent.stop_rendering_scanline();
     }
 }

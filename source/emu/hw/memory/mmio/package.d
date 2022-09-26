@@ -92,7 +92,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
         } else {
             import std.format;
 
-            log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
+            // log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
             T value = T(0);
 
             static foreach (MMIORegister mr; mmio_registers) {
@@ -173,7 +173,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
         static if (!is_memory_unit!T) {
             error_mmio("Tried to write to MMIO with wrong type (size: %d)", T.sizeof);
         } else {
-            log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
+            // log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
 
             import std.format;
             static foreach (MMIORegister mr; mmio_registers) {

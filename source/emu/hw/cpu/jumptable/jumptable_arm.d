@@ -364,10 +364,6 @@ template execute_arm(T : ArmCPU) {
         Word writeback_value = address + dir * offset;
         static if (pre) address = writeback_value;
 
-        if (opcode == 0x37881100) {
-            log_arm9("info: single data transfer: rn = %x, rd = %x, offset = %x, pre = %x, up = %x, byte_access = %x, writeback = %x, load = %x, address = %x", rn, rd, offset, pre, up, byte_access, writeback, load, address);
-        }
-
         static if (load && writeback) cpu.set_reg(rn, writeback_value);
 
         static if ( byte_access &&  load) cpu.ldrb(rd, address);

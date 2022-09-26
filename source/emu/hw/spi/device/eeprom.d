@@ -48,16 +48,13 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
     override Byte write(Byte b) {
         Byte result = 0;
 
-        log_eeprom("    received write: %x (sanity: %x)", b, data[2]);
         switch (state) {
             case State.WAITING_FOR_COMMAND:
-                log_eeprom("    parsing the command: %x", b);
                 parse_command(b);
                 break;
 
             case State.WRITING_STATUS:
                 if (!write_enable_latch) break;
-                log_eeprom("    setting status: %x", b);
                 write_protect                 = b[2..3];
                 status_register_write_disable = b[7];
                 break;
@@ -66,27 +63,21 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 result[1]    = write_enable_latch;
                 result[2..3] = write_protect;
                 result[7]    = status_register_write_disable;
-                log_eeprom("    reading status: %x", result);
                 break;
 
             case State.READING_JEDEC_ID:
                 result = 0xFF;
-                log_eeprom("    reading jedec id");
                 break;
             
             // bad code
             case State.READING_DATA:
-                log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
                 if (accesses_remaining <= page_size) {
-                    // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
                     result = data[current_address];
-                    log_eeprom("    reading data from %x %x %x", current_address, result, arm7.regs[pc]);
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
-                    log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
                     handle_address_write(b);
                     accesses_remaining--;
                 }
@@ -94,20 +85,15 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             
             case State.WRITING_DATA:
                 if (!write_enable_latch) break;
-                log_eeprom("    address write? (write): %x", b);
                 handle_address_write(b);
                 
                 if (accesses_remaining <= page_size) {
-                    // if (current_page >= num_pages) error_eeprom("tried to read from an invalid eeprom page: %x", current_page);
-                    log_eeprom("    writing data to page %x, %x %x", current_address, 69, b);
-
                     data[current_address] = b;
                     save_mmfile[current_address] = b;
 
                     current_address++;
                     current_address %= total_bytes;
                 } else {                
-                    log_eeprom("    handling address write: %x, %x, %x", current_page, page_size - accesses_remaining, b);
                     handle_address_write(b);
                     accesses_remaining--;
                 }
@@ -117,7 +103,6 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             default: break;
         }
 
-        log_eeprom("    returning %x", result);
         return result;
     }
 
@@ -135,12 +120,10 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
 
     override void chipselect_fall() {
         state = State.WAITING_FOR_COMMAND;
-        log_eeprom("chipselect fall");
     }
 
     override void chipselect_rise() {
         state = State.WAITING_FOR_CHIPSELECT;
-        log_eeprom("chipselect rise");
     }
 
 
@@ -153,7 +136,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             case 0x9F: state = State.READING_JEDEC_ID; break;
             case 0x06: write_enable_latch = true;  break;
             case 0x04: write_enable_latch = false; break;
-            default: log_eeprom("invalid eeprom command dummy: %x", b);
+            default: error_eeprom("invalid eeprom command dummy: %x", b);
         }
     }
 }
