@@ -27,6 +27,26 @@ jobs:
       run: |
         dub test
 
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+
+    - name: 'Setup'
+      run: |
+        git submodule update --init --recursive
+
+    - name: 'Build BeanDS'
+      run: |
+        # Build the project, with its main file included, without unittests
+        dub build --compiler=$DC
+    
+    - name: 'Run Tests'
+      run: |
+        dub test
+
   build-windows:
     runs-on: windows-latest
 
