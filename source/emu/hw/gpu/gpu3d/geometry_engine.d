@@ -633,8 +633,8 @@ final class GeometryEngine {
         ]);
 
         if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
-            texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[0][1] * normal_vector[1] + texture_matrix[0][2] * normal_vector[2] + texcoord[0];
-            texcoord_prime[1] = texture_matrix[1][0] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[1][2] * normal_vector[2] + texcoord[1];
+            texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[1][0] * normal_vector[1] + texture_matrix[2][0] * normal_vector[2] + texcoord[0];
+            texcoord_prime[1] = texture_matrix[0][1] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[2][1] * normal_vector[2] + texcoord[1];
         }
     }
 
