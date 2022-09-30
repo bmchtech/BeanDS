@@ -221,9 +221,9 @@ template execute_thumb(T : ArmCPU) {
         Word operand2 = cpu.get_reg(rm);
 
         final switch (op) {
-            case 0b00: cpu.add!(T, true)(rd, operand1, operand2, true, false); break;
-            case 0b01: cpu.cmp!(T, true)(rd, operand1, operand2); break;
-            case 0b10: cpu.mov!(T, true)(rd, operand2, false); break;
+            case 0b00: cpu.add!(T, false)(rd, operand1, operand2, true, false); break;
+            case 0b01: cpu.cmp!(T, false)(rd, operand1, operand2); break;
+            case 0b10: cpu.mov!(T, false)(rd, operand2, false); break;
         }
     }
 
