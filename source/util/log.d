@@ -83,9 +83,9 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
 
         if (fatal) {
             dump(wram.arm7_only_wram, "arm7_wram.dump");
-            dump(wram.shared_bank_1, "wram_bank1.dump");
-            dump(wram.shared_bank_2, "wram_bank2.dump");
-            dump(main_memory.data, "main_memory.dump");
+            dump(wram.shared_bank_1,  "wram_bank1.dump");
+            dump(wram.shared_bank_2,  "wram_bank2.dump");
+            dump(main_memory.data,    "main_memory.dump");
 
             auto trace = defaultTraceHandler(null);
             foreach (line; trace) {

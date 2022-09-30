@@ -122,7 +122,7 @@ final class ARM7TDMI : ArmCPU {
 
         version (release) {
         } else {
-            // cpu_trace.capture();
+            cpu_trace.capture();
         }
 
         if (num_log > 0) {
