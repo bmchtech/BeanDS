@@ -10,23 +10,25 @@ dependency "dunit" version="~>1.0.16"
 dependency "memoryunit" version="1.0.2"
 dependency "infoflow" path="ext/infoflow"
 
-lflags "-lglew" "-lglfw" "/System/Library/Frameworks/OpenGL.framework" platform="osx"
-lflags "glfw3" "WinMM.lib" "OLDNAMES.lib" "MSVCRT.lib" "raylib.lib" "$PACKAGE_DIR/*.lib $PACKAGE_DIR/glfw3_mt.lib" "user32.lib" "gdi32.lib" platform="windows"
-
+lflags "-lglew" "-lglfw" "/System/Library/Frameworks/OpenGL.framework/OpenGL" platform="osx"
+lflags "WinMM.lib" "OLDNAMES.lib" "MSVCRT.lib" "raylib.lib" "$PACKAGE_DIR/*.lib $PACKAGE_DIR/glfw3_mt.lib" "user32.lib" "gdi32.lib" platform="windows"
 
 configuration "default" {
 	targetType "executable"
 	versions "default"
 }
+
 configuration "release" {
 	targetType "executable"
 	dflags "-O3"
-	versions "release"
+	versions "release" "quiet" "silent"
 }
+
 configuration "silent" {
 	targetType "executable"
 	versions "quiet" "silent"
 }
+
 configuration "quiet" {
 	targetType "executable"
 	versions "quiet"
