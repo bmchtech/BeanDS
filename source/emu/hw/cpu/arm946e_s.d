@@ -140,7 +140,7 @@ final class ARM946E_S : ArmCPU {
         
         // version (release) {
         // } else {
-        //     cpu_trace.capture();
+            cpu_trace.capture();
         // }
         
         if (num_log > 0) {
@@ -323,7 +323,11 @@ final class ARM946E_S : ArmCPU {
 
     void refill_pipeline() {
         if (regs[pc] == 0x020CB57C) {
-            log_arm9("FUNCTION: OS_CreateThread()");
+            log_arm9("FUNCTION: OS_CreateThread() LR: %x", regs[lr]);
+        }
+
+        if (regs[pc] == 0x020CB684) {
+            log_arm9("FUNCTION: OS_InitThread() LR: %x", regs[lr]);
         }
 
         if (regs[pc] == 0x020CB2E4) {
@@ -360,6 +364,10 @@ final class ARM946E_S : ArmCPU {
 
         if (regs[pc] == 0x020CDFEC) {
             log_arm9("FUNCTION: MIi_FIFOCallback()");
+        }
+
+        if (regs[pc] == 0x020CAFA0) {
+            log_arm9("FUNCTION: OSi_SleepAlarmCallback()");
         }
 
         if (instruction_set == InstructionSet.ARM) {
@@ -405,6 +413,10 @@ final class ARM946E_S : ArmCPU {
 
         if (exception == CpuException.IRQ && interrupt9.status & interrupt9.enable & Interrupt.TIMER_0_OVERFLOW) {
             log_gpu3d("Switching threads!");
+        }
+
+        if (exception == CpuException.IRQ) {
+            log_gpu3d("IRQ: %x", interrupt9.status & interrupt9.enable);
         }
 
         enum mode = get_mode_from_exception!(exception);

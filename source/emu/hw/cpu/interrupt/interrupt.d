@@ -61,6 +61,14 @@ final class InterruptManager {
     }
 
     void write_IF(int target_byte, Byte data) {
+        if (this == interrupt9 && target_byte == 2 && data[5]) {
+            log_gpu3d("GXFIFO CLEAR! LR: PC: %x %x", arm9.regs[lr], arm9.regs[pc]);                
+            for (int i = 0; i < 64; i++) {
+                    // arm9.num_log = 100;
+                    log_arm9("stack contents: %x", mem9.read!Word(arm9.regs[sp] + i * 4));
+                }
+            // arm9.num_log = 1000;
+        }
         status.set_byte(target_byte, ~data & status.get_byte(target_byte));
     }
 
