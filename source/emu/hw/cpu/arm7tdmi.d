@@ -25,6 +25,9 @@ final class ARM7TDMI : ArmCPU {
 
     ulong num_log;
 
+    InstructionBlock* instruction_block;
+    Word current_instruction_block_address = 0xFFFFFFFF;
+
     this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
         current_mode = MODE_USER;
@@ -57,32 +60,39 @@ final class ARM7TDMI : ArmCPU {
         return Architecture.v4T;
     }
 
+    pragma(inline, true) void maybe_reload_instruction_block() {
+        Word requested_instruction_block_address = regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1);
+
+        if (current_instruction_block_address != requested_instruction_block_address) {
+            instruction_block = mem7.instruction_read(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
+            current_instruction_block_address = requested_instruction_block_address;
+        }
+    }
+
     bool first_fetch = true;
     pragma(inline, true) T fetch(T)() {
         if (!first_fetch && regs[pc] == 0) error_arm7("arm7 branched to 0");
         first_fetch = false;
-        
+
+        if ((regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1)) == 0) {
+            maybe_reload_instruction_block();
+        }
+
+        T opcode;
+
         static if (is(T == Word)) {
-            // must update the pipeline access type before the mem access
-            T result        = arm_pipeline[0];
+            opcode = arm_pipeline[0];
             arm_pipeline[0] = arm_pipeline[1];
-            arm_pipeline[1] = read_word(regs[pc]);
+            arm_pipeline[1] = instruction_block.code.read!T(regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1));
             regs[pc] += 4;
-
-            return result;
-        }
-
-        static if (is(T == Half)) {
-            // must update the pipeline access type before the mem access
-            T result          = thumb_pipeline[0];
+        } else {
+            opcode = thumb_pipeline[0];
             thumb_pipeline[0] = thumb_pipeline[1];
-            thumb_pipeline[1] = read_half(regs[pc]);
+            thumb_pipeline[1] = instruction_block.code.read!T(regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1));
             regs[pc] += 2;
-
-            return result;
         }
-
-        assert(0);
+        
+        return opcode;
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
@@ -205,8 +215,9 @@ final class ARM7TDMI : ArmCPU {
     pragma(inline, true) void set_reg__raw(Reg id, Word value, Word[18]* regs) {
         (*regs)[id] = value;
 
-        if (id == pc) {        
+        if (id == pc) {
             (*regs)[pc] &= instruction_set == InstructionSet.ARM ? ~3 : ~1;
+            maybe_reload_instruction_block();
             refill_pipeline();
         }
 
@@ -361,6 +372,7 @@ final class ARM7TDMI : ArmCPU {
         regs[16] = cpsr;
 
         regs[pc] = get_address_from_exception!(exception);
+        maybe_reload_instruction_block();
 
         set_flag(Flag.T, false);
 

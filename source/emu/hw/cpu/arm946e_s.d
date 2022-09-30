@@ -25,6 +25,9 @@ final class ARM946E_S : ArmCPU {
 
     ulong num_log;
 
+    InstructionBlock* instruction_block;
+    Word current_instruction_block_address = 0x06000000;
+
     this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
         current_mode = MODE_USER;
@@ -77,32 +80,45 @@ final class ARM946E_S : ArmCPU {
         return Architecture.v5TE;
     }
 
+    pragma(inline, true) void maybe_reload_instruction_block() {
+        Word requested_instruction_block_address = regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1);
+
+        if (current_instruction_block_address != requested_instruction_block_address) {
+            if (tcm.can_write_itcm(requested_instruction_block_address)) {
+                scheduler.tick(1);
+                instruction_block = tcm.read_itcm_instruction(requested_instruction_block_address);
+            } else {
+                instruction_block = mem9.instruction_read(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
+            }
+
+            current_instruction_block_address = requested_instruction_block_address;
+        }
+    }
+
+    bool first_fetch = true;
     pragma(inline, true) T fetch(T)() {
-        if (regs[pc] == 0) error_arm9("arm9 branched to 0");
-        // if (regs[pc] > 0x0200_0c00 && regs[pc] < 0x200_0dce) num_log = 100000;
-        // if ((regs[pc] & ~0xF) == 0x02095600) num_log = 10000000;
+        if (!first_fetch && regs[pc] == 0) error_arm7("arm7 branched to 0");
+        first_fetch = false;
+
+        if ((regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1)) == 0) {
+            maybe_reload_instruction_block();
+        }
+
+        T opcode;
 
         static if (is(T == Word)) {
-            // must update the pipeline access type before the mem access
-            T result        = arm_pipeline[0];
+            opcode = arm_pipeline[0];
             arm_pipeline[0] = arm_pipeline[1];
-            arm_pipeline[1] = read_word(regs[pc]);
+            arm_pipeline[1] = instruction_block.code.read!T(regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1));
             regs[pc] += 4;
-
-            return result;
-        }
-
-        static if (is(T == Half)) {
-            // must update the pipeline access type before the mem access
-            T result          = thumb_pipeline[0];
+        } else {
+            opcode = thumb_pipeline[0];
             thumb_pipeline[0] = thumb_pipeline[1];
-            thumb_pipeline[1] = read_half(regs[pc]);
+            thumb_pipeline[1] = instruction_block.code.read!T(regs[pc] & (INSTRUCTION_BLOCK_SIZE - 1));
             regs[pc] += 2;
-
-            return result;
         }
-
-        assert(0);
+        
+        return opcode;
     }
 
     pragma(inline, true) void execute(T)(T opcode) {
@@ -227,6 +243,7 @@ final class ARM946E_S : ArmCPU {
 
         if (id == pc) {
             (*regs)[pc] &= instruction_set == InstructionSet.ARM ? ~3 : ~1;
+            maybe_reload_instruction_block();
             refill_pipeline();
         }
 
@@ -439,6 +456,7 @@ final class ARM946E_S : ArmCPU {
         regs[16] = cpsr;
 
         regs[pc] = get_address_from_exception!(exception);
+        maybe_reload_instruction_block();
 
         set_flag(Flag.T, false);
         
@@ -533,9 +551,7 @@ final class ARM946E_S : ArmCPU {
         else if (tcm.can_read_dtcm(address)) { scheduler.tick(1); result = tcm.read_dtcm!T(address); }
         
         else {
-            static if (is (T == Word)) result = memory.read_word(address);
-            static if (is (T == Half)) result = memory.read_half(address);
-            static if (is (T == Byte)) result = memory.read_byte(address);
+            result = mem9.read!T(address);
         }
 
         for (int i = 0; i < T.sizeof; i++) {
@@ -548,9 +564,7 @@ final class ARM946E_S : ArmCPU {
         if (tcm.can_write_itcm(address)) { scheduler.tick(1); tcm.write_itcm!T(address, value); return; }
         if (tcm.can_write_dtcm(address)) { scheduler.tick(1); tcm.write_dtcm!T(address, value); return; }
         
-        static if (is (T == Word)) memory.write_word(address, value);
-        static if (is (T == Half)) memory.write_half(address, value);
-        static if (is (T == Byte)) memory.write_byte(address, value);
+        mem9.write(address, value);
 
         for (int i = 0; i < T.sizeof; i++) {
             version (ift) { IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i))); }

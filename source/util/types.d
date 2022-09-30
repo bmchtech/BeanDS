@@ -167,8 +167,8 @@ unittest {
     assert_equal(fp3.repr, 0x3DA, "%04x");
 }
 
-void check_memory_unit(T)() {
-    static assert (
+bool is_memory_unit(T)() {
+    return (
         is(T == Word) ||
         is(T == Half) ||
         is(T == Byte)

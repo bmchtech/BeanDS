@@ -30,4 +30,8 @@ final class MainMemory {
 
         data.write!T(address & (MAIN_MEMORY_SIZE - 1), value);
     }
+
+    InstructionBlock* instruction_read(Word address) {
+        return data.instruction_read(address & (MAIN_MEMORY_SIZE - 1));
+    }
 }

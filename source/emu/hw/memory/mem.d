@@ -1,5 +1,6 @@
 module emu.hw.memory.mem;
 
+import emu;
 import util;
 
 enum AccessType {
@@ -59,7 +60,19 @@ pragma(inline, true) {
         (cast(T*) memory)[address >> get_shift!T] = value;
     }
 
+    InstructionBlock* instruction_read(Byte* memory, Word address) {
+        return &(cast(InstructionBlock*) memory)[address >> get_shift!InstructionBlock];
+    }
+
+    InstructionBlock* instruction_read(Byte[] memory, Word address) {
+        return &(cast(InstructionBlock*) memory)[address >> get_shift!InstructionBlock];
+    }
+
     auto get_shift(T)() {
+        import core.bitop;
+        
+        static if (is(T == InstructionBlock)) return bsf(INSTRUCTION_BLOCK_SIZE);
+
         static if (is(T == Word)) return 2;
         static if (is(T == Half)) return 1;
         static if (is(T == Byte)) return 0;

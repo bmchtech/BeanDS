@@ -13,8 +13,26 @@ final class Mem9 : Mem {
         mem9 = this;
     }
 
+    InstructionBlock* instruction_read(Word address) {
+        scheduler.tick(1);
+
+        auto region = get_region(address);
+
+        if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to perform an instruction read from an invalid region of memory: %x", address);
+
+        switch (region) {
+            case 0xF: return bios.instruction_read(address[0..15]);
+            case 0x2: return main_memory.instruction_read(address);
+            case 0x3: return wram.instruction_read9(address);
+            
+            default: error_unimplemented("Attempt from ARM9 to perform an instruction read from an invalid region of memory: %x", address); break;
+        }
+
+        error_mem9("ARM9 instruction read from invalid address: %x", address);
+        return null;
+    }
+
     T read(T)(Word address) {
-        check_memory_unit!T;
         scheduler.tick(1);
 
         auto region = get_region(address);
@@ -36,12 +54,10 @@ final class Mem9 : Mem {
         }
 
         // should never happen
-        // assert(0);
-        return T(0);
+        return T();
     }
 
     void write(T)(Word address, T value) {
-        check_memory_unit!T;
         scheduler.tick(1);
         
         auto region = get_region(address);
