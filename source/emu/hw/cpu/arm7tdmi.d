@@ -21,8 +21,6 @@ final class ARM7TDMI : ArmCPU {
 
     CpuMode current_mode;
 
-    AccessType pipeline_access_type;
-
     CpuTrace cpu_trace;
 
     ulong num_log;
@@ -66,12 +64,9 @@ final class ARM7TDMI : ArmCPU {
         
         static if (is(T == Word)) {
             // must update the pipeline access type before the mem access
-            AccessType old_access_type = pipeline_access_type;
-            pipeline_access_type = AccessType.SEQUENTIAL; 
-
             T result        = arm_pipeline[0];
             arm_pipeline[0] = arm_pipeline[1];
-            arm_pipeline[1] = read_word(regs[pc], old_access_type);
+            arm_pipeline[1] = read_word(regs[pc]);
             regs[pc] += 4;
 
             return result;
@@ -79,12 +74,9 @@ final class ARM7TDMI : ArmCPU {
 
         static if (is(T == Half)) {
             // must update the pipeline access type before the mem access
-            AccessType old_access_type = pipeline_access_type;
-            pipeline_access_type = AccessType.SEQUENTIAL; 
-
             T result          = thumb_pipeline[0];
             thumb_pipeline[0] = thumb_pipeline[1];
-            thumb_pipeline[1] = read_half(regs[pc], old_access_type);
+            thumb_pipeline[1] = read_half(regs[pc]);
             regs[pc] += 2;
 
             return result;
@@ -118,10 +110,10 @@ final class ARM7TDMI : ArmCPU {
             raise_exception!(CpuException.IRQ);
         }
 
-        // version (release) {
-        // } else {
-        //     cpu_trace.capture();
-        // }
+        version (release) {
+        } else {
+            // cpu_trace.capture();
+        }
 
         if (num_log > 0) {
             num_log--;
@@ -169,6 +161,14 @@ final class ARM7TDMI : ArmCPU {
         set_reg__raw(id, value, &regs);
     }
 
+    pragma(inline, true) Word get_reg__thumb(Reg id) {
+        return regs[id];
+    }
+
+    pragma(inline, true) void set_reg__thumb(Reg id, Word value) {
+        regs[id] = value;
+    }
+
     pragma(inline, true) Word get_reg(Reg id, CpuMode mode) {
         bool is_banked = !(mode.REGISTER_UNIQUENESS.bit(id) & 1);
 
@@ -207,7 +207,6 @@ final class ARM7TDMI : ArmCPU {
 
         if (id == pc) {        
             (*regs)[pc] &= instruction_set == InstructionSet.ARM ? ~3 : ~1;
-            pipeline_access_type = AccessType.NONSEQUENTIAL;
             refill_pipeline();
         }
 
@@ -419,13 +418,8 @@ final class ARM7TDMI : ArmCPU {
         return cast(bool) get_cpsr()[flag];
     }
 
-    void set_pipeline_access_type(AccessType access_type) {
-        this.pipeline_access_type = access_type;
-    }
-
     void run_idle_cycle() {
         // TODO: replace with proper idling that actually takes up cpu cycles
-        pipeline_access_type = AccessType.NONSEQUENTIAL;
     }
 
     bool in_a_privileged_mode() {
@@ -446,8 +440,6 @@ final class ARM7TDMI : ArmCPU {
     }
 
     T internal_read(T)(Word address) {
-        pipeline_access_type = AccessType.NONSEQUENTIAL;
-
         T result;
         static if (is (T == Word)) result = memory.read_word(address);
         static if (is (T == Half)) result = memory.read_half(address);
@@ -460,8 +452,6 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void internal_write(T)(Word address, T value) {
-        pipeline_access_type = AccessType.NONSEQUENTIAL;
-
         static if (is (T == Word)) memory.write_word(address, value);
         static if (is (T == Half)) memory.write_half(address, value);
         static if (is (T == Byte)) memory.write_byte(address, value);
@@ -471,11 +461,11 @@ final class ARM7TDMI : ArmCPU {
         }
     }
 
-    Word read_word(Word address, AccessType access_type) { return internal_read!Word(address); }
-    Half read_half(Word address, AccessType access_type) { return internal_read!Half(address); }
-    Byte read_byte(Word address, AccessType access_type) { return internal_read!Byte(address); }
+    Word read_word(Word address) { return internal_read!Word(address); }
+    Half read_half(Word address) { return internal_read!Half(address); }
+    Byte read_byte(Word address) { return internal_read!Byte(address); }
 
-    void write_word(Word address, Word value, AccessType access_type) { internal_write!Word(address, value); }
-    void write_half(Word address, Half value, AccessType access_type) { internal_write!Half(address, value); }
-    void write_byte(Word address, Byte value, AccessType access_type) { internal_write!Byte(address, value); }
+    void write_word(Word address, Word value) { internal_write!Word(address, value); }
+    void write_half(Word address, Half value) { internal_write!Half(address, value); }
+    void write_byte(Word address, Byte value) { internal_write!Byte(address, value); }
 }

@@ -37,54 +37,42 @@ final class InterruptManager {
     bool master_enable;
 
     ArmCPU cpu;
+
+    bool is_irq_pending;
     
     this(ArmCPU cpu) {
         this.cpu = cpu;
     }
 
     void raise_interrupt(Interrupt code) {
-        if (code == Interrupt.GEOMETRY_COMMAND_FIFO) {
-            log_gpu3d("received interrupt %s. enabled: %x", code, enable[code]);
-        }
-
         status[code] = 1;
+        recalculate_irq_pending();
+        
         if (enable & status) cpu.unhalt();
     }
 
-    bool irq_pending() {
-        if (this == interrupt9 && master_enable && (enable & status) == (1 << 21)) {
-            log_gpu3d("GXFIFO FIRE!");
-            // arm9.num_log = 1000;
-        }
+    void recalculate_irq_pending() {
+        is_irq_pending = master_enable && (enable & status);
+    }
 
-        return master_enable && (enable & status);
+    bool irq_pending() {
+        return is_irq_pending;
     }
 
     void write_IF(int target_byte, Byte data) {
-        if (this == interrupt9 && target_byte == 2 && data[5]) {
-            log_gpu3d("GXFIFO CLEAR! LR: PC: %x %x", arm9.regs[lr], arm9.regs[pc]);                
-            for (int i = 0; i < 64; i++) {
-                    // arm9.num_log = 100;
-                    log_arm9("stack contents: %x", mem9.read!Word(arm9.regs[sp] + i * 4));
-                }
-            // arm9.num_log = 1000;
-        }
         status.set_byte(target_byte, ~data & status.get_byte(target_byte));
+        recalculate_irq_pending();
     }
 
     void write_IE(int target_byte, Byte data) {
         Word old_enable = enable;
         enable.set_byte(target_byte, data);
-
-        if (rising_edge(old_enable[21], enable[21])) {
-            log_gpu3d("enabled gxfifo irqs");
-        } else if (falling_edge(old_enable[21], enable[21])) {
-            log_gpu3d("disabled gxfifo irqs");
-        }
+        recalculate_irq_pending();
     }
 
     void write_IME(int target_byte, Byte data) {
         if (target_byte == 0) master_enable = data[0];
+        recalculate_irq_pending();
     }
 
     Byte read_IF(int target_byte) {
