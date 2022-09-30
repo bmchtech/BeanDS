@@ -33,7 +33,6 @@ final class RTCHook {
     void write_RTC(int target_byte, Byte value) {
         if (target_byte != 0) return;
 
-        // log_rtc("arm7: %x", arm7.regs[pc]);
         data_direction = value[4];
 
         rtc.write(
@@ -166,7 +165,6 @@ final class RTC_S_35199A01 {
     }
 
     void update_status_register_1(ubyte value) {
-        log_rtc("updating status register 1: %x", value);
         if (value & 1) reset();
 
         status_register_1.value = value & ~1;
@@ -280,7 +278,6 @@ final class RTC_S_35199A01 {
     }
 
     void set_active_register_value(Register* register) {
-        // log_rtc("Set active register: %x", register.value);
         this.active_register = register;
     }
 
@@ -293,10 +290,8 @@ final class RTC_S_35199A01 {
         this.current_command_index  = command;
         this.current_register_index = 0;
         if (commands[command].registers.length == 0) {
-            // log_rtc("Command %x not implemented", command);
+            log_rtc("Command %x not implemented", command);
         } else {
-            // log_rtc("Command %x received", command);
-            // arm9.num_log = 100000000;
             set_active_register_value(commands[command].registers[0]);
         }
     }
@@ -321,8 +316,6 @@ final class RTC_S_35199A01 {
     }
 
     void reset() {
-        log_rtc("reset");
-
         state = State.WAITING_FOR_COMMAND;
 
         this.SCK = false;

@@ -185,12 +185,10 @@ final class Canvas(EngineType E) {
     }
 
     public void on_hblank_start() {
-        log_ppu("canvas on_hblank_start");
         scanline_compositing_info.mmio_info = mmio_info;
     }
 
     public void on_hblank_end(int scanline) {
-        log_ppu("canvas on_hblank_end");
         if (scanline >= 192) return;
 
         scanline_compositing_info = &scanline_compositing_infos[scanline];

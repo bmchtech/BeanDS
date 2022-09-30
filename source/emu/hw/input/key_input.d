@@ -34,12 +34,6 @@ final class KeyInput {
     }
 
     Byte read_KEYINPUT(int target_byte) {
-        arm9.num_log = 1;
-        
-        for (int i = 0; i < 64; i++) {
-            log_arm9("stack contents: [%x] = %x", arm9.regs[sp] + i * 4, mem9.read!Word(arm9.regs[sp] + i * 4));
-        }
-
         return keys[0..15].get_byte(target_byte);
     }
 

@@ -75,9 +75,6 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
             texel >>= (2 * (texel_index % 4));
             texel &= 3;
             Half color = read_slot!Half(SlotType.TEXTURE_PAL, Word(palette_base_address) * 8 + Word(texel) * 2);
-            log_gpu3d("color palette 4: texel_index: %x, texel: %x, color: %x, texture_vram_offset: %x", texel_index, texel, color, p.orig.texture_vram_offset);
-            // log_gpu3d("dickless: %x", Word((p.orig.texture_vram_offset << 3) + texel_index / 4));
-
             return [
                 color[0..4],
                 color[5..9],
@@ -124,7 +121,6 @@ float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_b
 
             Word compressed_block = read_slot!Byte(SlotType.TEXTURE, compressed_block_base_address);
             int texel = (compressed_block >> (2 * block_fine_x)) & 3;
-            // log_gpu3d("texelinfo: %x %x %x %x %x %x %x %x", compressed_block, texel, texel_idx, block_fine_index, s, t, texture_s_size, texture_t_size);
 
             int compressed_block_slot = compressed_block_base_address >> 17;
             if (compressed_block_slot != 0 && compressed_block_slot != 2) error_gpu3d("Invalid slot for compressed texture: (address: %x offset: %x, idx: %x)", compressed_block_base_address, p.orig.texture_vram_offset, texel_index);

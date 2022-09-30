@@ -93,8 +93,6 @@ final class GPU {
     }
 
     void on_vblank_start() {
-        log_gpu3d("NEW FRAME");
-        
         vblank = true;
         gpu_engine_a.vblank();
         gpu_engine_b.vblank();
@@ -245,7 +243,6 @@ final class GPU {
     void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {
         if (master_bright_mode == MasterBrightMode.DISABLED) return;
 
-        log_ppu("Master brightness applied. Dx: %x -> %x", video_buffer[0][0].r, video_buffer[0][0].r * master_brightness);
         for (int x = 0; x < 256; x++) {
         for (int y = 0; y < 192; y++) {
             video_buffer[x][y].r = (video_buffer[x][y].r * master_brightness) / 64;

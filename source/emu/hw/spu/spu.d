@@ -166,18 +166,18 @@ final class SPU {
 
                 if (sound_channels[x].enabled) { 
                     sound_channels[x].reset(); 
-                    log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
-                        x,
-                        cast(Format) sound_channels[x].format,
-                        ((cast(int) read_SOUNDxCNT(0, x) << 0) |
-                        (cast(int) read_SOUNDxCNT(1, x) << 8) |
-                        (cast(int) read_SOUNDxCNT(2, x) << 16) |
-                        (cast(int) read_SOUNDxCNT(3, x) << 24)),
-                        sound_channels[x].source_address,
-                        sound_channels[x].timer_value,
-                        sound_channels[x].loopstart,
-                        sound_channels[x].length,
-                    );
+                    // log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
+                    //     x,
+                    //     cast(Format) sound_channels[x].format,
+                    //     ((cast(int) read_SOUNDxCNT(0, x) << 0) |
+                    //     (cast(int) read_SOUNDxCNT(1, x) << 8) |
+                    //     (cast(int) read_SOUNDxCNT(2, x) << 16) |
+                    //     (cast(int) read_SOUNDxCNT(3, x) << 24)),
+                    //     sound_channels[x].source_address,
+                    //     sound_channels[x].timer_value,
+                    //     sound_channels[x].loopstart,
+                    //     sound_channels[x].length,
+                    // );
                 }
                 break;
         }

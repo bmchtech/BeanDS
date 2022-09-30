@@ -200,7 +200,6 @@ final class Cart {
     }
 
     private void write_ROMDATAOUT(int target_byte, Byte value) {
-        // log_cart("writing to rom data out: %x %x", target_byte, value);
         command &= ~((cast(u64) 0xFF)  << cast(u64) (target_byte * 8));
         command |=  ((cast(u64) value) << cast(u64) (target_byte * 8));
     }
@@ -210,11 +209,9 @@ final class Cart {
 
         T result = cast(T) outbuffer[outbuffer_index];
         outbuffer_index++;
-        log_cart("reading from romresult: %x, %d / %d", result, outbuffer_index, outbuffer_length);
 
         if (outbuffer_index == outbuffer_length) {
             transfer_ongoing = false;
-            // log_cart("transfer ended!");
             if (auxspi.transfer_completion_irq_enable) interrupt7.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
             if (auxspi.transfer_completion_irq_enable) interrupt9.raise_interrupt(Interrupt.GAME_CARD_TRANSFER_COMPLETION);
         }
@@ -229,7 +226,6 @@ final class Cart {
     }
 
     void start_transfer() {
-        log_cart("Starting a transfer with command %x, %x. Current mode: %s", command, arm7.regs[pc], mode);
         final switch (mode) {
             case Mode.UNENCRYPTED: handle_unencrypted_transfer(); break;
             case Mode.KEY1:        handle_key1_transfer();        break;
@@ -264,8 +260,6 @@ final class Cart {
                 outbuffer[i] = get_cart_id();
             }
 
-            // log_cart("getting cart id");
-
             outbuffer_length = length / 4;
         } else
 
@@ -288,7 +282,6 @@ final class Cart {
         u64 swapped = bswap(command);
         key1_encryption_level2.decrypt_64bit(cast(u32*) &swapped);
         u64 decrypted_command = bswap(swapped);
-        log_cart("decrypted command: %x", decrypted_command);
 
         if ((decrypted_command & 0xF0) == 0x40) {
             auto length = get_data_block_size(0x2000);
@@ -394,7 +387,6 @@ final class Cart {
             if (address + length >= rom_size()) error_cart("Tried to initiate a B7 transfer at an out of bounds region!");
             
             memcpy(&outbuffer, &rom[address], length);
-            // log_cart("memcpy of addr %x %x %x %x", bswap((command >> 8) & 0xFFFF_FFFF), ((command >> 8) & 0xFFFF_FFFF), address, command >> 8);
             outbuffer_length = length / 4;
         } else
 
@@ -404,8 +396,6 @@ final class Cart {
             for (int i = 0; i < length / 4; i++) {
                 outbuffer[i] = get_cart_id();
             }
-
-            // log_cart("getting cart id");
 
             outbuffer_length = length / 4;
         } else

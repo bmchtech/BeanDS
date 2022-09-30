@@ -38,15 +38,15 @@ final class DMA(HwType H) {
     void handle_dma(int current_channel) {
         auto bytes_to_transfer = dma_channels[current_channel].size_buf;
 
-        if (current_channel == 3) log_dma(
-            "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
-            current_channel,
-            bytes_to_transfer,
-            dma_channels[current_channel].transferring_words ? "words" : "halfwords",
-            dma_channels[current_channel].source_buf,
-            dma_channels[current_channel].dest_buf,
-            read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
-        );
+        // if (current_channel == 3) log_dma(
+        //     "DMA Channel %x running: Transferring %x %s from %x to %x (Control: %x)",
+        //     current_channel,
+        //     bytes_to_transfer,
+        //     dma_channels[current_channel].transferring_words ? "words" : "halfwords",
+        //     dma_channels[current_channel].source_buf,
+        //     dma_channels[current_channel].dest_buf,
+        //     read_DMAxCNT_H(0, current_channel) | (read_DMAxCNT_H(1, current_channel) << 8)
+        // );
 
         auto source_increment = 0;
         auto dest_increment = 0;
@@ -80,7 +80,6 @@ final class DMA(HwType H) {
 
                 Word value = mem.read_word(read_address);
                 mem.write_word(write_address, value);
-                // log_dma("    Transferred %08x from %x to %x", value, read_address, write_address);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;
@@ -94,7 +93,6 @@ final class DMA(HwType H) {
 
                 Half value = mem.read_half(read_address);
                 mem.write_half(write_address, value);
-                // if (current_channel == 3) log_dma("    Transferred %04x from %x to %x", value, read_address, write_address);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;
@@ -131,7 +129,6 @@ final class DMA(HwType H) {
 
     void maybe_start_cart_transfer() {
         if (is_ds_cart_transfer_queued) {
-            log_cart("starting cart transfer");
             start_cart_transfer();
         }
     }
@@ -196,7 +193,6 @@ final class DMA(HwType H) {
         }
 
         if (dma_channels[dma_id].dma_start_timing == DMAStartTiming.DSCartSlot) {
-            // log_dma9("queueing a dma ds cart transfer %x %x", arm9.regs[pc], arm7.regs[pc]);
             ds_cart_transfer_channel = dma_id;
             is_ds_cart_transfer_queued = true;
         }
@@ -340,7 +336,6 @@ final class DMA(HwType H) {
                     case HwType.NDS7: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[4..5]; break;
                     case HwType.NDS9: dma_channels[x].dma_start_timing = cast(DMAStartTiming) data[3..5]; break;
                 }
-                    log_dma("%s", dma_channels[x].dma_start_timing);
 
                 dma_channels[x].irq_on_end          =  data[6];
                 dma_channels[x].enabled             =  data[7];

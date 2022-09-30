@@ -30,17 +30,6 @@ struct FixedPoint(uint I, uint F) {
     FixedPoint!(I, F) opBinary(string s)(FixedPoint!(I, F) other)
         if (s == "+" || s == "-" || s == "*" || s == "/") {
 
-        // if (s == "*") {
-        //     // log_gpu3d("performing a multiplication: %f %f %x %x %x %x",
-        //         cast(float) other.value,
-        //         cast(float) this.value,
-        //         other.repr,
-        //         this.repr,
-        //         this.repr * other.repr,
-        //         this.value * other.value
-        //     );
-        // }
-
         final switch (s) {
             case "+": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value + cast(long) other.value));
             case "-": return FixedPoint!(I, F).from_repr(cast(int) (cast(long) this.value - cast(long) other.value));
