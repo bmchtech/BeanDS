@@ -382,7 +382,7 @@ final class RenderingEngine {
                     p.viewport_coords[p.right_index][3]
                 );
 
-                for (int x = effective_start_x; x < effective_end_x; x++) {
+                for (int x = effective_start_x; x <= effective_end_x; x++) {
                     auto w_l = interpolate(p.viewport_coords[p.previous_left_index][3], p.viewport_coords[p.left_index][3], factor_l);
                     auto w_r = interpolate(p.viewport_coords[p.previous_right_index][3], p.viewport_coords[p.right_index][3], factor_r);
                     auto z_l = interpolate(p.viewport_coords[p.previous_left_index][2], p.viewport_coords[p.left_index][2], factor_l);
