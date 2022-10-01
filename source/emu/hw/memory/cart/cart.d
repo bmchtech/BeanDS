@@ -384,6 +384,11 @@ final class Cart {
             auto length = get_data_block_size(0x200);
             
             Word address = Word(bswap(cast(u32) ((command >> 8) & 0xFFFF_FFFF)));
+
+            if (address < 0x8000) {
+                address = 0x8000 + (address & 0x1FF);
+            }
+            
             if (address + length >= rom_size()) error_cart("Tried to initiate a B7 transfer at an out of bounds region!");
             
             memcpy(&outbuffer, &rom[address], length);
