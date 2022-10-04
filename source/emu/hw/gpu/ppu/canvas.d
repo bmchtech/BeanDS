@@ -445,6 +445,9 @@ final class Canvas(EngineType E) {
                 int effective_blend_a = scanline_compositing_info.mmio_info.blend_a;
                 int effective_blend_b = scanline_compositing_info.mmio_info.blend_b;
 
+                __m128i input_A__vec = _mm_loadu_si128(cast(__m128i*) &input_A);
+                __m128i input_B__vec = _mm_loadu_si128(cast(__m128i*) &input_B); 
+
                 static if (E == EngineType.A) {
                     if (scanline_compositing_info.mmio_info.bg_target_pixel[0][0]) {
                         effective_blend_a = input_A.a / 2;
@@ -452,9 +455,15 @@ final class Canvas(EngineType E) {
                     }
                 }
 
-                output.r = min(63, (effective_blend_a * input_A.r + effective_blend_b * input_B.r) >> 4);
-                output.g = min(63, (effective_blend_a * input_A.g + effective_blend_b * input_B.g) >> 4);
-                output.b = min(63, (effective_blend_a * input_A.b + effective_blend_b * input_B.b) >> 4);
+                input_A__vec = _mm_mullo_epi16(input_A__vec, _mm_set1_epi16(cast(short) effective_blend_a));
+                input_B__vec = _mm_mullo_epi16(input_B__vec, _mm_set1_epi16(cast(short) effective_blend_b));
+
+                __m128i output__vec = _mm_add_epi16(input_A__vec, input_B__vec);
+                output__vec = _mm_srli_epi16(output__vec, 4);
+                output__vec = _mm_min_epi16(output__vec, _mm_set1_epi16(cast(short) 63));
+
+                _mm_storeu_si128(cast(__m128i*) &output, output__vec);
+
                 return output;
         }
     }
