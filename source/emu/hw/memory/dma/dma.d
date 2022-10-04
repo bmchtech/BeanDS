@@ -197,13 +197,22 @@ final class DMA(HwType H) {
             is_ds_cart_transfer_queued = true;
         }
 
+        static if (H == HwType.NDS9) {
+            if (dma_channels[dma_id].dma_start_timing == DMAStartTiming.GeometryCmdFifo) {
+                dma_channels[dma_id].repeat = false;
+                dma_channels[dma_id].transferring_words = true;
+                dma_channels[dma_id].dest_buf = 0x0400_0400;
+                start_dma_channel(dma_id, false);
+            }
+        }
         
         static if (H == HwType.NDS9) {
             bool unimplemented_dma = 
                (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
                 dma_channels[dma_id].dma_start_timing != DMAStartTiming.VBlank &&
                 dma_channels[dma_id].dma_start_timing != DMAStartTiming.DSCartSlot &&
-                dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank);
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.HBlank &&
+                dma_channels[dma_id].dma_start_timing != DMAStartTiming.GeometryCmdFifo);
         } else {
             bool unimplemented_dma = 
                (dma_channels[dma_id].dma_start_timing != DMAStartTiming.Immediately &&
