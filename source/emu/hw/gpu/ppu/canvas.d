@@ -7,6 +7,8 @@ import std.stdio;
 import std.algorithm;
 
 import core.stdc.string;
+            
+import inteli.smmintrin;
 
 // okay so the rules here go like this:
 // an empty pixel is invalid. renders the background pixel.
@@ -408,18 +410,22 @@ final class Canvas(EngineType E) {
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
                 Pixel output = index[0].resolve!E(pram_offset);
+                
+                __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
+                __m128i diff__vec = _mm_sub_epi8(_mm_set1_epi8(63), output__vec); 
+                diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) scanline_compositing_info.mmio_info.evy_coeff));
+                diff__vec = _mm_srli_epi16(diff__vec, 4);
+                diff__vec = _mm_and_si128(diff__vec, _mm_set1_epi16(0xFF));
+                output__vec = _mm_sub_epi16(output__vec, diff__vec);
+                _mm_storeu_si128(cast(__m128i*) &output, output__vec);
 
-                output.r += cast(ubyte) (((63 - output.r) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
-                output.g += cast(ubyte) (((63 - output.g) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
-                output.b += cast(ubyte) (((63 - output.b) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
                 return output;
 
             case Blending.BRIGHTNESS_DECREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
                 Pixel output = index[0].resolve!E(pram_offset);
-            
-                import inteli.smmintrin;
+                
                 __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
                 __m128i diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) scanline_compositing_info.mmio_info.evy_coeff));
                 diff__vec = _mm_srli_epi16(diff__vec, 4);
