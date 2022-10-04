@@ -24,8 +24,11 @@ struct Pixel {
         this.a = 31;
     }
 
+    align(1):
     uint r;
     uint g;
     uint b;
     uint a;
 }
+
+static assert (Pixel.sizeof == 16);

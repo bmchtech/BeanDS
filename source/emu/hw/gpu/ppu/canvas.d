@@ -418,10 +418,15 @@ final class Canvas(EngineType E) {
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
                 Pixel output = index[0].resolve!E(pram_offset);
+            
+                import inteli.smmintrin;
+                __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
+                __m128i diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) scanline_compositing_info.mmio_info.evy_coeff));
+                diff__vec = _mm_srli_epi16(diff__vec, 4);
+                diff__vec = _mm_and_si128(diff__vec, _mm_set1_epi16(0xFF));
+                output__vec = _mm_sub_epi16(output__vec, diff__vec);
+                _mm_storeu_si128(cast(__m128i*) &output, output__vec);
 
-                output.r -= cast(ubyte) (((output.r) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
-                output.g -= cast(ubyte) (((output.g) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
-                output.b -= cast(ubyte) (((output.b) * scanline_compositing_info.mmio_info.evy_coeff) >> 4);
                 return output;
 
             case Blending.ALPHA:

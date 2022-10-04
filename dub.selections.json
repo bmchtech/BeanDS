@@ -8,6 +8,8 @@
 		"dunit": "1.0.16",
 		"fluent-asserts": "0.13.3",
 		"gperftools_d": "0.1.0",
+		"infoflow": {"path":"ext/infoflow"},
+		"intel-intrinsics": "1.10.8",
 		"jar": "0.1.0",
 		"libdparse": "0.14.0",
 		"memoryunit": "1.0.2",
