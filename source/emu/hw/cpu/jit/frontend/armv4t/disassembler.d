@@ -62,7 +62,8 @@ template Disassembler(HostReg, GuestReg) {
     }
 
     static void emit_branch_exchange()(_IR* ir, Word opcode) {
-        log_jit("Emitting BX");
+        log_jit("Emitting BX %x", opcode[3..6]);
+
         GuestReg rm = cast(GuestReg) opcode[3..6];
 
         _IRVariable temp = ir.create_variable();
@@ -81,6 +82,24 @@ template Disassembler(HostReg, GuestReg) {
 
         ir.delete_variable(cpsr);
         ir.delete_variable(temp);
+    }
+
+    static void emit_branch()(_IR* ir, Word opcode) {
+        log_jit("Emitting B");
+
+        // set linkage register?
+        if (opcode[24]) {
+            _IRVariable lr_value = ir.create_variable();
+            ir.emit(_IRInstructionGetReg(lr_value, GuestReg_ARMv4T.PC));
+            ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, lr_value, 4));
+            ir.emit(_IRInstructionSetReg(lr_value, GuestReg_ARMv4T.LR));
+        }
+
+        Word offset = sext_32(opcode[0..23], 24) * 4;
+        _IRVariable new_pc = ir.create_variable();
+        ir.emit(_IRInstructionGetReg(new_pc, GuestReg_ARMv4T.PC));
+        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, new_pc, offset));
+        ir.emit(_IRInstructionSetReg(new_pc, GuestReg_ARMv4T.PC));
     }
 
     void decode_thumb(_IR* ir, Word opcode) {

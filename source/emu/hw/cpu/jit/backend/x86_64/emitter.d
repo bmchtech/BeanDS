@@ -144,6 +144,14 @@ template Emitter(HostReg, GuestReg) {
                     shl(dest_reg, src_imm);
                     break;
                 
+                case IRBinaryDataOp.ADD:
+                    add(dest_reg, src_imm);
+                    break;
+                
+                case IRBinaryDataOp.SUB:
+                    sub(dest_reg, src_imm);
+                    break;
+                
                 default: break;
             }
         }
@@ -165,6 +173,14 @@ template Emitter(HostReg, GuestReg) {
                 
                 case IRBinaryDataOp.LSL:
                     shl(dest_reg, src_var.to_xbyak_reg8());
+                    break;
+                
+                case IRBinaryDataOp.ADD:
+                    add(dest_reg, src_var.to_xbyak_reg32());
+                    break;
+                
+                case IRBinaryDataOp.SUB:
+                    sub(dest_reg, src_var.to_xbyak_reg32());
                     break;
                 
                 default: break;

@@ -3,7 +3,9 @@ module emu.hw.cpu.jit.ir.types;
 enum IRBinaryDataOp {
     AND,
     LSL,
-    OR
+    OR,
+    ADD,
+    SUB
 }
 
 enum IRCond {
