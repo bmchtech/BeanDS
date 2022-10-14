@@ -62,9 +62,9 @@ template Disassembler(HostReg, GuestReg) {
     }
 
     static void emit_branch_exchange__THUMB()(_IR* ir, Word opcode) {
-        log_jit("Emitting bx r%x", opcode[3..6]);
-
         GuestReg rm = cast(GuestReg) opcode[3..6];
+
+        log_jit("Emitting bx r%x", rm);
 
         _IRVariable temp = ir.create_variable();
 
@@ -85,7 +85,6 @@ template Disassembler(HostReg, GuestReg) {
     }
 
     static void emit_branch__ARM()(_IR* ir, Word opcode) {
-        log_jit("Emitting b %x", sext_32(opcode[0..23], 24) * );
 
         // set linkage register?
         if (opcode[24]) {
@@ -96,6 +95,9 @@ template Disassembler(HostReg, GuestReg) {
         }
 
         Word offset = sext_32(opcode[0..23], 24) * 4;
+
+        log_jit("Emitting b %x", offset);
+
         _IRVariable new_pc = ir.create_variable();
         ir.emit(_IRInstructionGetReg(new_pc, GuestReg_ARMv4T.PC));
         ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, new_pc, offset));
@@ -103,15 +105,44 @@ template Disassembler(HostReg, GuestReg) {
     }
 
     static void create_clz__ARM()(_IR* ir, Word opcode) {
-        log_jit("Emitting clz r%x, r%x", opcode[12..15], opcode[0..3]);
 
         GuestReg rm = cast(GuestReg) opcode[0 .. 3];
         GuestReg rd = cast(GuestReg) opcode[16..20];
+
+        log_jit("Emitting clz r%x, r%x", rd, rm);
 
         _IRVariable operand = ir.create_variable();
         ir.emit(_IRInstructionGetReg(operand, rm));
         ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.CLZ, operand));
         ir.emit(_IRInstructionSetReg(operand, rd));
+    }
+
+    static void create_swap__ARM()(_IR* ir, Word opcode) {
+        GuestReg rm = cast(GuestReg) opcode[0.. 3];
+        GuestReg rd = cast(GuestReg) opcode[12..15];
+        GuestReg rn = cast(GuestReg) opcode[16..19];
+
+        log_jit("Emitting swp%s r%x, r%x, r%x", opcode[22] ? "b" : "", rd, rm, rn);
+
+        _IRVariable address = ir.create_variable();
+        ir.emit(_IRInstructionGetReg(address, rn));
+
+        _IRVariable read_value    = ir.create_variable();
+        _IRVariable written_value = ir.create_variable();
+
+        // byte swap?
+        if (opcode[22]) {
+            ir.emit(_IRInstructionReadByte(address, read_value));
+            ir.emit(_IRInstructionGetReg(written_value, rm));
+            ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, 0xFF));
+            ir.emit(_IRInstructionWriteByte(address, written_value));
+        } else {
+            ir.emit(_IRInstructionReadWord(address, read_value));
+            ir.emit(_IRInstructionGetReg(written_value, rm));
+            ir.emit(_IRInstructionWriteWord(address, written_value));
+        }
+
+        ir.emit(_IRInstructionSetReg(rd, read_value));
     }
 
     void decode_thumb(_IR* ir, Word opcode) {
