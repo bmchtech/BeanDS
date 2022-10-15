@@ -19,6 +19,7 @@ template Emitter(HostReg, GuestReg) {
         alias _IRInstructionDeleteVariable  = IRInstructionDeleteVariable!(HostReg, GuestReg);
         alias _IRInstructionBinaryDataOpImm = IRInstructionBinaryDataOpImm!(HostReg, GuestReg);
         alias _IRInstructionBinaryDataOpVar = IRInstructionBinaryDataOpVar!(HostReg, GuestReg);
+        alias _IRInstructionUnaryDataOp     = IRInstructionUnaryDataOp!(HostReg, GuestReg);
 
         _RegisterAllocator register_allocator;
 
@@ -183,6 +184,28 @@ template Emitter(HostReg, GuestReg) {
                     sub(dest_reg, src_var.to_xbyak_reg32());
                     break;
                 
+                case IRBinaryDataOp.MOV:
+                    mov(dest_reg, src_var.to_xbyak_reg32());
+                    break;
+                
+                default: break;
+            }
+        }
+
+        void emit_UNARY_DATA_OP(_IRInstructionUnaryDataOp ir_instruction) {
+            log_jit("emitting unary_data_op");
+
+            Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
+
+            switch (ir_instruction.op) {
+                case IRUnaryDataOp.NOT:
+                    not(dest_reg);
+                    break;
+
+                case IRUnaryDataOp.NEG:
+                    neg(dest_reg);
+                    break;
+
                 default: break;
             }
         }
@@ -193,7 +216,8 @@ template Emitter(HostReg, GuestReg) {
                 (_IRInstructionSetReg i)          => emit_SET_REG(i),
                 (_IRInstructionDeleteVariable i)  => emit_DELETE_VARIABLE(i),
                 (_IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i),
-                (_IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i)
+                (_IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i),
+                (_IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i),
             );
         }
     }

@@ -19,6 +19,7 @@ template Disassembler(HostReg, GuestReg) {
     alias _IRInstructionSetReg          = IRInstructionSetReg!(HostReg, GuestReg);
     alias _IRInstructionBinaryDataOpImm = IRInstructionBinaryDataOpImm!(HostReg, GuestReg);
     alias _IRInstructionBinaryDataOpVar = IRInstructionBinaryDataOpVar!(HostReg, GuestReg);
+    alias _IRInstructionUnaryDataOp     = IRInstructionUnaryDataOp!(HostReg, GuestReg);
 
     bool matches(string format, uint opcode) {
         bool matches = true;
@@ -44,11 +45,11 @@ template Disassembler(HostReg, GuestReg) {
 
         static foreach (enum i; 0 .. 256) {
             if ("11010000".matches(i)) {
-                decode_jumptable[i] = &emit_branch_exchange!();
+                // decode_jumptable[i] = &emit_branch_exchange__THUMB!();
             } else
 
             if ("01000111".matches(i)) {
-                decode_jumptable[i] = &emit_branch_exchange!();
+                decode_jumptable[i] = &emit_branch_exchange__THUMB!();
             }
         }
 
@@ -64,24 +65,38 @@ template Disassembler(HostReg, GuestReg) {
     static void emit_branch_exchange__THUMB()(_IR* ir, Word opcode) {
         GuestReg rm = cast(GuestReg) opcode[3..6];
 
-        log_jit("Emitting bx r%x", rm);
+        log_jit("Emitting bx r%d", rm);
+
+        _IRVariable new_pc_value = ir.create_variable();
+
+        ir.emit(_IRInstructionGetReg(new_pc_value, rm));
+        if (rm == 15) ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, new_pc_value, 2));
 
         _IRVariable temp = ir.create_variable();
-
-        ir.emit(_IRInstructionGetReg(temp, rm));
-        ir.emit(_IRInstructionSetReg(GuestReg.PC, temp));
-
         _IRVariable cpsr = ir.create_variable();
         
         ir.emit(_IRInstructionGetReg(cpsr, GuestReg_ARMv4T.CPSR));
         ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, cpsr, ~(1 << 5)));
+        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, temp, new_pc_value));
         ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, temp, 1));
+
+        _IRVariable pc_aligner = ir.create_variable();
+        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, pc_aligner, temp));
+        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, pc_aligner, 1));
+        ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.NEG, pc_aligner));         
+        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, pc_aligner, 3));
+        ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.NOT, pc_aligner));        
+        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.AND, new_pc_value, pc_aligner));
+        ir.emit(_IRInstructionSetReg(GuestReg.PC, new_pc_value));
+
         ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, temp, 5));
         ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.OR,  cpsr, temp));
-        ir.emit(_IRInstructionSetReg(GuestReg_ARMv4T.CPSR, cpsr));
-
-        ir.delete_variable(cpsr);
         ir.delete_variable(temp);
+
+        ir.emit(_IRInstructionSetReg(GuestReg_ARMv4T.CPSR, cpsr));
+        ir.delete_variable(cpsr);
+        ir.delete_variable(new_pc_value);
+        ir.delete_variable(pc_aligner);
     }
 
     static void emit_branch__ARM()(_IR* ir, Word opcode) {
@@ -96,7 +111,7 @@ template Disassembler(HostReg, GuestReg) {
 
         Word offset = sext_32(opcode[0..23], 24) * 4;
 
-        log_jit("Emitting b %x", offset);
+        log_jit("Emitting b 0x%x", cast(int) offset);
 
         _IRVariable new_pc = ir.create_variable();
         ir.emit(_IRInstructionGetReg(new_pc, GuestReg_ARMv4T.PC));
@@ -109,7 +124,7 @@ template Disassembler(HostReg, GuestReg) {
         GuestReg rm = cast(GuestReg) opcode[0 .. 3];
         GuestReg rd = cast(GuestReg) opcode[16..20];
 
-        log_jit("Emitting clz r%x, r%x", rd, rm);
+        log_jit("Emitting clz r%d, r%d", rd, rm);
 
         _IRVariable operand = ir.create_variable();
         ir.emit(_IRInstructionGetReg(operand, rm));
@@ -122,7 +137,7 @@ template Disassembler(HostReg, GuestReg) {
         GuestReg rd = cast(GuestReg) opcode[12..15];
         GuestReg rn = cast(GuestReg) opcode[16..19];
 
-        log_jit("Emitting swp%s r%x, r%x, r%x", opcode[22] ? "b" : "", rd, rm, rn);
+        log_jit("Emitting swp%s r%d, r%d, r%d", opcode[22] ? "b" : "", rd, rm, rn);
 
         _IRVariable address = ir.create_variable();
         ir.emit(_IRInstructionGetReg(address, rn));

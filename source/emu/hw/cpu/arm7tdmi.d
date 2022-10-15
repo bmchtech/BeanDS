@@ -131,9 +131,13 @@ final class ARM7TDMI : ArmCPU {
                 generated_function(jit_state);
                 regs[0..16] = jit_state.regs[0..16];
                 regs[16] = jit_state.cpsr;
+                log_jit("jit shit: %x %x", jit_state.regs[15], jit_state.cpsr);
+        instruction_set = get_flag(Flag.T) ? instruction_set.THUMB : instruction_set.ARM;
+                maybe_reload_instruction_block();
                 refill_pipeline();
+            } else {
+                execute_thumb!ARM7TDMI.jumptable[opcode >> 8](this, opcode);
             }
-            execute_thumb!ARM7TDMI.jumptable[opcode >> 8](this, opcode);
         }
 
         version (ift) { IFTDebugger.instruction_end(); }

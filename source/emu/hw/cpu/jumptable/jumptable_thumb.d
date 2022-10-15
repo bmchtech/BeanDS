@@ -114,7 +114,7 @@ template execute_thumb(T : ArmCPU) {
         } else {
             Reg rm = opcode[3..6];
 
-            Word address = cpu.get_reg__thumb(rm);
+            Word address = cpu.get_reg(rm);
             cpu.set_flag(Flag.T, cast(bool) (address & 1));
             cpu.set_reg(pc, address);
         }

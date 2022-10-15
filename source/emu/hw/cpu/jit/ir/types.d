@@ -5,7 +5,13 @@ enum IRBinaryDataOp {
     LSL,
     OR,
     ADD,
-    SUB
+    SUB,
+    MOV
+}
+
+enum IRUnaryDataOp {
+    NOT,
+    NEG
 }
 
 enum IRCond {
