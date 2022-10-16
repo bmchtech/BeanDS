@@ -7,19 +7,9 @@ import xbyak;
 import emu.hw.cpu.jit;
 import util;
 
-template Emitter(HostReg, GuestReg) {
+template Emitter(HostReg) {
     final class Code : CodeGenerator {
-        alias _RegisterAllocator            = RegisterAllocator!(HostReg, GuestReg);
-
-        alias _IR                           = IR!(HostReg, GuestReg);
-        
-        alias _IRInstruction                = IRInstruction!(HostReg, GuestReg);
-        alias _IRInstructionGetReg          = IRInstructionGetReg!(HostReg, GuestReg);
-        alias _IRInstructionSetReg          = IRInstructionSetReg!(HostReg, GuestReg);
-        alias _IRInstructionDeleteVariable  = IRInstructionDeleteVariable!(HostReg, GuestReg);
-        alias _IRInstructionBinaryDataOpImm = IRInstructionBinaryDataOpImm!(HostReg, GuestReg);
-        alias _IRInstructionBinaryDataOpVar = IRInstructionBinaryDataOpVar!(HostReg, GuestReg);
-        alias _IRInstructionUnaryDataOp     = IRInstructionUnaryDataOp!(HostReg, GuestReg);
+        alias _RegisterAllocator            = RegisterAllocator!(HostReg);
 
         _RegisterAllocator register_allocator;
 
@@ -52,7 +42,7 @@ template Emitter(HostReg, GuestReg) {
             if (register_allocator) register_allocator.reset();
         }
 
-        void emit(_IR* ir) {
+        void emit(IR* ir) {
             emit_prologue();
 
             for (int i = 0; i < ir.instructions.length; i++) {
@@ -97,7 +87,7 @@ template Emitter(HostReg, GuestReg) {
             ret();
         }
 
-        void emit_GET_REG(_IRInstructionGetReg ir_instruction) {
+        void emit_GET_REG(IRInstructionGetReg ir_instruction) {
             log_jit("emitting get_reg");
 
             GuestReg guest_reg = ir_instruction.src;
@@ -111,12 +101,12 @@ template Emitter(HostReg, GuestReg) {
             mov(host_reg.to_xbyak_reg32(), dword [rdi + offset]);
         }
 
-        void emit_DELETE_VARIABLE(_IRInstructionDeleteVariable ir_instruction) {
+        void emit_DELETE_VARIABLE(IRInstructionDeleteVariable ir_instruction) {
             log_jit("emitting delete_variable");
             register_allocator.unbind_variable(ir_instruction.variable);
         }
 
-        void emit_SET_REG(_IRInstructionSetReg ir_instruction) {
+        void emit_SET_REG(IRInstructionSetReg ir_instruction) {
             log_jit("emitting set_reg");
 
             GuestReg dest_reg = ir_instruction.dest;
@@ -126,7 +116,7 @@ template Emitter(HostReg, GuestReg) {
             mov(dword [rdi + offset], src_reg);
         }
 
-        void emit_BINARY_DATA_OP_IMM(_IRInstructionBinaryDataOpImm ir_instruction) {
+        void emit_BINARY_DATA_OP_IMM(IRInstructionBinaryDataOpImm ir_instruction) {
             log_jit("emitting binary_data_op_imm");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -157,7 +147,7 @@ template Emitter(HostReg, GuestReg) {
             }
         }
 
-        void emit_BINARY_DATA_OP_VAR(_IRInstructionBinaryDataOpVar ir_instruction) {
+        void emit_BINARY_DATA_OP_VAR(IRInstructionBinaryDataOpVar ir_instruction) {
             log_jit("emitting binary_data_op_var");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -192,7 +182,7 @@ template Emitter(HostReg, GuestReg) {
             }
         }
 
-        void emit_UNARY_DATA_OP(_IRInstructionUnaryDataOp ir_instruction) {
+        void emit_UNARY_DATA_OP(IRInstructionUnaryDataOp ir_instruction) {
             log_jit("emitting unary_data_op");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -210,14 +200,14 @@ template Emitter(HostReg, GuestReg) {
             }
         }
 
-        void emit(_IRInstruction ir_instruction) {
+        void emit(IRInstruction ir_instruction) {
             ir_instruction.match!(
-                (_IRInstructionGetReg i)          => emit_GET_REG(i),
-                (_IRInstructionSetReg i)          => emit_SET_REG(i),
-                (_IRInstructionDeleteVariable i)  => emit_DELETE_VARIABLE(i),
-                (_IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i),
-                (_IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i),
-                (_IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i),
+                (IRInstructionGetReg i)          => emit_GET_REG(i),
+                (IRInstructionSetReg i)          => emit_SET_REG(i),
+                (IRInstructionDeleteVariable i)  => emit_DELETE_VARIABLE(i),
+                (IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i),
+                (IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i),
+                (IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i),
             );
         }
     }

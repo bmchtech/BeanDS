@@ -5,163 +5,180 @@ import std.sumtype;
 import emu.hw.cpu.jit;
 import util;
 
-template Disassembler(HostReg, GuestReg) {
-    alias _IR = IR!(HostReg, GuestReg);
+alias DecodeJumptableEntry = void function(IR* ir, Word opcode);
+alias DecodeJumptable = DecodeJumptableEntry[256];
+
+bool matches(string format, uint opcode) {
+    bool matches = true;
+
+    for (int i = 0; i < format.length; i++) {
+        char f = format[i];
+        bool b = opcode.bit(format.length - i - 1);
+
+        if ((f != 'x') && ((f == '1' && b != 1) || (f == '0' && b != 0))) {
+            matches = false;
+        }
+    }
+
+    return matches;
+}
+
+// void set_flag(IRFlag ir_flag)(_IR* ir) {
+    // int offset = ir_flag;
+// }
+
+DecodeJumptable create_decode_jumptable()() {
+    DecodeJumptable decode_jumptable;
+
+    static foreach (enum i; 0 .. 256) {
+        if ("11010000".matches(i)) {
+            // decode_jumptable[i] = &emit_branch_exchange__THUMB!();
+        } else
+
+        if ("01000111".matches(i)) {
+            decode_jumptable[i] = &emit_branch_exchange__THUMB!();
+        }
+    }
+
+    return decode_jumptable;
+}
+
+enum decode_jumptable = create_decode_jumptable!();
+
+void do_action(IR* ir, Word opcode) {
+    decode_jumptable[opcode >> 8](ir, opcode);
+}
+
+static void emit_branch_exchange__THUMB()(IR* ir, Word opcode) {
+    GuestReg rm = cast(GuestReg) opcode[3..6];
+
+    log_jit("Emitting bx r%d", rm);
+
+    IRVariable new_pc_value = ir.create_variable();
+
+    ir.emit(IRInstructionGetReg(new_pc_value, rm));
+    if (rm == 15) ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, new_pc_value, 2));
+
+    IRVariable temp = ir.create_variable();
+    IRVariable cpsr = ir.create_variable();
+    IRVariable pc_aligner = ir.create_variable();
     
-    alias DecodeJumptableEntry = void function(_IR* ir, Word opcode);
-    alias DecodeJumptable = DecodeJumptableEntry[256];
+    ir.emit(IRInstructionGetReg(cpsr, GuestReg.CPSR));
 
-    alias _IRConstant = IRConstant!(HostReg, GuestReg);
-    alias _IRGuestReg = IRGuestReg!(HostReg, GuestReg); 
-    alias _IRVariable = IRVariable!(HostReg, GuestReg);
+    // cpsr = cpsr & ~(1 << 5);
+    // temp = new_pc_value;
+    // temp = temp & 1;
+    // pc_aligner = temp;
+    // new_pc_value = new_pc_value & ~((pc_aligner << 1) + 3);
 
-    alias _IRInstructionGetReg          = IRInstructionGetReg!(HostReg, GuestReg);
-    alias _IRInstructionSetReg          = IRInstructionSetReg!(HostReg, GuestReg);
-    alias _IRInstructionBinaryDataOpImm = IRInstructionBinaryDataOpImm!(HostReg, GuestReg);
-    alias _IRInstructionBinaryDataOpVar = IRInstructionBinaryDataOpVar!(HostReg, GuestReg);
-    alias _IRInstructionUnaryDataOp     = IRInstructionUnaryDataOp!(HostReg, GuestReg);
+    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, cpsr, ~(1 << 5)));
+    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, temp, new_pc_value));
+    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, temp, 1));
 
-    bool matches(string format, uint opcode) {
-        bool matches = true;
+    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, pc_aligner, temp));
+    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, pc_aligner, 1));
+    ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NEG, pc_aligner));         
+    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, pc_aligner, 3));
+    ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NOT, pc_aligner));        
+    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.AND, new_pc_value, pc_aligner));
+    ir.emit(IRInstructionSetReg(GuestReg.PC, new_pc_value));
 
-        for (int i = 0; i < format.length; i++) {
-            char f = format[i];
-            bool b = opcode.bit(format.length - i - 1);
+    cpsr = cpsr | (temp << 5);
 
-            if ((f != 'x') && ((f == '1' && b != 1) || (f == '0' && b != 0))) {
-                matches = false;
-            }
-        }
+    ir.delete_variable(temp);
 
-        return matches;
-    }
+    ir.emit(IRInstructionSetReg(GuestReg.CPSR, cpsr));
 
-    // void set_flag(IRFlag ir_flag)(_IR* ir) {
-        // int offset = ir_flag;
-    // }
+    ir.delete_variable(cpsr);
+    ir.delete_variable(new_pc_value);
+    ir.delete_variable(pc_aligner);
+}
 
-    DecodeJumptable create_decode_jumptable()() {
-        DecodeJumptable decode_jumptable;
+// static void emit_conditional_branch__THUMB()(IR* ir, Word opcode) {
+//     switch (cond) {
+//         case 0x0: return ( get_flag(Flag.Z));
+//         case 0x1: return (!get_flag(Flag.Z));
+//         case 0x2: return ( get_flag(Flag.C));
+//         case 0x3: return (!get_flag(Flag.C));
+//         case 0x4: return ( get_flag(Flag.N));
+//         case 0x5: return (!get_flag(Flag.N));
+//         case 0x6: return ( get_flag(Flag.V));
+//         case 0x7: return (!get_flag(Flag.V));
+//         case 0x8: return ( get_flag(Flag.C) && !get_flag(Flag.Z));
+//         case 0x9: return (!get_flag(Flag.C) ||  get_flag(Flag.Z));
+//         case 0xA: return ( get_flag(Flag.N) ==  get_flag(Flag.V));
+//         case 0xB: return ( get_flag(Flag.N) !=  get_flag(Flag.V));
+//         case 0xC: return (!get_flag(Flag.Z) && (get_flag(Flag.N) == get_flag(Flag.V)));
+//         case 0xD: return ( get_flag(Flag.Z) || (get_flag(Flag.N) != get_flag(Flag.V)));
+//         case 0xE: return true;
+//         case 0xF: error_arm7("ARM7 opcode has a condition of 0xF"); return false;
 
-        static foreach (enum i; 0 .. 256) {
-            if ("11010000".matches(i)) {
-                // decode_jumptable[i] = &emit_branch_exchange__THUMB!();
-            } else
+//         default: assert(0);
+//     }
+// }
 
-            if ("01000111".matches(i)) {
-                decode_jumptable[i] = &emit_branch_exchange__THUMB!();
-            }
-        }
+// static void emit_branch__ARM()(_IR* ir, Word opcode) {
 
-        return decode_jumptable;
-    }
+//     // set linkage register?
+//     if (opcode[24]) {
+//         _IRVariable lr_value = ir.create_variable();
+//         ir.emit(_IRInstructionGetReg(lr_value, GuestReg_ARMv4T.PC));
+//         ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, lr_value, 4));
+//         ir.emit(_IRInstructionSetReg(lr_value, GuestReg_ARMv4T.LR));
+//     }
 
-    enum decode_jumptable = create_decode_jumptable!();
+//     Word offset = sext_32(opcode[0..23], 24) * 4;
 
-    void do_action(_IR* ir, Word opcode) {
-        decode_jumptable[opcode >> 8](ir, opcode);
-    }
+//     log_jit("Emitting b 0x%x", cast(int) offset);
 
-    static void emit_branch_exchange__THUMB()(_IR* ir, Word opcode) {
-        GuestReg rm = cast(GuestReg) opcode[3..6];
+//     _IRVariable new_pc = ir.create_variable();
+//     ir.emit(_IRInstructionGetReg(new_pc, GuestReg_ARMv4T.PC));
+//     ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, new_pc, offset));
+//     ir.emit(_IRInstructionSetReg(new_pc, GuestReg_ARMv4T.PC));
+// }
 
-        log_jit("Emitting bx r%d", rm);
+// static void create_clz__ARM()(_IR* ir, Word opcode) {
 
-        _IRVariable new_pc_value = ir.create_variable();
+//     GuestReg rm = cast(GuestReg) opcode[0 .. 3];
+//     GuestReg rd = cast(GuestReg) opcode[16..20];
 
-        ir.emit(_IRInstructionGetReg(new_pc_value, rm));
-        if (rm == 15) ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, new_pc_value, 2));
+//     log_jit("Emitting clz r%d, r%d", rd, rm);
 
-        _IRVariable temp = ir.create_variable();
-        _IRVariable cpsr = ir.create_variable();
-        
-        ir.emit(_IRInstructionGetReg(cpsr, GuestReg_ARMv4T.CPSR));
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, cpsr, ~(1 << 5)));
-        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, temp, new_pc_value));
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, temp, 1));
+//     _IRVariable operand = ir.create_variable();
+//     ir.emit(_IRInstructionGetReg(operand, rm));
+//     ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.CLZ, operand));
+//     ir.emit(_IRInstructionSetReg(operand, rd));
+// }
 
-        _IRVariable pc_aligner = ir.create_variable();
-        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, pc_aligner, temp));
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, pc_aligner, 1));
-        ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.NEG, pc_aligner));         
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, pc_aligner, 3));
-        ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.NOT, pc_aligner));        
-        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.AND, new_pc_value, pc_aligner));
-        ir.emit(_IRInstructionSetReg(GuestReg.PC, new_pc_value));
+// static void create_swap__ARM()(_IR* ir, Word opcode) {
+//     GuestReg rm = cast(GuestReg) opcode[0.. 3];
+//     GuestReg rd = cast(GuestReg) opcode[12..15];
+//     GuestReg rn = cast(GuestReg) opcode[16..19];
 
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, temp, 5));
-        ir.emit(_IRInstructionBinaryDataOpVar(IRBinaryDataOp.OR,  cpsr, temp));
-        ir.delete_variable(temp);
+//     log_jit("Emitting swp%s r%d, r%d, r%d", opcode[22] ? "b" : "", rd, rm, rn);
 
-        ir.emit(_IRInstructionSetReg(GuestReg_ARMv4T.CPSR, cpsr));
-        ir.delete_variable(cpsr);
-        ir.delete_variable(new_pc_value);
-        ir.delete_variable(pc_aligner);
-    }
+//     IRVariable address = ir.create_variable();
+//     ir.emit(_IRInstructionGetReg(address, rn));
 
-    static void emit_branch__ARM()(_IR* ir, Word opcode) {
+//     IRVariable read_value    = ir.create_variable();
+//     IRVariable written_value = ir.create_variable();
 
-        // set linkage register?
-        if (opcode[24]) {
-            _IRVariable lr_value = ir.create_variable();
-            ir.emit(_IRInstructionGetReg(lr_value, GuestReg_ARMv4T.PC));
-            ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, lr_value, 4));
-            ir.emit(_IRInstructionSetReg(lr_value, GuestReg_ARMv4T.LR));
-        }
+//     // byte swap?
+//     if (opcode[22]) {
+//         ir.emit(IRInstructionReadByte(address, read_value));
+//         ir.emit(IRInstructionGetReg(written_value, rm));
+//         ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, 0xFF));
+//         ir.emit(IRInstructionWriteByte(address, written_value));
+//     } else {
+//         ir.emit(IRInstructionReadWord(address, read_value));
+//         ir.emit(IRInstructionGetReg(written_value, rm));
+//         ir.emit(IRInstructionWriteWord(address, written_value));
+//     }
 
-        Word offset = sext_32(opcode[0..23], 24) * 4;
+//     ir.emit(IRInstructionSetReg(rd, read_value));
+// }
 
-        log_jit("Emitting b 0x%x", cast(int) offset);
-
-        _IRVariable new_pc = ir.create_variable();
-        ir.emit(_IRInstructionGetReg(new_pc, GuestReg_ARMv4T.PC));
-        ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, new_pc, offset));
-        ir.emit(_IRInstructionSetReg(new_pc, GuestReg_ARMv4T.PC));
-    }
-
-    static void create_clz__ARM()(_IR* ir, Word opcode) {
-
-        GuestReg rm = cast(GuestReg) opcode[0 .. 3];
-        GuestReg rd = cast(GuestReg) opcode[16..20];
-
-        log_jit("Emitting clz r%d, r%d", rd, rm);
-
-        _IRVariable operand = ir.create_variable();
-        ir.emit(_IRInstructionGetReg(operand, rm));
-        ir.emit(_IRInstructionUnaryDataOp(IRUnaryDataOp.CLZ, operand));
-        ir.emit(_IRInstructionSetReg(operand, rd));
-    }
-
-    static void create_swap__ARM()(_IR* ir, Word opcode) {
-        GuestReg rm = cast(GuestReg) opcode[0.. 3];
-        GuestReg rd = cast(GuestReg) opcode[12..15];
-        GuestReg rn = cast(GuestReg) opcode[16..19];
-
-        log_jit("Emitting swp%s r%d, r%d, r%d", opcode[22] ? "b" : "", rd, rm, rn);
-
-        _IRVariable address = ir.create_variable();
-        ir.emit(_IRInstructionGetReg(address, rn));
-
-        _IRVariable read_value    = ir.create_variable();
-        _IRVariable written_value = ir.create_variable();
-
-        // byte swap?
-        if (opcode[22]) {
-            ir.emit(_IRInstructionReadByte(address, read_value));
-            ir.emit(_IRInstructionGetReg(written_value, rm));
-            ir.emit(_IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, 0xFF));
-            ir.emit(_IRInstructionWriteByte(address, written_value));
-        } else {
-            ir.emit(_IRInstructionReadWord(address, read_value));
-            ir.emit(_IRInstructionGetReg(written_value, rm));
-            ir.emit(_IRInstructionWriteWord(address, written_value));
-        }
-
-        ir.emit(_IRInstructionSetReg(rd, read_value));
-    }
-
-    void decode_thumb(_IR* ir, Word opcode) {
-        log_jit("%x", opcode);
-        decode_jumptable[opcode >> 8](ir, opcode);
-    }
+void decode_thumb(IR* ir, Word opcode) {
+    log_jit("%x", opcode);
+    decode_jumptable[opcode >> 8](ir, opcode);
 }

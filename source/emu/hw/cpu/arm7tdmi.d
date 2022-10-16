@@ -29,8 +29,8 @@ final class ARM7TDMI : ArmCPU {
     Word current_instruction_block_address = 0xFFFFFFFF;
     
     JITState* jit_state;
-    IR!(HostReg_x86_64, GuestReg_ARMv4T)* ir;
-    Emitter!(HostReg_x86_64, GuestReg_ARMv4T).Code emitter;
+    IR* ir;
+    Emitter!(HostReg_x86_64).Code emitter;
 
     this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
@@ -40,8 +40,8 @@ final class ARM7TDMI : ArmCPU {
         cpu_trace = new CpuTrace(this, ringbuffer_size);
 
         jit_state = new JITState();
-        ir = new IR!(HostReg_x86_64, GuestReg_ARMv4T)();
-        emitter = new Emitter!(HostReg_x86_64, GuestReg_ARMv4T).Code();
+        ir = new IR();
+        emitter = new Emitter!(HostReg_x86_64).Code();
         // log_jit("output: %x %x", jit_state.regs[15], jit_state.cpsr);
     }
 
@@ -119,7 +119,9 @@ final class ARM7TDMI : ArmCPU {
             if (opcode >> 8 == 0x47) {
                 ir.reset();
                 emitter.reset();
-                Disassembler!(HostReg_x86_64, GuestReg_ARMv4T).decode_thumb(
+
+                // todo: namespace this
+                decode_thumb(
                     ir,
                     Word(opcode)
                 );
@@ -132,7 +134,7 @@ final class ARM7TDMI : ArmCPU {
                 regs[0..16] = jit_state.regs[0..16];
                 regs[16] = jit_state.cpsr;
                 log_jit("jit shit: %x %x", jit_state.regs[15], jit_state.cpsr);
-        instruction_set = get_flag(Flag.T) ? instruction_set.THUMB : instruction_set.ARM;
+                instruction_set = get_flag(Flag.T) ? instruction_set.THUMB : instruction_set.ARM;
                 maybe_reload_instruction_block();
                 refill_pipeline();
             } else {

@@ -1,6 +1,6 @@
 module emu.hw.cpu.jit.frontend.armv4t.guest_reg;
 
-enum GuestReg_ARMv4T {
+enum GuestReg {
     R0,
     R1,
     R2,

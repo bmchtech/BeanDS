@@ -7,9 +7,7 @@ import emu.hw.cpu.jit;
 
 import util;
 
-final class RegisterAllocator(HostReg, GuestReg) {
-    alias _IRVariable = IRVariable!(HostReg, GuestReg);
-
+final class RegisterAllocator(HostReg) {
     struct BindingVariable {
         HostReg host_reg;
 
@@ -24,7 +22,7 @@ final class RegisterAllocator(HostReg, GuestReg) {
             unbind_all();
         }
 
-        void bind_variable(_IRVariable new_variable) {
+        void bind_variable(IRVariable new_variable) {
             if (variable_bound) error_jit("Tried to bind %s to %s when it was already bound to %s.", host_reg, new_variable, variable);
 
             log_jit("Binding %s to %s.", host_reg, new_variable);
@@ -91,7 +89,7 @@ final class RegisterAllocator(HostReg, GuestReg) {
         }
     }
 
-    HostReg get_bound_host_reg(_IRVariable ir_variable) {
+    HostReg get_bound_host_reg(IRVariable ir_variable) {
         BindingVariable* binding_variable;
         int binding_variable_index = get_binding_variable_from_variable(ir_variable);
 
@@ -126,7 +124,7 @@ final class RegisterAllocator(HostReg, GuestReg) {
         bindings[host_reg].bind_guest_reg(guest_reg);
     }
 
-    int get_binding_variable_from_variable(_IRVariable ir_variable) {
+    int get_binding_variable_from_variable(IRVariable ir_variable) {
         for (int i = 0; i < NUM_HOST_REGS; i++) {
             BindingVariable binding_variable = bindings[i];
             log_jit("Comparing %d [%s] to %s. [%d]", binding_variable.variable, binding_variable.host_reg, ir_variable, !binding_variable.unbound());
@@ -150,7 +148,7 @@ final class RegisterAllocator(HostReg, GuestReg) {
         return -1;
     }
 
-    void unbind_variable(_IRVariable ir_variable) {
+    void unbind_variable(IRVariable ir_variable) {
         auto binding_variable_index = get_binding_variable_from_variable(ir_variable);
         if (binding_variable_index == -1) error_jit("Tried to unbind %s when it was not bound.", ir_variable);
         bindings[binding_variable_index].unbind_variable();
