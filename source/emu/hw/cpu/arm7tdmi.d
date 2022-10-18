@@ -41,6 +41,7 @@ final class ARM7TDMI : ArmCPU {
 
         jit_state = new JITState();
         ir = new IR();
+        ir.setup();
         emitter = new Emitter!(HostReg_x86_64).Code();
         // log_jit("output: %x %x", jit_state.regs[15], jit_state.cpsr);
     }

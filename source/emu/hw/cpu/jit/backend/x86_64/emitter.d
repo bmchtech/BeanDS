@@ -47,7 +47,7 @@ template Emitter(HostReg) {
 
             ir.pretty_print();
 
-            for (int i = 0; i < ir.instructions.length; i++) {
+            for (int i = 0; i < ir.length(); i++) {
                 log_jit("emitting instruction %d", i);
                 emit(ir.instructions[i]);
             }

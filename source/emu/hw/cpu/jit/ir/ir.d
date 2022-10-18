@@ -15,17 +15,30 @@ alias IRInstruction = SumType!(
 );
 
 struct IR {
-    // TODO: use a less awful allocator for this
-    IRInstruction[] instructions;
+    enum MAX_IR_INSTRUCTIONS = 0x10000;
+
+    IRInstruction* instructions;
+    size_t current_instruction_index;
 
     private void emit(I)(I ir_opcode) {
-        log_jit("Emit: %s", ir_opcode);
-        instructions ~= IRInstruction(ir_opcode);
+        log_jit("Emit: %s at idx %d", ir_opcode, current_instruction_index);
+        instructions[current_instruction_index++] = ir_opcode;
+    }
+
+    void setup() {
+        // yes this looks stupid but IRInstruction is a sumtype which disables the default constructor
+        // so we have to do this silly workaround
+
+        instructions = cast(IRInstruction*) new ubyte[IRInstruction.sizeof * MAX_IR_INSTRUCTIONS];
     }
 
     void reset() {
-        instructions        = [];
         current_variable_id = 0;
+        current_instruction_index = 0;
+    }
+
+    size_t length() {
+        return current_instruction_index;
     }
 
     int current_variable_id;
@@ -49,7 +62,7 @@ struct IR {
     }
 
     void pretty_print() {
-        for (int i = 0; i < instructions.length; i++) {
+        for (int i = 0; i < this.length(); i++) {
             pretty_print_instruction(instructions[i]);
         }
     }
