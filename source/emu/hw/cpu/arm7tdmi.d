@@ -126,6 +126,7 @@ final class ARM7TDMI : ArmCPU {
                     Word(opcode)
                 );
                 emitter.emit(ir);
+                emitter.pretty_print();
                 auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
 
                 jit_state.regs[0..16] = regs[0..16];
@@ -157,7 +158,7 @@ final class ARM7TDMI : ArmCPU {
             cpu_trace.capture();
         }
 
-        if (num_log > 0) {
+        if (num_log > 0 || true) {
             num_log--;
             log_state();
         }

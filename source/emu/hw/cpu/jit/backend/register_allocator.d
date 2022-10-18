@@ -163,6 +163,11 @@ final class RegisterAllocator(HostReg) {
     private BindingVariable* get_free_binding_variable() {
         log_jit("Getting free binding variable.");
         for (int i = 0; i < NUM_HOST_REGS; i++) {
+            // pls dont clobber the stack pointer
+            static if (is(HostReg == HostReg_x86_64)) {
+                if (bindings[i].host_reg == HostReg_x86_64.ESP || bindings[i].host_reg == HostReg_x86_64.EDI) continue;
+            }
+
             if (bindings[i].unbound()) {
                 return &bindings[i];
             }

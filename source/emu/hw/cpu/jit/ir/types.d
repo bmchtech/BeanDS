@@ -1,17 +1,29 @@
 module emu.hw.cpu.jit.ir.types;
 
+import std.conv;
+import std.uni;
+
 enum IRBinaryDataOp {
     AND,
     LSL,
-    OR,
+    ORR,
     ADD,
     SUB,
-    MOV
+    XOR
 }
 
 enum IRUnaryDataOp {
     NOT,
-    NEG
+    NEG,
+    MOV
+}
+
+string to_string(IRBinaryDataOp op) {
+    return std.conv.to!string(op).toLower();
+}
+
+string to_string(IRUnaryDataOp op) {
+    return std.conv.to!string(op).toLower();
 }
 
 enum IRCond {

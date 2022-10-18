@@ -1,5 +1,8 @@
 module emu.hw.cpu.jit.frontend.armv4t.guest_reg;
 
+import std.conv;
+import std.uni;
+
 enum GuestReg {
     R0,
     R1,
@@ -19,4 +22,8 @@ enum GuestReg {
     PC,
     CPSR,
     SPSR
+}
+
+string to_string(GuestReg reg) {
+    return std.conv.to!string(reg).toLower();
 }

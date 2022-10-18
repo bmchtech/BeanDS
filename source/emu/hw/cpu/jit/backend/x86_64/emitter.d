@@ -45,7 +45,10 @@ template Emitter(HostReg) {
         void emit(IR* ir) {
             emit_prologue();
 
+            ir.pretty_print();
+
             for (int i = 0; i < ir.instructions.length; i++) {
+                log_jit("emitting instruction %d", i);
                 emit(ir.instructions[i]);
             }
 
@@ -101,11 +104,6 @@ template Emitter(HostReg) {
             mov(host_reg.to_xbyak_reg32(), dword [rdi + offset]);
         }
 
-        void emit_DELETE_VARIABLE(IRInstructionDeleteVariable ir_instruction) {
-            log_jit("emitting delete_variable");
-            register_allocator.unbind_variable(ir_instruction.variable);
-        }
-
         void emit_SET_REG(IRInstructionSetReg ir_instruction) {
             log_jit("emitting set_reg");
 
@@ -120,27 +118,38 @@ template Emitter(HostReg) {
             log_jit("emitting binary_data_op_imm");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
-            int src_imm  = ir_instruction.src;
+            Reg src1     = register_allocator.get_bound_host_reg(ir_instruction.src1).to_xbyak_reg32();
+            int src2     = ir_instruction.src2;
             
             switch (ir_instruction.op) {
                 case IRBinaryDataOp.AND:
-                    and(dest_reg, src_imm);
+                    mov(dest_reg, src1);
+                    and(dest_reg, src2);
                     break;
                 
-                case IRBinaryDataOp.OR:
-                    or(dest_reg, src_imm);
+                case IRBinaryDataOp.ORR:
+                    mov(dest_reg, src1);
+                    or (dest_reg, src2);
                     break;
                 
                 case IRBinaryDataOp.LSL:
-                    shl(dest_reg, src_imm);
+                    mov(dest_reg, src1);
+                    shl(dest_reg, src2);
                     break;
                 
                 case IRBinaryDataOp.ADD:
-                    add(dest_reg, src_imm);
+                    mov(dest_reg, src1);
+                    add(dest_reg, src2);
                     break;
                 
                 case IRBinaryDataOp.SUB:
-                    sub(dest_reg, src_imm);
+                    mov(dest_reg, src1);
+                    sub(dest_reg, src2);
+                    break;
+                
+                case IRBinaryDataOp.XOR:
+                    mov(dest_reg, src1);
+                    xor(dest_reg, src2);
                     break;
                 
                 default: break;
@@ -148,34 +157,41 @@ template Emitter(HostReg) {
         }
 
         void emit_BINARY_DATA_OP_VAR(IRInstructionBinaryDataOpVar ir_instruction) {
-            log_jit("emitting binary_data_op_var");
+            log_jit("emitting binary_data_op_imm");
 
-            Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
-            HostReg src_var  = register_allocator.get_bound_host_reg(ir_instruction.src);
-
+            Reg dest_reg        = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
+            Reg src1            = register_allocator.get_bound_host_reg(ir_instruction.src1).to_xbyak_reg32();
+            HostReg_x86_64 src2 = register_allocator.get_bound_host_reg(ir_instruction.src2);
+            
             switch (ir_instruction.op) {
                 case IRBinaryDataOp.AND:
-                    and(dest_reg, src_var.to_xbyak_reg32());
+                    mov(dest_reg, src1);
+                    and(dest_reg, src2.to_xbyak_reg32());
                     break;
                 
-                case IRBinaryDataOp.OR:
-                    or(dest_reg, src_var.to_xbyak_reg32());
+                case IRBinaryDataOp.ORR:
+                    mov(dest_reg, src1);
+                    or (dest_reg, src2.to_xbyak_reg32());
                     break;
                 
                 case IRBinaryDataOp.LSL:
-                    shl(dest_reg, src_var.to_xbyak_reg8());
+                    mov(dest_reg, src1);
+                    shl(dest_reg, src2.to_xbyak_reg8());
                     break;
                 
                 case IRBinaryDataOp.ADD:
-                    add(dest_reg, src_var.to_xbyak_reg32());
+                    mov(dest_reg, src1);
+                    add(dest_reg, src2.to_xbyak_reg32());
                     break;
                 
                 case IRBinaryDataOp.SUB:
-                    sub(dest_reg, src_var.to_xbyak_reg32());
+                    mov(dest_reg, src1);
+                    sub(dest_reg, src2.to_xbyak_reg32());
                     break;
                 
-                case IRBinaryDataOp.MOV:
-                    mov(dest_reg, src_var.to_xbyak_reg32());
+                case IRBinaryDataOp.XOR:
+                    mov(dest_reg, src1);
+                    xor(dest_reg, src2.to_xbyak_reg32());
                     break;
                 
                 default: break;
@@ -186,14 +202,21 @@ template Emitter(HostReg) {
             log_jit("emitting unary_data_op");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
+            Reg src_reg  = register_allocator.get_bound_host_reg(ir_instruction.src).to_xbyak_reg32();
 
             switch (ir_instruction.op) {
                 case IRUnaryDataOp.NOT:
+                    mov(dest_reg, src_reg);
                     not(dest_reg);
                     break;
 
                 case IRUnaryDataOp.NEG:
+                    mov(dest_reg, src_reg);
                     neg(dest_reg);
+                    break;
+                
+                case IRUnaryDataOp.MOV:
+                    mov(dest_reg, src_reg);
                     break;
 
                 default: break;
@@ -204,11 +227,20 @@ template Emitter(HostReg) {
             ir_instruction.match!(
                 (IRInstructionGetReg i)          => emit_GET_REG(i),
                 (IRInstructionSetReg i)          => emit_SET_REG(i),
-                (IRInstructionDeleteVariable i)  => emit_DELETE_VARIABLE(i),
                 (IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i),
                 (IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i),
                 (IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i),
             );
+        }
+
+        void pretty_print() {
+            import capstone;
+
+            auto disassembler = create(Arch.x86, ModeFlags(Mode.bit64 | Mode.littleEndian));
+            auto instructions = disassembler.disasm(this.getCode()[0..this.getSize()], this.getSize());
+            foreach (instruction; instructions) {
+                log_xbyak("0x%x:\t%s\t\t%s", instruction.address, instruction.mnemonic, instruction.opStr);
+            }
         }
     }
 }

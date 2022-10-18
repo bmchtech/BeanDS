@@ -52,47 +52,68 @@ void do_action(IR* ir, Word opcode) {
 static void emit_branch_exchange__THUMB()(IR* ir, Word opcode) {
     GuestReg rm = cast(GuestReg) opcode[3..6];
 
-    log_jit("Emitting bx r%d", rm);
-
-    IRVariable new_pc_value = ir.create_variable();
-
-    ir.emit(IRInstructionGetReg(new_pc_value, rm));
-    if (rm == 15) ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, new_pc_value, 2));
-
-    IRVariable temp = ir.create_variable();
-    IRVariable cpsr = ir.create_variable();
-    IRVariable pc_aligner = ir.create_variable();
+    IRVariable address    = ir.get_reg(rm);
+    IRVariable cpsr       = ir.get_reg(GuestReg.CPSR);
+    IRVariable thumb_mode = address & 1;
     
-    ir.emit(IRInstructionGetReg(cpsr, GuestReg.CPSR));
+    cpsr = cpsr & ~(1          << 5);
+    cpsr = cpsr |  (thumb_mode << 5);
 
-    // cpsr = cpsr & ~(1 << 5);
-    // temp = new_pc_value;
-    // temp = temp & 1;
-    // pc_aligner = temp;
-    // new_pc_value = new_pc_value & ~((pc_aligner << 1) + 3);
+    ir.set_reg(GuestReg.CPSR, cpsr);
 
-    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, cpsr, ~(1 << 5)));
-    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, temp, new_pc_value));
-    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, temp, 1));
-
-    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, pc_aligner, temp));
-    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, pc_aligner, 1));
-    ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NEG, pc_aligner));         
-    ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, pc_aligner, 3));
-    ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NOT, pc_aligner));        
-    ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.AND, new_pc_value, pc_aligner));
-    ir.emit(IRInstructionSetReg(GuestReg.PC, new_pc_value));
-
-    cpsr = cpsr | (temp << 5);
-
-    ir.delete_variable(temp);
-
-    ir.emit(IRInstructionSetReg(GuestReg.CPSR, cpsr));
-
-    ir.delete_variable(cpsr);
-    ir.delete_variable(new_pc_value);
-    ir.delete_variable(pc_aligner);
+    // thanks Kelpsy for this hilarious hack
+    address = address & ~((thumb_mode << 1) ^ 3);
+    
+    ir.set_reg(GuestReg.PC, address);
 }
+
+
+//  Reg rm = opcode[3..6];
+
+//             Word address = cpu.get_reg(rm);
+//             cpu.set_flag(Flag.T, cast(bool) (address & 1));
+//             cpu.set_reg(pc, address);
+    // log_jit("Emitting bx r%d", rm);
+
+    // IRVariable new_pc_value = ir.create_variable();
+
+    // ir.emit(IRInstructionGetReg(new_pc_value, rm));
+    // if (rm == 15) ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.SUB, new_pc_value, 2));
+
+    // IRVariable temp = ir.create_variable();
+    // IRVariable cpsr = ir.create_variable();
+    // IRVariable pc_aligner = ir.create_variable();
+    
+    // ir.emit(IRInstructionGetReg(cpsr, GuestReg.CPSR));
+
+    // // cpsr = cpsr & ~(1 << 5);
+    // // temp = new_pc_value;
+    // // temp = temp & 1;
+    // // pc_aligner = temp;
+    // // new_pc_value = new_pc_value & ~((pc_aligner << 1) + 3);
+
+    // ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, cpsr, ~(1 << 5)));
+    // ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, temp, new_pc_value));
+    // ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.AND, temp, 1));
+
+    // ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.MOV, pc_aligner, temp));
+    // ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.LSL, pc_aligner, 1));
+    // ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NEG, pc_aligner));         
+    // ir.emit(IRInstructionBinaryDataOpImm(IRBinaryDataOp.ADD, pc_aligner, 3));
+    // ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.NOT, pc_aligner));        
+    // ir.emit(IRInstructionBinaryDataOpVar(IRBinaryDataOp.AND, new_pc_value, pc_aligner));
+    // ir.emit(IRInstructionSetReg(GuestReg.PC, new_pc_value));
+
+    // cpsr = cpsr | (temp << 5);
+
+    // ir.delete_variable(temp);
+
+    // ir.emit(IRInstructionSetReg(GuestReg.CPSR, cpsr));
+
+    // ir.delete_variable(cpsr);
+    // ir.delete_variable(new_pc_value);
+    // ir.delete_variable(pc_aligner);
+// }
 
 // static void emit_conditional_branch__THUMB()(IR* ir, Word opcode) {
 //     switch (cond) {
