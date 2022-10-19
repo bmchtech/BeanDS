@@ -32,6 +32,10 @@ final class ARM7TDMI : ArmCPU {
     IR* ir;
     Emitter!(HostReg_x86_64).Code emitter;
 
+    alias JitFunction = void function(JITState* jit_state);
+
+    JitFunction[int] jit_functions;
+
     this(Mem memory, uint ringbuffer_size) {
         this.memory = memory;
         current_mode = MODE_USER;
@@ -118,21 +122,30 @@ final class ARM7TDMI : ArmCPU {
 
         static if (is(T == Half)) {
             if (opcode >> 8 == 0x47) {
-                ir.reset();
-                emitter.reset();
+                // if (!(regs[pc] in jit_functions)) {
+                    ir.reset();
+                    emitter.reset();
 
-                // todo: namespace this
-                decode_thumb(
-                    ir,
-                    Word(opcode)
-                );
-                emitter.emit(ir);
-                emitter.pretty_print();
-                auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
+                    // todo: namespace this
+                    decode_thumb(
+                        ir,
+                        Word(opcode)
+                    );
+
+                    // todo: clean all this up once we have a proper jit.
+                    //       i simply dont understand the full scope of this yet to be able to clean it up.
+
+                    emitter.emit(ir);
+                    emitter.pretty_print();
+                    auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
+                    jit_functions[regs[pc]] = generated_function;
+                // }
 
                 jit_state.regs[0..16] = regs[0..16];
                 jit_state.cpsr = regs[16];
-                generated_function(jit_state);
+
+                jit_functions[regs[pc]](jit_state);
+
                 regs[0..16] = jit_state.regs[0..16];
                 regs[16] = jit_state.cpsr;
                 log_jit("jit shit: %x %x", jit_state.regs[15], jit_state.cpsr);
@@ -159,7 +172,7 @@ final class ARM7TDMI : ArmCPU {
             cpu_trace.capture();
         }
 
-        if (num_log > 0 || true) {
+        if (num_log > 0) {
             num_log--;
             log_state();
         }

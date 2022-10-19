@@ -65,6 +65,8 @@ static void emit_branch_exchange__THUMB()(IR* ir, Word opcode) {
     address = address & ~((thumb_mode << 1) ^ 3);
     
     ir.set_reg(GuestReg.PC, address);
+    
+    log_jit("Emitting bx r%d", rm);
 }
 
 

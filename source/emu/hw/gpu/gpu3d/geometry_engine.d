@@ -154,6 +154,7 @@ final class GeometryEngine {
     uint cycles_till_complete;
     ulong irq_event;
 
+    bool is_fifo_empty = true;
     u64 last_reschedule_timestamp = 0;
 
     this(GPU3D parent) {
@@ -745,8 +746,10 @@ final class GeometryEngine {
                 static if (commands[i].valid) {
                     case i:
                         static if (commands[i].implemented) {
-                            cycles_till_complete += commands[i].cycles * 2;
+                            cycles_till_complete += commands[i].cycles * 4;
                             reschedule_interrupt();
+                            is_fifo_empty = false;
+                            log_gpu3d("Executing %s %x", commands[i].name, arm9.regs[pc]);
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
                             log_gpu3d("Unhandled command: %s", commands[i].name);
@@ -761,10 +764,7 @@ final class GeometryEngine {
     }
 
     void reschedule_interrupt() {
-        if (parent.irq_mode == IRQMode.NEVER) return;
-        
-        // only do this if this not our first time scheduling the interrupt
-        if (last_reschedule_timestamp != 0) {
+        if (!is_fifo_empty) {
             auto elapsed = scheduler.get_current_time_relative_to_cpu() - last_reschedule_timestamp;
             
             if (cycles_till_complete < elapsed) {
@@ -772,21 +772,24 @@ final class GeometryEngine {
             } else {
                 cycles_till_complete -= elapsed;
             }
+            
+            scheduler.remove_event(irq_event);
         }
 
-        last_reschedule_timestamp = scheduler.get_current_time_relative_to_cpu();
+        log_gpu3d("bunch of info: %d %d %d", is_fifo_empty, scheduler.get_current_time_relative_to_cpu(), last_reschedule_timestamp);
 
-        scheduler.remove_event(irq_event);
+        last_reschedule_timestamp = scheduler.get_current_time_relative_to_cpu();
 
         final switch (parent.irq_mode) {
             case IRQMode.NEVER:
                 break;
             
             case IRQMode.LESS_THAN_HALF_FULL:
-                irq_event = scheduler.add_event_relative_to_clock(&this.raise_interrupt, cycles_till_complete);
+                irq_event = scheduler.add_event_relative_to_clock(&this.raise_interrupt, cycles_till_complete / 2);
                 break;
             
             case IRQMode.EMPTY:
+                log_gpu3d("Rescheduling interrupt for %d cycles", cycles_till_complete);
                 irq_event = scheduler.add_event_relative_to_clock(&this.raise_interrupt, cycles_till_complete);
                 break;
             
@@ -794,9 +797,17 @@ final class GeometryEngine {
                 error_gpu3d("Tried to use a reserved IRQMode!");
                 break;
         }
+
+        scheduler.add_event_relative_to_clock(&this.empty_fifo, cycles_till_complete);
+    }
+
+    void empty_fifo() {
+        is_fifo_empty = true;
+        cycles_till_complete = 0;
     }
 
     void raise_interrupt() {
+        log_gpu3d("Raising interrupt!");
         interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO);
     }
 }

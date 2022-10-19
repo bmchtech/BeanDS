@@ -214,6 +214,7 @@ final class GPU3D {
     void write_GXSTAT(int target_byte, Byte data) {
         if (target_byte == 3) {
             irq_mode = cast(IRQMode) data[6..7];
+            log_gpu3d("Set IRQ Mode to %s", irq_mode);
         }
     }
 

@@ -109,8 +109,11 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         bool should_cycle_nds() {
+            if (shit) return false;
             return buffer_cursor < NUM_CHANNELS * BUFFER_SIZE_MULTIPLIER * SAMPLES_PER_UPDATE - (SAMPLE_RATE / 60) * 2;
         }
+        
+        bool shit = false;
 
         void handle_input() {
             import std.algorithm.comparison;
@@ -129,6 +132,13 @@ class RengMultimediaDevice : MultiMediaDevice {
             }
 
             fast_foward = Input.is_key_down(FAST_FOWARD_KEY);
+    
+            if (Input.is_key_down(Keys.KEY_U)) {
+                shit = true;
+            }
+            if (Input.is_key_down(Keys.KEY_I)) {
+                shit = false;
+            }
         }
 
         bool should_fast_forward() {

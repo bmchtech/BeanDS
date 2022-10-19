@@ -4,6 +4,8 @@ import emu;
 
 import util;
 
+bool watchreg9likeahalk = false;
+
 __gshared ARM946E_S arm9;
 final class ARM946E_S : ArmCPU {
     Word[18 * 7] register_file;
@@ -75,6 +77,8 @@ final class ARM946E_S : ArmCPU {
         tcm.direct_boot();
     }
 
+    bool bomb = false;
+
     @property
     static Architecture architecture() {
         return Architecture.v5TE;
@@ -97,6 +101,12 @@ final class ARM946E_S : ArmCPU {
 
     bool first_fetch = true;
     pragma(inline, true) T fetch(T)() {
+
+        if (regs[pc] == 0x020640f4) {
+            log_arm9("busyshit.");
+            num_log = 30;
+        }
+
         if (!first_fetch && regs[pc] == 0) error_arm7("arm7 branched to 0");
         first_fetch = false;
 
@@ -154,6 +164,10 @@ final class ARM946E_S : ArmCPU {
         if (num_log > 0) {
             log_state();
             num_log--;
+
+            if (num_log == 0 && bomb) {
+                error_arm9("bomb");
+            }
         }
         
         if (instruction_set == InstructionSet.ARM) {
@@ -240,6 +254,10 @@ final class ARM946E_S : ArmCPU {
 
     pragma(inline, true) void set_reg__raw(Reg id, Word value, Word[18]* regs) {
         (*regs)[id] = value;
+
+        if (watchreg9likeahalk && id == 9) {
+            log_arm9("set reg 9 to 0x%08xat pc %x", value, (*regs)[pc]);
+        }
 
         if (id == pc) {
             (*regs)[pc] &= instruction_set == InstructionSet.ARM ? ~3 : ~1;
@@ -337,7 +355,103 @@ final class ARM946E_S : ArmCPU {
         regs[17] = spsr;
     }
 
+    int bigboishitter = 0;
+
     void refill_pipeline() {
+        if (regs[pc] == 0x2019a74) {
+            log_function("something_funny_with_input(%x, %x)", regs[0], regs[1]);
+        }
+
+        if (regs[pc] == 0x02074c7c) {
+            log_function("uses_input1()");
+        }
+
+        if (regs[pc] == 0x0207575c) {
+            log_function("uses_input2()");
+        }
+
+        if (regs[pc] == 0x020720c8) {
+            log_function("heytherebigguy()");
+        }
+
+        if (regs[pc] == 0x0206db20) {
+            log_function("sussy trampoline()");
+            arm9.num_log = 200;
+        }
+
+        if (regs[pc] == 0x01ff8bb8) {
+            log_function("shitinitcm()");
+            arm9.num_log = 200;
+        }
+
+        if (regs[pc] == 0x01ff8bf0) {
+            log_function("shitinitcm2()");
+            arm9.num_log = 200;
+        }
+
+        if (regs[pc] == 0x01ff8bd0) {
+            log_function("shitinitcm3()");
+            arm9.num_log = 20;
+        }
+
+        if (regs[pc] == 0x02064144) {
+            log_function("sussyoverwriter()");
+            arm9.num_log = 30000;
+        }
+
+        if (regs[pc] == 0x020647fc) {
+            // error_arm9("who knows whats going on anymore()");
+            // arm9.num_log = 30000;
+            
+        }
+
+        if (regs[pc] == 0x02063bc8) {
+            watchreg9likeahalk = true;
+            // error_arm9("what the shit. %x", arm9.regs[lr]);
+            // num_log = 3;
+            log_arm9("bigboi function start");
+            // num_log = -1;
+            bigboishitter++;
+            if (bigboishitter == 15) {
+                // bomb = true;
+                num_log = 3;
+            }
+        }
+
+        if (regs[pc] == 0x020641b0) {
+            log_arm9("resulf of funf call is %x", regs[0]);
+        }
+
+        if (regs[pc] == 0x0206403c) {
+            log_arm9("the function taht returns 0");
+            num_log = 1;
+            // bomb = true;
+        }
+
+        if (regs[pc] == 0x020640a8) {
+            log_arm9("inside the function taht returns 0 %x %x", mem9.read!Word(Word(0x27fffb0)), mem9.read!Word(Word(0x27fffb4)));
+            num_log = 1;
+            // bomb = true;
+        }
+
+        if (regs[pc] == 0x02063e08) {
+            // bomb = true;
+            num_log = 1;
+        }
+
+        if (regs[pc] == 0x02063fc0) {
+            // bomb = true;
+            num_log = 1;
+        }
+
+        if (regs[pc] == 0x2064114) {
+            log_function(".");
+            // bomb = true;
+            num_log = 1;
+        }
+
+        
+
         if (instruction_set == InstructionSet.ARM) {
             fetch!Word();
             fetch!Word();
@@ -501,6 +615,11 @@ final class ARM946E_S : ArmCPU {
         for (int i = 0; i < T.sizeof; i++) {
             version (ift) { IFTDebugger.commit_mem_read(HwType.NDS9, address + i, Word(result.get_byte(i))); }
         }
+
+        if (address == 0x01ff9524) {
+            log_arm9("reading something sus: %x", result);
+        }
+
         return result;
     }
 

@@ -226,6 +226,8 @@ final class Cart {
     }
 
     void start_transfer() {
+        log_cart("starting transfer");
+
         final switch (mode) {
             case Mode.UNENCRYPTED: handle_unencrypted_transfer(); break;
             case Mode.KEY1:        handle_key1_transfer();        break;
@@ -363,6 +365,8 @@ final class Cart {
     }
 
     void handle_key2_transfer() {
+        log_cart("performing command %x", bswap(command));
+        
         if ((command & 0xFF) == 0x9F) {
             auto length = get_data_block_size(0x2000);
             memset(&outbuffer, 0xFF, length);
@@ -379,6 +383,7 @@ final class Cart {
         } else
 
         if ((command & 0xFF) == 0xB7) {
+            log_cart("performing key2 data read %x %x (length: %x)", bswap(command), Word(bswap(cast(u32) ((command >> 8) & 0xFFFF_FFFF))), get_data_block_size(0x200));
             // KEY2 data read
 
             auto length = get_data_block_size(0x200);

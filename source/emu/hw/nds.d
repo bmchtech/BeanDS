@@ -240,8 +240,4 @@ final class NDS {
     Byte read_POSTFLG(int target_byte) {
         return target_byte == 0 ? Byte(booted) : Byte(0);
     }
-
-    Byte read_SM64_DSI_STUB(int target_byte) {
-        return Word(0x8000).get_byte(target_byte);
-    }
 }

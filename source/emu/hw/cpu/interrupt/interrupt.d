@@ -56,6 +56,9 @@ final class InterruptManager {
     }
 
     bool irq_pending() {
+        if (status[Interrupt.GEOMETRY_COMMAND_FIFO] & enable[Interrupt.GEOMETRY_COMMAND_FIFO]) {
+            log_gpu3d("acknowledging the irq");
+        }
         return is_irq_pending;
     }
 

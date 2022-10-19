@@ -49,7 +49,7 @@ template Emitter(HostReg) {
 
             for (int i = 0; i < ir.length(); i++) {
                 log_jit("emitting instruction %d", i);
-                emit(ir.instructions[i]);
+                emit(ir.instructions[i], i);
             }
 
             emit_epilogue();
@@ -90,7 +90,7 @@ template Emitter(HostReg) {
             ret();
         }
 
-        void emit_GET_REG(IRInstructionGetReg ir_instruction) {
+        void emit_GET_REG(IRInstructionGetReg ir_instruction, int current_instruction_index) {
             log_jit("emitting get_reg");
 
             GuestReg guest_reg = ir_instruction.src;
@@ -104,7 +104,7 @@ template Emitter(HostReg) {
             mov(host_reg.to_xbyak_reg32(), dword [rdi + offset]);
         }
 
-        void emit_SET_REG(IRInstructionSetReg ir_instruction) {
+        void emit_SET_REG(IRInstructionSetReg ir_instruction, int current_instruction_index) {
             log_jit("emitting set_reg");
 
             GuestReg dest_reg = ir_instruction.dest;
@@ -112,9 +112,11 @@ template Emitter(HostReg) {
             
             int offset = cast(int) JITState.regs.offsetof + 4 * dest_reg;
             mov(dword [rdi + offset], src_reg);
+
+            register_allocator.maybe_unbind_variable(ir_instruction.src, current_instruction_index);
         }
 
-        void emit_BINARY_DATA_OP_IMM(IRInstructionBinaryDataOpImm ir_instruction) {
+        void emit_BINARY_DATA_OP_IMM(IRInstructionBinaryDataOpImm ir_instruction, int current_instruction_index) {
             log_jit("emitting binary_data_op_imm");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -154,9 +156,12 @@ template Emitter(HostReg) {
                 
                 default: break;
             }
+            
+            register_allocator.maybe_unbind_variable(ir_instruction.dest, current_instruction_index);
+            register_allocator.maybe_unbind_variable(ir_instruction.src1, current_instruction_index);
         }
 
-        void emit_BINARY_DATA_OP_VAR(IRInstructionBinaryDataOpVar ir_instruction) {
+        void emit_BINARY_DATA_OP_VAR(IRInstructionBinaryDataOpVar ir_instruction, int current_instruction_index) {
             log_jit("emitting binary_data_op_imm");
 
             Reg dest_reg        = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -196,9 +201,13 @@ template Emitter(HostReg) {
                 
                 default: break;
             }
+
+            register_allocator.maybe_unbind_variable(ir_instruction.dest, current_instruction_index);
+            register_allocator.maybe_unbind_variable(ir_instruction.src1, current_instruction_index);
+            register_allocator.maybe_unbind_variable(ir_instruction.src2, current_instruction_index);
         }
 
-        void emit_UNARY_DATA_OP(IRInstructionUnaryDataOp ir_instruction) {
+        void emit_UNARY_DATA_OP(IRInstructionUnaryDataOp ir_instruction, int current_instruction_index) {
             log_jit("emitting unary_data_op");
 
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
@@ -221,15 +230,18 @@ template Emitter(HostReg) {
 
                 default: break;
             }
+
+            register_allocator.maybe_unbind_variable(ir_instruction.dest, current_instruction_index);
+            register_allocator.maybe_unbind_variable(ir_instruction.src,  current_instruction_index);
         }
 
-        void emit(IRInstruction ir_instruction) {
+        void emit(IRInstruction ir_instruction, int current_instruction_index) {
             ir_instruction.match!(
-                (IRInstructionGetReg i)          => emit_GET_REG(i),
-                (IRInstructionSetReg i)          => emit_SET_REG(i),
-                (IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i),
-                (IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i),
-                (IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i),
+                (IRInstructionGetReg i)          => emit_GET_REG(i, current_instruction_index),
+                (IRInstructionSetReg i)          => emit_SET_REG(i, current_instruction_index),
+                (IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i, current_instruction_index),
+                (IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i, current_instruction_index),
+                (IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i, current_instruction_index),
             );
         }
 

@@ -67,13 +67,15 @@ final class Cp15 {
 
             tcm.dtcm_virtual_size = 512 << dtcm_virtual_size;
             tcm.dtcm_region_base  = dtcm_region_base << 12;
+
+            log_coprocessor("dtcm virtual size: %x, region base: %x", tcm.dtcm_virtual_size, tcm.dtcm_region_base);
         } else
 
         if (cn == 9 && cm == 1 && opcode == 1) {
             itcm_virtual_size = data[1 .. 5];
             itcm_region_base  = data[12..31];
 
-            tcm.itcm_virtual_size = 512 << itcm_virtual_size;
+            log_coprocessor("itcm virtual size: %x, region base: %x", tcm.itcm_virtual_size, tcm.itcm_region_base);
         } else
 
         if (cn == 1 && cm == 0 && opcode == 0) {

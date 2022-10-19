@@ -109,6 +109,7 @@ void teq(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word
 void eor(T : ArmCPU, bool lower_regs = false)(T cpu, Reg rd, Word operand1, Word operand2, bool writeback = true, bool set_flags = true) {
     Word result = operand1 ^ operand2;
     if (set_flags) cpu.set_flags_NZ(result);
+    if (rd == pc) log_arm9("shitter: %x %x %x", rd, result, arm9.internal_read!Word(result));
     if (writeback) cpu.set_reg_wrapper!(T, lower_regs)(rd, result);
 }
 

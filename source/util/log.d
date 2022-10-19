@@ -37,6 +37,7 @@ enum LogSource {
     GPU3D,
     RTC,
     POWERMAN,
+    SCHEDULER,
 
     JIT,
     IR,
@@ -90,6 +91,8 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
             dump(wram.shared_bank_1,  "wram_bank1.dump");
             dump(wram.shared_bank_2,  "wram_bank2.dump");
             dump(main_memory.data,    "main_memory.dump");
+            dump(tcm.itcm,            "itcm.dump");
+            dump(tcm.dtcm,            "dtcm.dump");
 
             auto trace = defaultTraceHandler(null);
             foreach (line; trace) {

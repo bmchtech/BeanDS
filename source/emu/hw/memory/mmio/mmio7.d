@@ -50,6 +50,4 @@ static const mmio7_registers = [
     MMIORegister("sound_capture", "SNDCAPxDAD",    0x0400_0510,  4, READ_WRITE).repeat(2, 8),
     MMIORegister("sound_capture", "SNDCAPxLEN",    0x0400_0514,  4,      WRITE).repeat(2, 8),
     MMIORegister("sio",           "RCNT",          0x0400_0134,  2, READ_WRITE),
-
-    MMIORegister("nds",           "SM64_DSI_STUB", 0x0400_4008,  4, READ),
 ];

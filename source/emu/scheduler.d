@@ -1,5 +1,8 @@
 module emu.scheduler;
 
+import emu;
+import util;
+
 struct Event {
     void delegate() callback;
     ulong           timestamp;
@@ -42,6 +45,10 @@ final class Scheduler {
     }
 
     private ulong add_event(void delegate() callback, ulong timestamp) {
+        if (events_in_queue == TOTAL_NUMBER_OF_EVENTS) {
+            error_scheduler("Error when adding event: Scheduler is full.");
+        }
+
         int insert_at;
 
         for (; insert_at < events_in_queue; insert_at++) {
@@ -62,6 +69,10 @@ final class Scheduler {
     }
 
     void remove_event(ulong event_id) {
+        if (events_in_queue == TOTAL_NUMBER_OF_EVENTS) {
+            error_scheduler("Error when removing event: Scheduler is full.");
+        }
+
         int remove_at = -1;
         for (int i = 0; i < events_in_queue; i++) {
             if (events[i].id == event_id) {

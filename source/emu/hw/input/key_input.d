@@ -30,10 +30,15 @@ final class KeyInput {
     Word keys;
     
     void update_key(DSKeyCode key, bool pressed) {
+        if (key == DSKeyCode.Y && pressed) {
+            error_nds("exit.");
+        }
+        
         keys[key] = !pressed;
     }
 
     Byte read_KEYINPUT(int target_byte) {
+        log_nds("KEYINPUT READ %x %x %X", target_byte, keys, arm9.regs[pc]);
         return keys[0..15].get_byte(target_byte);
     }
 

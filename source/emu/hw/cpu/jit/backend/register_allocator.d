@@ -148,10 +148,17 @@ final class RegisterAllocator(HostReg) {
         return -1;
     }
 
-    void unbind_variable(IRVariable ir_variable) {
-        auto binding_variable_index = get_binding_variable_from_variable(ir_variable);
-        if (binding_variable_index == -1) error_jit("Tried to unbind %s when it was not bound.", ir_variable);
-        bindings[binding_variable_index].unbind_variable();
+    void maybe_unbind_variable(IRVariable ir_variable, int last_emitted_ir_instruction) {
+        if (ir_variable.get_lifetime_end() < last_emitted_ir_instruction) {
+            error_jit("Used an IRVariable v%d on IR Instruction #%d while its lifetime has already ended on IR Instruction #%d.", ir_variable.get_id(), last_emitted_ir_instruction, ir_variable.get_lifetime_end());
+        }
+
+        if (ir_variable.get_lifetime_end() == last_emitted_ir_instruction) {
+            log_jit("Unbinding v%d.", ir_variable.get_id());
+            auto binding_variable_index = get_binding_variable_from_variable(ir_variable);
+            if (binding_variable_index == -1) error_jit("Tried to unbind %s when it was not bound.", ir_variable);
+            bindings[binding_variable_index].unbind_variable();
+        }
     }
 
     void unbind_guest_reg(GuestReg guest_reg) {

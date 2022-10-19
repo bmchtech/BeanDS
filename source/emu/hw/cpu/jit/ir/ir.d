@@ -16,9 +16,14 @@ alias IRInstruction = SumType!(
 
 struct IR {
     enum MAX_IR_INSTRUCTIONS = 0x10000;
+    enum MAX_IR_VARIABLES    = 0x1000;
 
     IRInstruction* instructions;
     size_t current_instruction_index;
+
+    // keeps track of a variables lifetime. this corresponds to an IR instruction. when this IR instruction
+    // is executed, the variable is deleted (in other words, it gets unbound from the host register)
+    size_t[MAX_IR_VARIABLES] variable_lifetimes;
 
     private void emit(I)(I ir_opcode) {
         log_jit("Emit: %s at idx %d", ir_opcode, current_instruction_index);
@@ -43,6 +48,10 @@ struct IR {
 
     int current_variable_id;
     int generate_new_variable_id() {
+        if (current_variable_id >= MAX_IR_VARIABLES) {
+            error_ir("Tried to create too many IR variables.");
+        }
+
         return current_variable_id++;
     }
     
@@ -58,6 +67,7 @@ struct IR {
     }
 
     void set_reg(GuestReg reg, IRVariable variable) {
+        variable.update_lifetime();
         emit(IRInstructionSetReg(reg, variable));
     }
 
@@ -67,28 +77,36 @@ struct IR {
         }
     }
 
+    void update_lifetime(int variable_id) {
+        variable_lifetimes[variable_id] = current_instruction_index;
+    }
+
+    size_t get_lifetime_end(int variable_id) {
+        return variable_lifetimes[variable_id];
+    }
+
     void pretty_print_instruction(IRInstruction instruction) {
-            instruction.match!(
-                (IRInstructionGetReg i)          {
-                    log_ir("ld  v%d, %s", i.dest.get_id(), i.src.to_string());
-                },
+        instruction.match!(
+            (IRInstructionGetReg i)          {
+                log_ir("ld  v%d, %s", i.dest.get_id(), i.src.to_string());
+            },
 
-                (IRInstructionSetReg i)          {
-                    log_ir("st  v%d, %s", i.src.get_id(), i.dest.to_string());
-                },
+            (IRInstructionSetReg i)          {
+                log_ir("st  v%d, %s", i.src.get_id(), i.dest.to_string());
+            },
 
-                (IRInstructionBinaryDataOpImm i) {
-                    log_ir("%s v%d, v%d, %d", i.op.to_string(), i.dest.get_id(), i.src1.get_id(), i.src2);
-                },
+            (IRInstructionBinaryDataOpImm i) {
+                log_ir("%s v%d, v%d, %d", i.op.to_string(), i.dest.get_id(), i.src1.get_id(), i.src2);
+            },
 
-                (IRInstructionBinaryDataOpVar i) {
-                    log_ir("%s v%d, v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src1.get_id(), i.src2.get_id());
-                },
+            (IRInstructionBinaryDataOpVar i) {
+                log_ir("%s v%d, v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src1.get_id(), i.src2.get_id());
+            },
 
-                (IRInstructionUnaryDataOp i)     {
-                    log_ir("%s v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src.get_id());
-                }
-            );
+            (IRInstructionUnaryDataOp i)     {
+                log_ir("%s v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src.get_id());
+            }
+        );
     }
 }
 
@@ -112,6 +130,11 @@ struct IRVariable {
         IRVariable dest = ir.generate_new_variable();
 
         IRBinaryDataOp op = get_binary_data_op!s;
+
+        this.update_lifetime();
+        dest.update_lifetime();
+        other.update_lifetime();
+
         ir.emit(IRInstructionBinaryDataOpVar(op, dest, this, other));
 
         return dest;
@@ -121,6 +144,10 @@ struct IRVariable {
         IRVariable dest = ir.generate_new_variable();
 
         IRBinaryDataOp op = get_binary_data_op!s;
+
+        this.update_lifetime();
+        dest.update_lifetime();
+
         ir.emit(IRInstructionBinaryDataOpImm(op, dest, this, other));
 
         return dest;
@@ -149,6 +176,10 @@ struct IRVariable {
     
     void opAssign(IRVariable rhs) {
         this.variable_id = ir.generate_new_variable_id();
+
+        this.update_lifetime();
+        rhs.update_lifetime();
+
         ir.emit(IRInstructionUnaryDataOp(IRUnaryDataOp.MOV, this, rhs));
     }
 
@@ -156,9 +187,21 @@ struct IRVariable {
         IRVariable dest = ir.generate_new_variable();
 
         IRUnaryDataOp op = get_unary_data_op!s;
+
+        this.update_lifetime();
+        dest.update_lifetime();
+
         ir.emit(IRInstructionUnaryDataOp(op, dest, this));
 
         return dest;
+    }
+
+    void update_lifetime() {
+        ir.update_lifetime(this.variable_id);
+    }
+
+    size_t get_lifetime_end() {
+        return ir.get_lifetime_end(this.variable_id);
     }
 
     IRBinaryDataOp get_binary_data_op(string s)() {
