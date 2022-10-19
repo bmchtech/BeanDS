@@ -53,4 +53,8 @@ enum IRFlag {
     V = 28,
     Q = 27,
     T = 5,
+
+    NZCV = N | Z | C | V,
+    NZC  = N | Z | C,
+    NZ   = N | Z,
 }

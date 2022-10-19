@@ -250,6 +250,10 @@ template Emitter(HostReg) {
             }
         }
 
+        void emit_SET_FLAGS(IRInstructionSetFlags ir_instruction, int current_instruction_index) {
+            log_jit("emitting set_flags");
+        }
+
         void emit(IRInstruction ir_instruction, int current_instruction_index) {
             ir_instruction.match!(
                 (IRInstructionGetReg i)          => emit_GET_REG(i, current_instruction_index),
@@ -257,6 +261,7 @@ template Emitter(HostReg) {
                 (IRInstructionBinaryDataOpImm i) => emit_BINARY_DATA_OP_IMM(i, current_instruction_index),
                 (IRInstructionBinaryDataOpVar i) => emit_BINARY_DATA_OP_VAR(i, current_instruction_index),
                 (IRInstructionUnaryDataOp i)     => emit_UNARY_DATA_OP(i, current_instruction_index),
+                (IRInstructionSetFlags i)        => emit_SET_FLAGS(i, current_instruction_index),
             );
         }
 

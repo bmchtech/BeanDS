@@ -12,6 +12,7 @@ alias IRInstruction = SumType!(
     IRInstructionBinaryDataOpImm,
     IRInstructionBinaryDataOpVar,
     IRInstructionUnaryDataOp,
+    IRInstructionSetFlags
 );
 
 struct IR {
@@ -71,6 +72,10 @@ struct IR {
         emit(IRInstructionSetReg(reg, variable));
     }
 
+    void set_flags(int flags, IRVariable variable) {
+        emit(IRInstructionSetFlags(variable, flags));
+    }
+
     void pretty_print() {
         for (int i = 0; i < this.length(); i++) {
             pretty_print_instruction(instructions[i]);
@@ -87,11 +92,11 @@ struct IR {
 
     void pretty_print_instruction(IRInstruction instruction) {
         instruction.match!(
-            (IRInstructionGetReg i)          {
+            (IRInstructionGetReg i) {
                 log_ir("ld  v%d, %s", i.dest.get_id(), i.src.to_string());
             },
 
-            (IRInstructionSetReg i)          {
+            (IRInstructionSetReg i) {
                 log_ir("st  v%d, %s", i.src.get_id(), i.dest.to_string());
             },
 
@@ -103,8 +108,12 @@ struct IR {
                 log_ir("%s v%d, v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src1.get_id(), i.src2.get_id());
             },
 
-            (IRInstructionUnaryDataOp i)     {
+            (IRInstructionUnaryDataOp i) {
                 log_ir("%s v%d, v%d", i.op.to_string(), i.dest.get_id(), i.src.get_id());
+            },
+
+            (IRInstructionSetFlags i) {
+                log_ir("setf v%d, %d", i.src.get_id(), i.flags);
             }
         );
     }
@@ -267,4 +276,9 @@ struct IRInstructionGetReg {
 struct IRInstructionSetReg{
     GuestReg dest;
     IRVariable src;
+}
+
+struct IRInstructionSetFlags {
+    IRVariable src;
+    int flags;
 }

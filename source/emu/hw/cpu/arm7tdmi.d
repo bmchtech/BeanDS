@@ -121,6 +121,30 @@ final class ARM7TDMI : ArmCPU {
         }
 
         static if (is(T == Half)) {
+            // if ((opcode & 0xFFC0) == 0x4000) {
+            //     ir.reset();
+            //     emitter.reset();
+
+            //     // todo: namespace this
+            //     decode_thumb(
+            //         ir,
+            //         Word(opcode)
+            //     );
+
+            //     emitter.emit(ir);
+            //     emitter.pretty_print();
+            //     auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
+            //     jit_functions[regs[pc]] = generated_function;
+
+            //     jit_state.regs[0..16] = regs[0..16];
+            //     jit_state.cpsr = regs[16];
+
+            //     jit_functions[regs[pc]](jit_state);
+
+            //     regs[0..16] = jit_state.regs[0..16];
+            //     regs[16] = jit_state.cpsr;
+            // }
+
             if (opcode >> 8 == 0x47) {
                 // if (!(regs[pc] in jit_functions)) {
                     ir.reset();
@@ -136,7 +160,6 @@ final class ARM7TDMI : ArmCPU {
                     //       i simply dont understand the full scope of this yet to be able to clean it up.
 
                     emitter.emit(ir);
-                    emitter.pretty_print();
                     auto generated_function = cast(void function(JITState* jit_state)) emitter.getCode;
                     jit_functions[regs[pc]] = generated_function;
                 // }
