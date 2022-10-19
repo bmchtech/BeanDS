@@ -213,6 +213,8 @@ template Emitter(HostReg) {
             Reg dest_reg = register_allocator.get_bound_host_reg(ir_instruction.dest).to_xbyak_reg32();
             Reg src_reg  = register_allocator.get_bound_host_reg(ir_instruction.src).to_xbyak_reg32();
 
+            bool unbound_src = false;
+
             switch (ir_instruction.op) {
                 case IRUnaryDataOp.NOT:
                     mov(dest_reg, src_reg);
@@ -225,14 +227,27 @@ template Emitter(HostReg) {
                     break;
                 
                 case IRUnaryDataOp.MOV:
-                    mov(dest_reg, src_reg);
+                    // if src_reg is going to be unbound after this instruction, then we can just bind
+                    // dest_reg to src_reg's host register and save a mov
+
+                    if (register_allocator.will_variable_be_unbound(ir_instruction.src, current_instruction_index)) {
+                        auto src_host_reg = register_allocator.get_bound_host_reg(ir_instruction.src);
+                        register_allocator.unbind_host_reg(src_host_reg);
+                        register_allocator.bind_variable_to_host_reg(ir_instruction.dest, src_host_reg);
+                        unbound_src = true;
+                    } else {
+                        mov(dest_reg, src_reg);
+                    }
                     break;
 
                 default: break;
             }
 
             register_allocator.maybe_unbind_variable(ir_instruction.dest, current_instruction_index);
-            register_allocator.maybe_unbind_variable(ir_instruction.src,  current_instruction_index);
+            
+            if (!unbound_src) {
+                register_allocator.maybe_unbind_variable(ir_instruction.src,  current_instruction_index);
+            }
         }
 
         void emit(IRInstruction ir_instruction, int current_instruction_index) {

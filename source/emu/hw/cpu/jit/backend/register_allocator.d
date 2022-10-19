@@ -120,6 +120,10 @@ final class RegisterAllocator(HostReg) {
         return binding_variable.host_reg;
     }
 
+    void bind_variable_to_host_reg(IRVariable ir_variable, HostReg host_reg) {
+        bindings[host_reg].bind_variable(ir_variable);
+    }
+
     void bind_host_reg_to_guest_reg(HostReg host_reg, GuestReg guest_reg) {
         bindings[host_reg].bind_guest_reg(guest_reg);
     }
@@ -154,11 +158,23 @@ final class RegisterAllocator(HostReg) {
         }
 
         if (ir_variable.get_lifetime_end() == last_emitted_ir_instruction) {
-            log_jit("Unbinding v%d.", ir_variable.get_id());
-            auto binding_variable_index = get_binding_variable_from_variable(ir_variable);
-            if (binding_variable_index == -1) error_jit("Tried to unbind %s when it was not bound.", ir_variable);
-            bindings[binding_variable_index].unbind_variable();
+            unbind_variable(ir_variable);
         }
+    }
+
+    void unbind_variable(IRVariable ir_variable) {
+        log_jit("Unbinding v%d.", ir_variable.get_id());
+        auto binding_variable_index = get_binding_variable_from_variable(ir_variable);
+        if (binding_variable_index == -1) error_jit("Tried to unbind %s when it was not bound.", ir_variable);
+        bindings[binding_variable_index].unbind_variable();
+    }
+
+    void unbind_host_reg(HostReg host_reg) {
+        bindings[host_reg].unbind_all();
+    }
+
+    bool will_variable_be_unbound(IRVariable ir_variable, int last_emitted_ir_instruction) {
+        return ir_variable.get_lifetime_end() == last_emitted_ir_instruction;
     }
 
     void unbind_guest_reg(GuestReg guest_reg) {
