@@ -6,7 +6,7 @@ import std.format;
 import infoflow.analysis.ift;
 import infoflow.models;
 
-import emu;
+import emu.all;
 
 string generate_logged_reg_enum()() {
     auto mixed_in = appender!string;

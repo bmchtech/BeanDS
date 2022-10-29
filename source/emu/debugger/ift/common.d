@@ -1,6 +1,6 @@
 module emu.debugger.ift.common;
 
-import emu;
+import emu.all;
 import util;
 
 ulong hwtype_to_ulong(HwType hw_type) {

@@ -1,6 +1,11 @@
 module emu.hw.gpu.ppu.canvas;
 
-import emu;
+import emu.hw.gpu.engines;
+import emu.hw.gpu.pixel;
+import emu.hw.gpu.ppu;
+import emu.hw.gpu.pram;
+import emu.hw.gpu.vram;
+
 import util;
 
 import std.stdio;

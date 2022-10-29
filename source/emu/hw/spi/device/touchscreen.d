@@ -1,6 +1,7 @@
 module emu.hw.spi.device.touchscreen;
 
-import emu;
+import emu.hw.spi.device;
+import emu.hw.input;
 import util;
 
 __gshared TouchScreen touchscreen;
@@ -102,8 +103,6 @@ final class TouchScreen : SPIDevice {
         this.result[0] = Byte((incoming_result >> 8) & 0xFF);
         this.result[1] = Byte((incoming_result >> 0) & 0xFF);
     }
-    
-    bool sussine = true;
 
     override Byte write(Byte b) {
         Byte return_value = result[0];
@@ -133,12 +132,6 @@ final class TouchScreen : SPIDevice {
                                 );
                             }
 
-                            if (sussine) {
-                                IFTDebugger.start_debugging();
-                                scheduler.add_event_relative_to_clock(() => IFTDebugger.stop_debugging(), 100);
-                            }
-                            
-                            sussine = false;
                             break;
                         
                         case ChannelSelect.BATTERY_VOLTAGE:

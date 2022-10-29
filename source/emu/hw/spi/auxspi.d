@@ -1,6 +1,9 @@
 module emu.hw.spi.auxspi;
 
-import emu;
+import emu.hw.spi.device.eeprom;
+import emu.hw.memory.slot;
+import emu.hw.hwtype;
+
 import util;
 
 __gshared AUXSPI auxspi;

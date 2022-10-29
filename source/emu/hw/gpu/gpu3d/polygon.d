@@ -1,6 +1,8 @@
 module emu.hw.gpu.gpu3d.polygon;
 
-import emu;
+import emu.hw.gpu.gpu3d.math;
+import emu.hw.gpu.gpu3d.texture;
+
 import util;
 
 struct Vertex(T) {

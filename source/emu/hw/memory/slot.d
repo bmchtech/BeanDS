@@ -1,6 +1,8 @@
 module emu.hw.memory.slot;
 
-import emu;
+import emu.hw.hwtype;
+import emu.hw.cpu.armcpu;
+
 import util;
 
 __gshared Slot slot;

@@ -2,7 +2,7 @@ module emu.hw.misc.rtc;
 
 import std.datetime;
 
-import emu;
+
 import util;
 
 struct RTCParams {

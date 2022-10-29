@@ -2,7 +2,29 @@ module emu.hw.memory.mmio;
 
 import std.format;
 
-import emu;
+import emu.hw.cpu.ipc;
+import emu.hw.gpu.gpu;
+import emu.hw.memory.cart.cart;
+import emu.hw.memory.slot;
+import emu.hw.gpu.vram;
+import emu.hw.memory.wram;
+import emu.hw.math.division;
+import emu.hw.math.sqrt;
+import emu.hw.gpu.engines.engine_a;
+import emu.hw.gpu.engines.engine_b;
+import emu.hw.gpu.gpu3d.gpu3d;
+import emu.hw.memory.dma;
+import emu.hw.timers;
+import emu.hw.spi.auxspi;
+import emu.hw.spi.spi;
+import emu.hw.cpu.interrupt;
+import emu.hw.input;
+import emu.hw.misc.rtc;
+import emu.hw.spu.spu;
+import emu.hw.spu.capture;
+import emu.hw.nds;
+import emu.hw.misc.sio;
+
 import util;
 
 public {

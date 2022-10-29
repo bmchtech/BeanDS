@@ -1,4 +1,4 @@
-module emu.hw.sio.sio;
+module emu.hw.misc.sio;
 
 import util;
 

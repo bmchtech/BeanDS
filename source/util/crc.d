@@ -1,6 +1,6 @@
 module util.crc;
 
-import emu;
+
 import util;
 
 // short crc16(byte* data, int length) {

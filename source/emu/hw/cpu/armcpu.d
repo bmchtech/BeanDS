@@ -2,7 +2,7 @@ module emu.hw.cpu.armcpu;
 
 import std.meta;
 
-import emu;
+import emu.hw.cpu.architecture;
 
 import util;
 

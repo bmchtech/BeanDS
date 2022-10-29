@@ -1,6 +1,13 @@
 module emu.hw.memory.dma.dma;
 
-import emu;
+import emu.hw.hwtype;
+import emu.hw.memory.mem;
+import emu.hw.memory.mem7;
+import emu.hw.memory.mem9;
+import emu.hw.cpu.interrupt;
+import emu.hw.memory.slot;
+import emu.hw.memory.cart.cart;
+
 import util;
 
 __gshared DMA!(HwType.NDS7) dma7;
@@ -25,9 +32,6 @@ final class DMA(HwType H) {
 
     static if (H == HwType.NDS9) alias mem = mem9;
     static if (H == HwType.NDS7) alias mem = mem7;
-
-    static if (H == HwType.NDS9) alias log_dma = log_dma9;
-    static if (H == HwType.NDS7) alias log_dma = log_dma7;
 
     static if (H == HwType.NDS9) alias DMAStartTiming = DMAStartTiming9;
     static if (H == HwType.NDS7) alias DMAStartTiming = DMAStartTiming7;
@@ -221,7 +225,7 @@ final class DMA(HwType H) {
         }
 
         if (unimplemented_dma) {
-            error_dma9("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
+            error_dma("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
         }
     }
 

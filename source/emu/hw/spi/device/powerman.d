@@ -1,6 +1,6 @@
 module emu.hw.spi.device.powerman;
 
-import emu;
+import emu.hw.spi.device;
 import util;
 
 __gshared PowerMan powerman;

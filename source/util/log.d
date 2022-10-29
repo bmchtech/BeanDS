@@ -1,6 +1,12 @@
 module util.log;
 
-import emu;
+import emu.hw.nds;
+import emu.hw.cpu.arm7tdmi;
+import emu.hw.cpu.arm946e_s;
+import emu.hw.memory.wram;
+import emu.hw.memory.main_memory;
+import emu.debugger.dumper;
+import emu.scheduler;
 
 private __gshared NDS nds;
 
@@ -11,8 +17,7 @@ enum LogSource {
     MMIO,
     ARM7,
     ARM9,
-    DMA7,
-    DMA9,
+    DMA,
     NDS,
     ENGINE_A,
     ENGINE_B,

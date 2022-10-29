@@ -1,6 +1,7 @@
 module emu.hw.memory.wram;
 
-import emu;
+import emu.hw.cpu.armcpu;
+import emu.hw.memory.mem;
 import util;
 
 __gshared WRAM wram;

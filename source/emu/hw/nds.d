@@ -2,16 +2,45 @@ module emu.hw.nds;
 
 import std.mmfile;
 
-import emu;
+// TODO: this import-spam needs to be fixed. in order to do that, i'll have to
+// offload the construction of the NDS state to each of the components instead.
+import emu.debugger.cputrace;
+import emu.hw.gpu.pixel;
+import emu.hw.memory.mem7;
+import emu.hw.memory.mem9;
+import emu.hw.cpu.arm7tdmi;
+import emu.hw.cpu.arm946e_s;
+import emu.scheduler;
+import emu.hw.cpu.interrupt;
+import emu.hw.cpu.ipc;
+import emu.hw.memory.wram;
+import emu.hw.timers;
+import emu.hw.spi.spi;
+import emu.hw.spi.auxspi;
+import emu.hw.spu.spu;
+import emu.hw.spu.capture;
+import emu.hw.memory.slot;
+import emu.hw.math.sqrt;
+import emu.hw.math.division;
+import emu.hw.memory.mmio;
+import emu.hw.memory.dma;
+import emu.hw.hwtype;
+import emu.hw.memory.main_memory;
+import emu.hw.gpu.gpu3d;
+import emu.hw.gpu.engines.engine_a;
+import emu.hw.gpu.engines.engine_b;
+import emu.hw.input;
+import emu.hw.misc.rtc;
+import emu.hw.memory.cart;
+import emu.hw.spi.device.touchscreen;
+import emu.hw.spi.device.firmware;
+import emu.hw.misc.sio;
+import emu.hw.cpu.armcpu;
+import emu.hw.gpu.gpu;
 
 import ui.device;
 
 import util;
-
-enum HwType {
-    NDS7,
-    NDS9
-}
 
 __gshared NDS nds;
 final class NDS {

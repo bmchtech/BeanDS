@@ -1,6 +1,6 @@
 module emu.debugger.ift.commit;
 
-import emu;
+import emu.all;
 import util;
 
 struct IFTDebugger {

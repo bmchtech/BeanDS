@@ -1,6 +1,8 @@
 module emu.hw.spu.spu;
 
-import emu;
+import emu.scheduler;
+import emu.hw.memory.mem9;
+
 import util;
 
 import ui.device;

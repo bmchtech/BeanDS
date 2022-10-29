@@ -1,6 +1,8 @@
 module emu.hw.spi.spi;
 
-import emu;
+import emu.hw.spi.device;
+import emu.scheduler;
+import emu.hw.cpu.interrupt;
 import util;
 
 __gshared SPI spi;

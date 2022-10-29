@@ -1,6 +1,12 @@
 module emu.hw.memory.mem7;
 
-import emu;
+import emu.hw.memory.mem;
+import emu.hw.cpu.armcpu;
+import emu.hw.memory.main_memory;
+import emu.hw.memory.wram;
+import emu.hw.memory.mmio;
+import emu.hw.gpu.vram;
+import emu.scheduler;
 
 import util;
 
@@ -12,6 +18,7 @@ final class Mem7 : Mem {
     this() {
         mem7 = this;
     }
+
 
     InstructionBlock* instruction_read(Word address) {
         scheduler.tick(1);

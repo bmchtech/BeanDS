@@ -1,6 +1,7 @@
 module emu.hw.gpu.oam;
 
-import emu;
+import emu.hw.memory.mem;
+
 import util;
 
 __gshared OAM oam;

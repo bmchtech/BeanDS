@@ -1,6 +1,7 @@
 module emu.hw.gpu.vram;
 
-import emu;
+import emu.hw.gpu.engines;
+import emu.hw.memory.mem;
 
 import util;
 
