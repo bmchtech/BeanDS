@@ -1,11 +1,9 @@
 module emu.hw.cpu.jumptable.jumptable_thumb;
 
+import core.bitop;
 import emu.hw.cpu;
 import emu.hw.memory;
-
 import util;
-
-import core.bitop;
 
 template execute_thumb(T : ArmCPU) {
     alias JumptableEntry = void function(T cpu, Half opcode);
@@ -229,8 +227,10 @@ template execute_thumb(T : ArmCPU) {
 
     static void create_add_sp_pc_relative(Reg rd, bool is_sp)(T cpu, Half opcode) {
         Word immediate = opcode[0..7] << 2;
-        static if ( is_sp) Word base = cpu.get_reg(sp);
-        static if (!is_sp) Word base = cpu.get_reg(pc) & ~3;
+        Word base;
+
+        static if ( is_sp) base = cpu.get_reg(sp);
+        static if (!is_sp) base = cpu.get_reg(pc) & ~3;
 
         cpu.set_reg__thumb(rd, base + immediate);
     }

@@ -1,6 +1,8 @@
 module emu.hw.gpu.gpu3d.geometry_engine;
 
-import emu;
+import emu.hw.cpu.interrupt;
+import emu.hw.gpu.gpu3d;
+import emu.scheduler;
 import util;
 
 struct GPU3DCommand {

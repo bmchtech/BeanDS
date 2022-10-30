@@ -1,6 +1,7 @@
 module emu.hw.timers.timers;
 
-import emu;
+import emu.hw.cpu.interrupt;
+import emu.scheduler;
 import util;
 
 __gshared TimerManager timers7;
@@ -54,9 +55,6 @@ final class TimerManager {
         // on_timer_overflow(x);
 
         if (timers[x].irq_enable) {
-            if (x == 1 && this == timers9) {
-                arm9.num_log = 100;
-            }
             interrupt_manager.raise_interrupt(get_interrupt_from_timer_id(x));
         }
 

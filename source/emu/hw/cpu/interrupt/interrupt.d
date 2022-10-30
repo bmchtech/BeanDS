@@ -1,6 +1,6 @@
 module emu.hw.cpu.interrupt.interrupt;
 
-import emu;
+import emu.hw.cpu.armcpu;
 import util;
 
 enum Interrupt {

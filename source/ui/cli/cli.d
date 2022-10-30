@@ -1,8 +1,7 @@
 module ui.cli.cli;
 
-import std.conv;
-
 import commandr;
+import std.conv;
 
 struct CLIArgs {
     string rom_path;
@@ -16,8 +15,10 @@ struct CLIArgs {
 CLIArgs parse_cli_args(string[] args) {
 	auto program = new Program("BeanDS", "0.1").summary("Nintendo DS Emulator")
 		.add(new Argument("rom_path", "path to rom file"))
-        .add(new Option("7", "arm7_ringbuffer_size", "the number of instructions to capture in the arm7 ring buffer (default: 100)").optional.defaultValue("100"))
-        .add(new Option("9", "arm9_ringbuffer_size", "the number of instructions to capture in the arm9 ring buffer (default: 100)").optional.defaultValue("100"))
+        .add(new Option("7", "arm7_ringbuffer_size", "the number of instructions to capture in the arm7 ring buffer (default: 100)")
+            .optional.defaultValue("100"))
+        .add(new Option("9", "arm9_ringbuffer_size", "the number of instructions to capture in the arm9 ring buffer (default: 100)")
+            .optional.defaultValue("100"))
 		.add(new Option("s", "screen_scale", "the screen scale (default: 1)").optional.defaultValue("1"))
         .add(new Flag("d", "direct_boot", "skip the firmware"))
         .add(new Flag("r", "reset_firmware", "factory reset the firmware before booting"))

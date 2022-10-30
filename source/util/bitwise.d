@@ -1,9 +1,8 @@
 module util.bitwise;
 
-import util;
-
 import core.bitop;
 import std.traits;
+import util;
 
 pragma(inline, true) {
     auto create_mask(size_t start, size_t end) {

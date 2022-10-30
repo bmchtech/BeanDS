@@ -1,6 +1,8 @@
 module emu.hw.spi.auxspi;
 
-import emu;
+import emu.hw.hwtype;
+import emu.hw.memory.slot;
+import emu.hw.spi.device.eeprom;
 import util;
 
 __gshared AUXSPI auxspi;
@@ -19,7 +21,7 @@ final class AUXSPI {
     bool active = false;
     int baudrate;
 
-    Byte result;
+    Byte transaction_result;
 
     private Byte read_AUXSPICNT(int target_byte) {
         Byte result;
@@ -62,7 +64,7 @@ final class AUXSPI {
         if (!nds_slot_mode) return;
 
         if (target_byte == 0) {
-            result = eeprom.write(data);
+            transaction_result = eeprom.write(data);
             if (!spi_hold_chipselect) eeprom.chipselect_fall();
             active = false;
         }
@@ -75,7 +77,7 @@ final class AUXSPI {
 
         if (target_byte == 0) {
             active = false;
-            return result;
+            return transaction_result;
         }
 
         return Byte(0);

@@ -1,9 +1,9 @@
 module emu.hw.spu.spu;
 
-import emu;
-import util;
-
+import emu.hw.memory.mem9;
+import emu.scheduler;
 import ui.device;
+import util;
 
 __gshared SPU spu;
 final class SPU {

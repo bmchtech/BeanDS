@@ -1,7 +1,6 @@
 module emu.hw.cpu.ipc;
 
-import emu;
-
+import emu.hw.cpu.interrupt;
 import util;
 
 __gshared IPC ipc7;

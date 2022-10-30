@@ -1,7 +1,14 @@
 module emu.hw.memory.mem9;
 
-import emu;
-
+import emu.hw.cpu.armcpu;
+import emu.hw.gpu.oam;
+import emu.hw.gpu.pram;
+import emu.hw.gpu.vram;
+import emu.hw.memory.main_memory;
+import emu.hw.memory.mem;
+import emu.hw.memory.mmio.mmio9;
+import emu.hw.memory.wram;
+import emu.scheduler;
 import util;
 
 __gshared Mem9 mem9;

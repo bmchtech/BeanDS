@@ -1,11 +1,15 @@
 module emu.hw.gpu.ppu.ppu;
 
-import emu;
-import util;
-
+import emu.hw.gpu.engines;
+import emu.hw.gpu.oam;
+import emu.hw.gpu.pixel;
+import emu.hw.gpu.ppu.canvas;
+import emu.hw.gpu.vram;
+import emu.scheduler;
+import std.algorithm;
 import std.stdio;
 import std.typecons;
-import std.algorithm;
+import util;
 
 enum AffineParameter {
     A = 0,

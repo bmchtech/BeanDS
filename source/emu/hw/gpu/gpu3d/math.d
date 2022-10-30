@@ -84,7 +84,7 @@ struct SquareMatrix(int N,T) {
         ]);
     }
 
-    string opCast(T : string)() {
+    string opCast(T : string)() const {
         string result = "";
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {

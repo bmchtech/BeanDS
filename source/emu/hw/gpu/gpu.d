@@ -1,10 +1,8 @@
 module emu.hw.gpu.gpu;
 
-import std.algorithm;
-
 import emu.hw;
 import emu.scheduler;
-
+import std.algorithm;
 import util;
 
 __gshared GPU gpu;

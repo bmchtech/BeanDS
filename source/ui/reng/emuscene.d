@@ -1,8 +1,7 @@
 module ui.reng.emuscene;
 
-import ui.reng;
-
 import re;
+import ui.reng;
 
 class EmuScene : Scene2D {
     int screen_scale;

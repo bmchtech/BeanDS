@@ -1,6 +1,6 @@
 module emu.debugger.ift.logged_mem;
 
-import emu;
+import emu.all;
 import util;
 
 enum MemoryPage {

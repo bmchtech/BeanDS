@@ -1,6 +1,7 @@
 module emu.hw.memory.cart.cryptography;
 
-import emu;
+import emu.hw.memory.mem7;
+
 import util;
 
 final class Key1Encryption {

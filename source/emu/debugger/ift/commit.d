@@ -1,6 +1,6 @@
 module emu.debugger.ift.commit;
 
-import emu;
+import emu.all;
 import util;
 
 struct IFTDebugger {
@@ -125,7 +125,7 @@ struct IFTDebugger {
     }
 
     private static void snapshot_mem_region(Snapshot snapshot, string name, Byte* memory, int length, int memory_base) {
-        import std.algorithm.comparison: min;
+        import std.algorithm.comparison : min;
 
         snapshot.memory_map ~= MemoryMap(MemoryMap.Type.Memory, memory_base, name);
         for (auto i = 0; i < length; i += MemoryPageTable.PAGE_SIZE) {

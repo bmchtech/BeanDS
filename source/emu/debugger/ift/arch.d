@@ -1,12 +1,10 @@
 module emu.debugger.ift.arch;
 
-import std.array;
-import std.format;
-
+import emu.all;
 import infoflow.analysis.ift;
 import infoflow.models;
-
-import emu;
+import std.array;
+import std.format;
 
 string generate_logged_reg_enum()() {
     auto mixed_in = appender!string;

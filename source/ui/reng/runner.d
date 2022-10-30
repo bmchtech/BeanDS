@@ -1,13 +1,10 @@
 module ui.reng.runner;
 
+import core.sync.mutex;
+import emu.hw;
+import std.datetime.stopwatch;
 import ui.device;
 import ui.reng;
-
-import emu.hw;
-
-import std.datetime.stopwatch;
-
-import core.sync.mutex;
 
 final class Runner {
     NDS nds;

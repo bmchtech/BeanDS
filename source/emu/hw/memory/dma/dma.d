@@ -1,12 +1,18 @@
 module emu.hw.memory.dma.dma;
 
-import emu;
+import emu.hw.cpu.interrupt;
+import emu.hw.hwtype;
+import emu.hw.memory.cart.cart;
+import emu.hw.memory.mem;
+import emu.hw.memory.mem7;
+import emu.hw.memory.mem9;
+import emu.hw.memory.slot;
 import util;
 
 __gshared DMA!(HwType.NDS7) dma7;
 __gshared DMA!(HwType.NDS9) dma9;
 
-static void DMA_maybe_start_cart_transfer() {
+static void dma_maybe_start_cart_transfer() {
     final switch (slot.nds_slot_access_rights) {
         case HwType.NDS7: dma7.maybe_start_cart_transfer(); break;
         case HwType.NDS9: dma9.maybe_start_cart_transfer(); break;
@@ -25,9 +31,6 @@ final class DMA(HwType H) {
 
     static if (H == HwType.NDS9) alias mem = mem9;
     static if (H == HwType.NDS7) alias mem = mem7;
-
-    static if (H == HwType.NDS9) alias log_dma = log_dma9;
-    static if (H == HwType.NDS7) alias log_dma = log_dma7;
 
     static if (H == HwType.NDS9) alias DMAStartTiming = DMAStartTiming9;
     static if (H == HwType.NDS7) alias DMAStartTiming = DMAStartTiming7;
@@ -136,8 +139,9 @@ final class DMA(HwType H) {
     void start_cart_transfer() {
         Word address = dma_channels[ds_cart_transfer_channel].dest_buf;
         while (cart.transfer_ongoing) {
-            static if (H == HwType.NDS7) Word val = cart.read_ROMRESULT7!Word(0);
-            static if (H == HwType.NDS9) Word val = cart.read_ROMRESULT9!Word(0);
+            Word val;
+            static if (H == HwType.NDS7) val = cart.read_ROMRESULT7!Word(0);
+            static if (H == HwType.NDS9) val = cart.read_ROMRESULT9!Word(0);
             
             mem.write_word(address, val);
             address += 4;
@@ -221,7 +225,7 @@ final class DMA(HwType H) {
         }
 
         if (unimplemented_dma) {
-            error_dma9("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
+            error_dma("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
         }
     }
 

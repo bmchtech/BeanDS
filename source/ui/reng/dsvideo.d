@@ -1,13 +1,11 @@
 module ui.reng.dsvideo;
 
+import raylib;
 import re;
-import re.math;
 import re.gfx;
-
+import re.math;
 import std.format;
 import std.string;
-
-import raylib;
 
 enum SCREEN_SEPARATION_HEIGHT = 0;
 

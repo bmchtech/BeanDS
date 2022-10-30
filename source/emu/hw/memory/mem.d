@@ -1,6 +1,6 @@
 module emu.hw.memory.mem;
 
-import emu;
+import emu.hw.cpu.armcpu;
 import util;
 
 enum AccessType {
@@ -59,7 +59,7 @@ pragma(inline, true) {
     void write(T)(Byte* memory, int address, T value) {
         (cast(T*) memory)[address >> get_shift!T] = value;
     }
-
+    
     InstructionBlock* instruction_read(Byte* memory, Word address) {
         return &(cast(InstructionBlock*) memory)[address >> get_shift!InstructionBlock];
     }

@@ -8,7 +8,6 @@ enum Architecture {
 }
 
 string generate_prettier_architecture_functions() {
-    import std.format;
     import std.conv;
     import std.format;
     import std.traits;

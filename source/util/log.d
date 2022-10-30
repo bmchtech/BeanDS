@@ -1,6 +1,12 @@
 module util.log;
 
-import emu;
+import emu.debugger.dumper;
+import emu.hw.cpu.arm7tdmi;
+import emu.hw.cpu.arm946e_s;
+import emu.hw.memory.main_memory;
+import emu.hw.memory.wram;
+import emu.hw.nds;
+import emu.scheduler;
 
 private __gshared NDS nds;
 
@@ -11,8 +17,7 @@ enum LogSource {
     MMIO,
     ARM7,
     ARM9,
-    DMA7,
-    DMA9,
+    DMA,
     NDS,
     ENGINE_A,
     ENGINE_B,
@@ -64,10 +69,9 @@ static ulong get_largest_logsource_length()(){
 
 // thanks https://github.com/dlang/phobos/blob/4239ed8ebd3525206453784908f5d37c82d338ee/std/outbuffer.d
 private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)[] fmt, A args) {
-    import core.stdc.stdlib;
-    import core.stdc.stdio;
     import core.runtime;
-
+    import core.stdc.stdio;
+    import core.stdc.stdlib;
     import std.conv;
     import std.format.write : formattedWrite;
     import std.stdio : writef, writefln;

@@ -1,6 +1,6 @@
 module emu.hw.input.key_input;
 
-import emu;
+
 import util;
 
 enum DSKeyCode {

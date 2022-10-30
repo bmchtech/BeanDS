@@ -1,7 +1,13 @@
 module emu.hw.cpu.arm7tdmi;
 
-import emu;
-
+import emu.debugger.cputrace;
+import emu.hw.cpu.architecture;
+import emu.hw.cpu.armcpu;
+import emu.hw.cpu.interrupt;
+import emu.hw.cpu.jumptable.jumptable_arm;
+import emu.hw.cpu.jumptable.jumptable_thumb;
+import emu.hw.memory.mem;
+import emu.hw.memory.mem7;
 import util;
 
 __gshared ARM7TDMI arm7;
@@ -214,8 +220,8 @@ final class ARM7TDMI : ArmCPU {
         version (quiet) {
             return;
         } else {
-            import std.stdio;
             import std.format;
+            import std.stdio;
 
             writef("LOG_ARM7 [%04d] ", num_log);
         

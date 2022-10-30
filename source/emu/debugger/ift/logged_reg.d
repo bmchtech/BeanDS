@@ -1,6 +1,6 @@
 module emu.debugger.ift.logged_reg;
 
-import emu;
+import emu.all;
 import util;
 
 string created_logged_reg_string(HwType hw_type)() {

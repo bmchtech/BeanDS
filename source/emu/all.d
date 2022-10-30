@@ -1,4 +1,4 @@
-module emu;
+module emu.all;
 
 public {
     import emu.debugger;

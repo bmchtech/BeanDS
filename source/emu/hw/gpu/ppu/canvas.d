@@ -1,14 +1,15 @@
 module emu.hw.gpu.ppu.canvas;
 
-import emu;
-import util;
-
-import std.stdio;
-import std.algorithm;
-
 import core.stdc.string;
-            
+import emu.hw.gpu.engines;
+import emu.hw.gpu.pixel;
+import emu.hw.gpu.ppu;
+import emu.hw.gpu.pram;
+import emu.hw.gpu.vram;
 import inteli.smmintrin;
+import std.algorithm;
+import std.stdio;
+import util;
 
 // okay so the rules here go like this:
 // an empty pixel is invalid. renders the background pixel.
@@ -42,10 +43,14 @@ struct PaletteIndex {
     int a;
 
     Pixel resolve(EngineType E)(int pram_offset) {
-        static if (E == EngineType.A) SlotType bg_slot_type  = SlotType.BG_PAL_A;
-        static if (E == EngineType.B) SlotType bg_slot_type  = SlotType.BG_PAL_B;
-        static if (E == EngineType.A) SlotType obj_slot_type = SlotType.OBJ_PAL_A;
-        static if (E == EngineType.B) SlotType obj_slot_type = SlotType.OBJ_PAL_B;
+        SlotType bg_slot_type;
+        SlotType obj_slot_type;
+
+        static if (E == EngineType.A) bg_slot_type  = SlotType.BG_PAL_A;
+        static if (E == EngineType.B) bg_slot_type  = SlotType.BG_PAL_B;
+        static if (E == EngineType.A) obj_slot_type = SlotType.OBJ_PAL_A;
+        static if (E == EngineType.B) obj_slot_type = SlotType.OBJ_PAL_B;
+        
         Pixel p;
 
         if (is_3d) {
@@ -106,70 +111,65 @@ struct Window {
 }
 
 final class Canvas(EngineType E) {
-    
-    public:
-        struct MMIOInfo {
-            // fields for blending
-            Blending blending_type;
-            uint evy_coeff;
-            
-            // these are the blend values given to us
-            uint blend_a;
-            uint blend_b;
+    struct MMIOInfo {
+        // fields for blending
+        Blending blending_type;
+        uint evy_coeff;
+        
+        // these are the blend values given to us
+        uint blend_a;
+        uint blend_b;
 
-            // accessed as bg_target_pixel[layer][bg_id]. tells you if
-            // the bg is a target pixel on that layer
-            bool[4][2] bg_target_pixel;
+        // accessed as bg_target_pixel[layer][bg_id]. tells you if
+        // the bg is a target pixel on that layer
+        bool[4][2] bg_target_pixel;
 
-            // these are the same as bg_target_pixel, just without the need for a bg_id
-            bool[2]    obj_target_pixel;
-            bool[2]    backdrop_target_pixel;
+        // these are the same as bg_target_pixel, just without the need for a bg_id
+        bool[2]    obj_target_pixel;
+        bool[2]    backdrop_target_pixel;
 
-            // fields for windowing
-            Window[2] windows;
-            int outside_window_bg_enable;
-            bool outside_window_obj_enable;
-            int  obj_window_bg_enable;
-            bool obj_window_obj_enable;
-            bool obj_window_enable;
+        // fields for windowing
+        Window[2] windows;
+        int outside_window_bg_enable;
+        bool outside_window_obj_enable;
+        int  obj_window_bg_enable;
+        bool obj_window_obj_enable;
+        bool obj_window_enable;
 
-            bool obj_window_blended;
-            bool outside_window_blended;
-        }
+        bool obj_window_blended;
+        bool outside_window_blended;
+    }
 
-        struct ScanlineCompositingInfo {
-            MMIOInfo mmio_info;
+    struct ScanlineCompositingInfo {
+        MMIOInfo mmio_info;
 
-            PixelData[256][4] bg_scanline;
-            PixelData[256]    obj_scanline;
+        PixelData[256][4] bg_scanline;
+        PixelData[256]    obj_scanline;
 
-            bool[256] obj_window;
-            bool[256] obj_semitransparent;
+        bool[256] obj_window;
+        bool[256] obj_semitransparent;
 
-            void reset() {
-                for (int x = 0; x < 256; x++) {
-                    for (int bg = 0; bg < 4; bg++) {
-                        bg_scanline[bg][x].transparent = true;
-                    }
-
-                    obj_scanline       [x].transparent = true;
-                    obj_scanline       [x].priority    = 4;
-                    obj_window         [x]             = false;
-                    obj_semitransparent[x]             = false;
+        void reset() {
+            for (int x = 0; x < 256; x++) {
+                for (int bg = 0; bg < 4; bg++) {
+                    bg_scanline[bg][x].transparent = true;
                 }
+
+                obj_scanline       [x].transparent = true;
+                obj_scanline       [x].priority    = 4;
+                obj_window         [x]             = false;
+                obj_semitransparent[x]             = false;
             }
         }
+    }
 
-        MMIOInfo mmio_info;
-        ScanlineCompositingInfo*     scanline_compositing_info;
-        ScanlineCompositingInfo[192] scanline_compositing_infos;
-        Pixel[192][256] pixels_output;
-
-
-    private:
-        PPU!E ppu;
-        Background[4] sorted_backgrounds;
-        int pram_offset;
+    MMIOInfo mmio_info;
+    ScanlineCompositingInfo* scanline_compositing_info;
+    ScanlineCompositingInfo[192] scanline_compositing_infos;
+    Pixel[192][256] pixels_output;
+    PPU!E ppu;
+    Background[4] sorted_backgrounds;
+    int pram_offset;
 
     public this(PPU!E ppu, int pram_offset) {
         this.ppu         = ppu;
@@ -276,7 +276,7 @@ final class Canvas(EngineType E) {
 
     public void composite() {
         for (int scanline = 0; scanline < 192; scanline++) {
-            ScanlineCompositingInfo* scanline_compositing_info = &scanline_compositing_infos[scanline];
+            ScanlineCompositingInfo* current_scanline_compositing_info = &scanline_compositing_infos[scanline];
 
             // step 1: sort the backgrounds by priority
             sorted_backgrounds = ppu.backgrounds;
@@ -301,21 +301,21 @@ final class Canvas(EngineType E) {
 
 
             // step 2: loop through the backgrounds, and get the first non transparent pixel
-            WindowType default_window_type = (scanline_compositing_info.mmio_info.obj_window_enable || 
-                                            scanline_compositing_info.mmio_info.windows[0].enabled || 
-                                            scanline_compositing_info.mmio_info.windows[1].enabled)
+            WindowType default_window_type = (current_scanline_compositing_info.mmio_info.obj_window_enable || 
+                                            current_scanline_compositing_info.mmio_info.windows[0].enabled || 
+                                            current_scanline_compositing_info.mmio_info.windows[1].enabled)
                                             ? WindowType.OUTSIDE
                                             : WindowType.NONE;
 
             for (int x = 0; x < 256; x++) {
                 // which window are we in?
                 WindowType current_window_type = default_window_type;
-                if (scanline_compositing_info.obj_window[x] && scanline_compositing_info.mmio_info.obj_window_enable) current_window_type = WindowType.OBJ;
+                if (current_scanline_compositing_info.obj_window[x] && current_scanline_compositing_info.mmio_info.obj_window_enable) current_window_type = WindowType.OBJ;
 
                 for (int i = 0; i < 2; i++) {
-                    if (scanline_compositing_info.mmio_info.windows[i].enabled) {
-                        if (scanline_compositing_info.mmio_info.windows[i].left <= x        && x        < scanline_compositing_info.mmio_info.windows[i].right  && 
-                            scanline_compositing_info.mmio_info.windows[i].top  <= scanline && scanline < scanline_compositing_info.mmio_info.windows[i].bottom) {
+                    if (current_scanline_compositing_info.mmio_info.windows[i].enabled) {
+                        if (current_scanline_compositing_info.mmio_info.windows[i].left <= x        && x        < current_scanline_compositing_info.mmio_info.windows[i].right  && 
+                            current_scanline_compositing_info.mmio_info.windows[i].top  <= scanline && scanline < current_scanline_compositing_info.mmio_info.windows[i].bottom) {
                             current_window_type = cast(WindowType) i;
                             break;
                         }
@@ -337,14 +337,14 @@ final class Canvas(EngineType E) {
                 for (int i = 0; i < 4; i++) {
                     if (total_pixels == 2) break;
 
-                    if (!processed_obj && !scanline_compositing_info.obj_scanline[x].transparent && is_obj_pixel_visible(current_window_type) &&
-                            sorted_backgrounds[i].priority >= scanline_compositing_info.obj_scanline[x].priority) {
-                        index[total_pixels] = scanline_compositing_info.obj_scanline[x].index;
+                    if (!processed_obj && !current_scanline_compositing_info.obj_scanline[x].transparent && is_obj_pixel_visible(current_window_type, current_scanline_compositing_info) &&
+                            sorted_backgrounds[i].priority >= current_scanline_compositing_info.obj_scanline[x].priority) {
+                        index[total_pixels] = current_scanline_compositing_info.obj_scanline[x].index;
 
                         processed_obj = true;
-                        if (scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || scanline_compositing_info.obj_semitransparent[x]) {
+                        if (current_scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || current_scanline_compositing_info.obj_semitransparent[x]) {
                             blendable_pixels++;
-                            force_blend = scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
+                            force_blend = current_scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
                         }
                         total_pixels++;
                     }
@@ -352,12 +352,12 @@ final class Canvas(EngineType E) {
                     if (total_pixels == 2) break;
 
                     current_bg_id = sorted_backgrounds[i].id;
-                    if (!scanline_compositing_info.bg_scanline[current_bg_id][x].transparent) {
-                        if (is_bg_pixel_visible(current_bg_id, current_window_type)) {
-                            index[total_pixels] = scanline_compositing_info.bg_scanline[current_bg_id][x].index;
+                    if (!current_scanline_compositing_info.bg_scanline[current_bg_id][x].transparent) {
+                        if (is_bg_pixel_visible(current_bg_id, current_window_type, current_scanline_compositing_info)) {
+                            index[total_pixels] = current_scanline_compositing_info.bg_scanline[current_bg_id][x].index;
                             priority = sorted_backgrounds[i].priority;
 
-                            if (scanline_compositing_info.mmio_info.bg_target_pixel[total_pixels][current_bg_id]) {
+                            if (current_scanline_compositing_info.mmio_info.bg_target_pixel[total_pixels][current_bg_id]) {
                                 blendable_pixels++;
                                 total_pixels++;
                                 continue;
@@ -370,16 +370,16 @@ final class Canvas(EngineType E) {
                     if (total_pixels == 2) break;
                 }
 
-                if (priority >= scanline_compositing_info.obj_scanline[x].priority && 
+                if (priority >= current_scanline_compositing_info.obj_scanline[x].priority && 
                     total_pixels < 2 && 
                     !processed_obj && 
-                    !scanline_compositing_info.obj_scanline[x].transparent && 
-                    is_obj_pixel_visible(current_window_type)) {
-                    index[total_pixels] = scanline_compositing_info.obj_scanline[x].index;
+                    !current_scanline_compositing_info.obj_scanline[x].transparent && 
+                    is_obj_pixel_visible(current_window_type, current_scanline_compositing_info)) {
+                    index[total_pixels] = current_scanline_compositing_info.obj_scanline[x].index;
 
-                    if (scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || scanline_compositing_info.obj_semitransparent[x]) {
+                    if (current_scanline_compositing_info.mmio_info.obj_target_pixel[total_pixels] || current_scanline_compositing_info.obj_semitransparent[x]) {
                         blendable_pixels++;
-                        force_blend = scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
+                        force_blend = current_scanline_compositing_info.obj_semitransparent[x] && total_pixels == 0;
                     }
                     total_pixels++;
                 }
@@ -387,21 +387,21 @@ final class Canvas(EngineType E) {
                 // add the backdrop
                 if (total_pixels < 2) {
                     // total_pixels++; we can increment this, but it wont affect the rest of the loop
-                    if (scanline_compositing_info.mmio_info.backdrop_target_pixel[blendable_pixels]) {
+                    if (current_scanline_compositing_info.mmio_info.backdrop_target_pixel[blendable_pixels]) {
                         blendable_pixels++;
                     }
                 }
                 
-                Blending effective_blending_type = is_blended(current_window_type) ? scanline_compositing_info.mmio_info.blending_type : Blending.NONE;
+                Blending effective_blending_type = is_blended(current_window_type, current_scanline_compositing_info) ? current_scanline_compositing_info.mmio_info.blending_type : Blending.NONE;
                 if (force_blend) { effective_blending_type = Blending.ALPHA; }
                 // now to blend the two values together
-                pixels_output[x][scanline] = blend(index, blendable_pixels, effective_blending_type);
+                pixels_output[x][scanline] = blend(index, blendable_pixels, effective_blending_type, current_scanline_compositing_info);
             }
         }
     }
 
     // blends the two colors together based on blending type
-    private pragma(inline, true) Pixel blend(PaletteIndex[] index, int blendable_pixels, Blending effective_blending_type) {
+    private pragma(inline, true) Pixel blend(PaletteIndex[] index, int blendable_pixels, Blending effective_blending_type, ScanlineCompositingInfo* current_scanline_compositing_info) {
         final switch (effective_blending_type) {
             case Blending.NONE:
                 return index[0].resolve!E(pram_offset);
@@ -413,7 +413,7 @@ final class Canvas(EngineType E) {
                 
                 __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
                 __m128i diff__vec = _mm_sub_epi8(_mm_set1_epi8(63), output__vec); 
-                diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) scanline_compositing_info.mmio_info.evy_coeff));
+                diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) current_scanline_compositing_info.mmio_info.evy_coeff));
                 diff__vec = _mm_srli_epi16(diff__vec, 4);
                 diff__vec = _mm_and_si128(diff__vec, _mm_set1_epi16(0xFF));
                 output__vec = _mm_sub_epi16(output__vec, diff__vec);
@@ -427,7 +427,7 @@ final class Canvas(EngineType E) {
                 Pixel output = index[0].resolve!E(pram_offset);
                 
                 __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
-                __m128i diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) scanline_compositing_info.mmio_info.evy_coeff));
+                __m128i diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) current_scanline_compositing_info.mmio_info.evy_coeff));
                 diff__vec = _mm_srli_epi16(diff__vec, 4);
                 diff__vec = _mm_and_si128(diff__vec, _mm_set1_epi16(0xFF));
                 output__vec = _mm_sub_epi16(output__vec, diff__vec);
@@ -442,14 +442,14 @@ final class Canvas(EngineType E) {
                 Pixel input_B = index[1].resolve!E(pram_offset);
                 Pixel output;
 
-                int effective_blend_a = scanline_compositing_info.mmio_info.blend_a;
-                int effective_blend_b = scanline_compositing_info.mmio_info.blend_b;
+                int effective_blend_a = current_scanline_compositing_info.mmio_info.blend_a;
+                int effective_blend_b = current_scanline_compositing_info.mmio_info.blend_b;
 
                 __m128i input_A__vec = _mm_loadu_si128(cast(__m128i*) &input_A);
                 __m128i input_B__vec = _mm_loadu_si128(cast(__m128i*) &input_B); 
 
                 static if (E == EngineType.A) {
-                    if (scanline_compositing_info.mmio_info.bg_target_pixel[0][0]) {
+                    if (current_scanline_compositing_info.mmio_info.bg_target_pixel[0][0]) {
                         effective_blend_a = input_A.a / 2;
                         effective_blend_b = 16 - (input_A.a / 2);
                     }
@@ -468,34 +468,34 @@ final class Canvas(EngineType E) {
         }
     }
 
-    private pragma(inline, true) bool is_blended(WindowType window_type) {
+    private pragma(inline, true) bool is_blended(WindowType window_type, ScanlineCompositingInfo* current_scanline_compositing_info) {
         final switch (window_type) {
-            case WindowType.ZERO:    return scanline_compositing_info.mmio_info.windows[0].blended;
-            case WindowType.ONE:     return scanline_compositing_info.mmio_info.windows[1].blended;
-            case WindowType.OBJ:     return scanline_compositing_info.mmio_info.obj_window_blended;
-            case WindowType.OUTSIDE: return scanline_compositing_info.mmio_info.outside_window_blended;
+            case WindowType.ZERO:    return current_scanline_compositing_info.mmio_info.windows[0].blended;
+            case WindowType.ONE:     return current_scanline_compositing_info.mmio_info.windows[1].blended;
+            case WindowType.OBJ:     return current_scanline_compositing_info.mmio_info.obj_window_blended;
+            case WindowType.OUTSIDE: return current_scanline_compositing_info.mmio_info.outside_window_blended;
             case WindowType.NONE:    return true;
         }
     }
     
     // calculates if the bg pixel is visible under the effects of windowing
-    private pragma(inline, true) bool is_bg_pixel_visible(int bg_id, WindowType window_type) {
+    private pragma(inline, true) bool is_bg_pixel_visible(int bg_id, WindowType window_type, ScanlineCompositingInfo* current_scanline_compositing_info) {
         final switch (window_type) {
-            case WindowType.ZERO:    return bit(scanline_compositing_info.mmio_info.windows[0].bg_enable,     bg_id);
-            case WindowType.ONE:     return bit(scanline_compositing_info.mmio_info.windows[1].bg_enable,     bg_id);
-            case WindowType.OBJ:     return bit(scanline_compositing_info.mmio_info.obj_window_bg_enable,     bg_id);
-            case WindowType.OUTSIDE: return bit(scanline_compositing_info.mmio_info.outside_window_bg_enable, bg_id);
+            case WindowType.ZERO:    return bit(current_scanline_compositing_info.mmio_info.windows[0].bg_enable,     bg_id);
+            case WindowType.ONE:     return bit(current_scanline_compositing_info.mmio_info.windows[1].bg_enable,     bg_id);
+            case WindowType.OBJ:     return bit(current_scanline_compositing_info.mmio_info.obj_window_bg_enable,     bg_id);
+            case WindowType.OUTSIDE: return bit(current_scanline_compositing_info.mmio_info.outside_window_bg_enable, bg_id);
             case WindowType.NONE:    return true;
         }
     }
     
     // calculates if the obj pixel is visible under the effects of windowing
-    private pragma(inline, true) bool is_obj_pixel_visible(WindowType window_type) {
+    private pragma(inline, true) bool is_obj_pixel_visible(WindowType window_type, ScanlineCompositingInfo* current_scanline_compositing_info) {
         final switch (window_type) {
-            case WindowType.ZERO:    return scanline_compositing_info.mmio_info.windows[0].obj_enable;
-            case WindowType.ONE:     return scanline_compositing_info.mmio_info.windows[1].obj_enable;
-            case WindowType.OBJ:     return scanline_compositing_info.mmio_info.obj_window_obj_enable;
-            case WindowType.OUTSIDE: return scanline_compositing_info.mmio_info.outside_window_obj_enable;
+            case WindowType.ZERO:    return current_scanline_compositing_info.mmio_info.windows[0].obj_enable;
+            case WindowType.ONE:     return current_scanline_compositing_info.mmio_info.windows[1].obj_enable;
+            case WindowType.OBJ:     return current_scanline_compositing_info.mmio_info.obj_window_obj_enable;
+            case WindowType.OUTSIDE: return current_scanline_compositing_info.mmio_info.outside_window_obj_enable;
             case WindowType.NONE:    return true;
         }
     }

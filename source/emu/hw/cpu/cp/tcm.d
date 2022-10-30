@@ -1,7 +1,7 @@
 module emu.hw.cpu.cp.tcm;
 
-import emu;
-
+import emu.hw.cpu.armcpu;
+import emu.hw.memory.mem;
 import util;
 
 __gshared TCM tcm;

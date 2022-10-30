@@ -1,8 +1,7 @@
 module emu.hw.spi.device.eeprom;
 
+import emu.hw.spi.device;
 import std.mmfile;
-
-import emu;
 import util;
 
 public class EEPROM(int page_size, int num_pages) : SPIDevice {

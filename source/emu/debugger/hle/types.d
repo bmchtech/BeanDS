@@ -32,7 +32,7 @@ struct CPContext {
     u64 sqrt;
     u16 div_mode;
     u16 sqrt_mode;
-};
+}
 
 static assert (CPContext.sizeof == 0x1C);
 
@@ -62,6 +62,6 @@ struct OSThreadQueue {
     align(1):
     Pointer!OSThread head;
     Pointer!OSThread tail;
-};
+}
 
 static assert (OSThreadQueue.sizeof == 0x8);

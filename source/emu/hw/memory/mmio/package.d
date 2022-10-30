@@ -1,14 +1,31 @@
 module emu.hw.memory.mmio;
 
+import emu.hw.cpu.interrupt;
+import emu.hw.cpu.ipc;
+import emu.hw.gpu.engines.engine_a;
+import emu.hw.gpu.engines.engine_b;
+import emu.hw.gpu.gpu;
+import emu.hw.gpu.gpu3d.gpu3d;
+import emu.hw.gpu.vram;
+import emu.hw.input;
+import emu.hw.math.division;
+import emu.hw.math.sqrt;
+import emu.hw.memory.cart.cart;
+import emu.hw.memory.dma;
+public import emu.hw.memory.mmio.mmio7;
+public import emu.hw.memory.mmio.mmio9;
+import emu.hw.memory.slot;
+import emu.hw.memory.wram;
+import emu.hw.misc.rtc;
+import emu.hw.misc.sio;
+import emu.hw.nds;
+import emu.hw.spi.auxspi;
+import emu.hw.spi.spi;
+import emu.hw.spu.capture;
+import emu.hw.spu.spu;
+import emu.hw.timers;
 import std.format;
-
-import emu;
 import util;
-
-public {
-    import emu.hw.memory.mmio.mmio7;
-    import emu.hw.memory.mmio.mmio9;
-}
 
 enum {
     READ,
