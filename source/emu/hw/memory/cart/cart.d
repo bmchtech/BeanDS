@@ -2,16 +2,14 @@ module emu.hw.memory.cart.cart;
 
 import core.bitop;
 import core.stdc.string;
-
-import emu.hw.memory.cart.header;
-import emu.hw.memory.cart.cryptography;
-import emu.hw.memory.slot;
-import emu.hw.hwtype;
-import emu.hw.spi.auxspi;
 import emu.hw.cpu.interrupt;
-import emu.hw.memory.mem;
+import emu.hw.hwtype;
+import emu.hw.memory.cart.cryptography;
+import emu.hw.memory.cart.header;
 import emu.hw.memory.dma;
-
+import emu.hw.memory.mem;
+import emu.hw.memory.slot;
+import emu.hw.spi.auxspi;
 import util;
 
 __gshared Cart cart;
@@ -92,8 +90,8 @@ final class Cart {
     import emu.hw.spi.device.firmware;
     char[128] rom_title_buf;
     string get_rom_title(FirmwareLanguage language) {
-        import std.utf;
         import std.encoding;
+        import std.utf;
             
         Word icon_offset = this.cart_header.icon_offset;
 
@@ -244,7 +242,7 @@ final class Cart {
         
         outbuffer_index  = 0;
 
-        DMA_maybe_start_cart_transfer();
+        dma_maybe_start_cart_transfer();
     }
 
     void handle_unencrypted_transfer() {

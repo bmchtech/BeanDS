@@ -2,7 +2,6 @@ module emu.hw.cpu.jumptable.ops;
 
 import emu.hw.cpu;
 import emu.hw.memory;
-
 import util;
 
 void set_reg_wrapper(T : ArmCPU, bool lower_regs)(T cpu, int reg, Word value) {

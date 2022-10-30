@@ -1,7 +1,6 @@
 module emu.hw.gpu.engines.engine_b;
 
 import emu.hw;
-
 import util;
 
 __gshared GPUEngineB gpu_engine_b;
@@ -14,7 +13,7 @@ final class GPUEngineB {
     }
 
     int display_mode;
-    int vram_block;
+    int vram_block_index;
     int tile_obj_mapping;
     int bitmap_obj_dimension;
     int bitmap_obj_mapping;
@@ -99,7 +98,7 @@ final class GPUEngineB {
     }
 
     Byte* get_vram_block() {
-        final switch (vram_block) {
+        final switch (vram_block_index) {
             case 0: return cast(Byte*) vram.vram_a.data;
             case 1: return cast(Byte*) vram.vram_b.data;
             case 2: return cast(Byte*) vram.vram_c.data;

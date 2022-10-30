@@ -1,9 +1,7 @@
 module emu.hw.cpu.armcpu;
 
-import std.meta;
-
 import emu.hw.cpu.architecture;
-
+import std.meta;
 import util;
 
 alias pc   = Alias!15;
@@ -78,13 +76,13 @@ interface ArmCPU {
 // 2) their register uniqueness (see the diagram in arm7tdmi.h).
 // 3) their offset into the registers array.
 
-enum MODE_USER       = CpuMode(0b10000, 0b011111111111111111, 18 * 0, "USR");
-enum MODE_SYSTEM     = CpuMode(0b11111, 0b011111111111111111, 18 * 0, "SYS");
-enum MODE_SUPERVISOR = CpuMode(0b10011, 0b011001111111111111, 18 * 1, "SVC");
-enum MODE_ABORT      = CpuMode(0b10111, 0b011001111111111111, 18 * 2, "ABT");
-enum MODE_UNDEFINED  = CpuMode(0b11011, 0b011001111111111111, 18 * 3, "UND");
-enum MODE_IRQ        = CpuMode(0b10010, 0b011001111111111111, 18 * 4, "IRQ");
-enum MODE_FIQ        = CpuMode(0b10001, 0b011000000011111111, 18 * 5, "FIQ");
+enum MODE_USER       = CpuMode(0b10000, 0b01_1111_1111_1111_1111, 18 * 0, "USR");
+enum MODE_SYSTEM     = CpuMode(0b11111, 0b01_1111_1111_1111_1111, 18 * 0, "SYS");
+enum MODE_SUPERVISOR = CpuMode(0b10011, 0b01_1001_1111_1111_1111, 18 * 1, "SVC");
+enum MODE_ABORT      = CpuMode(0b10111, 0b01_1001_1111_1111_1111, 18 * 2, "ABT");
+enum MODE_UNDEFINED  = CpuMode(0b11011, 0b01_1001_1111_1111_1111, 18 * 3, "UND");
+enum MODE_IRQ        = CpuMode(0b10010, 0b01_1001_1111_1111_1111, 18 * 4, "IRQ");
+enum MODE_FIQ        = CpuMode(0b10001, 0b01_1000_0000_1111_1111, 18 * 5, "FIQ");
 
 static immutable CpuMode[7] MODES = [
     MODE_USER, MODE_FIQ, MODE_IRQ, MODE_SUPERVISOR, MODE_ABORT, MODE_UNDEFINED,

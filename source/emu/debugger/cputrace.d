@@ -1,7 +1,6 @@
 module emu.debugger.cputrace;
 
 import emu.hw.cpu;
-
 import util;
 
 struct CpuTraceState {
@@ -41,8 +40,8 @@ final class CpuTrace {
     }
 
     void print_trace() {
-        import std.stdio;
         import std.format;
+        import std.stdio;
 
         CpuTraceState[] trace = ringbuffer.get();
         for (int i = 0; i < trace.length; i++) {

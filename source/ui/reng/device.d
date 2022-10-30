@@ -1,18 +1,15 @@
 module ui.reng.device;
 
 import emu.hw;
-
+import raylib;
+import re;
+import std.format;
+import std.string;
 import ui.device;
 import ui.reng;
 
-import std.format;
-import std.string;
-
-import raylib;
-import re;
-
 class RengMultimediaDevice : MultiMediaDevice {
-    enum SAMPLE_RATE            = 48000;
+    enum SAMPLE_RATE            = 48_000;
     enum SAMPLES_PER_UPDATE     = 4096;
     enum BUFFER_SIZE_MULTIPLIER = 3;
     enum NUM_CHANNELS           = 2;

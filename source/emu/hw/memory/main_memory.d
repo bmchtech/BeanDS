@@ -1,8 +1,8 @@
 module emu.hw.memory.main_memory;
 
+import emu.hw.cpu.armcpu;
 import emu.hw.memory.main_memory;
 import emu.hw.memory.mem;
-import emu.hw.cpu.armcpu;
 import util;
 
 __gshared MainMemory main_memory;

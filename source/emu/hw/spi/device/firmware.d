@@ -1,8 +1,7 @@
 module emu.hw.spi.device.firmware;
 
-import emu.hw.spi.device;
 import emu.hw.memory.mem;
-
+import emu.hw.spi.device;
 import util;
 
 enum FirmwareLanguage {

@@ -1,11 +1,8 @@
+import emu.hw.nds;
 import std.file;
 import std.mmfile;
 import std.path;
-
-import emu.hw.nds;
-
 import ui;
-
 import util;
 
 enum DIRECT_BOOT = false;
@@ -43,7 +40,7 @@ version (unittest) {
 		MmFile mm_file = new MmFile(save_path, MmFile.Mode.readWrite, nds.get_backup_size(), null, 0);
 		nds.load_save_mmfile(mm_file);
 
-		nds.set_sample_rate(48000);
+		nds.set_sample_rate(48_000);
 
 		nds.reset();
 		if (cli_args.direct_boot) nds.direct_boot();

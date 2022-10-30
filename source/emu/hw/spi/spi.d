@@ -1,8 +1,8 @@
 module emu.hw.spi.spi;
 
+import emu.hw.cpu.interrupt;
 import emu.hw.spi.device;
 import emu.scheduler;
-import emu.hw.cpu.interrupt;
 import util;
 
 __gshared SPI spi;
@@ -15,7 +15,7 @@ final class SPI {
     bool chipselect_hold = false;
     bool irq_enable;
     bool bus_enable;
-    Half result;
+    Half transaction_result;
 
     SPIDevice[4] spi_devices;
 
@@ -90,7 +90,7 @@ final class SPI {
     }
 
     T read_SPIDATA(T)(int offset) {
-        return T(result);
+        return T(transaction_result);
     }
 
     void write_SPIDATA(T)(T data, int offset) {
@@ -101,7 +101,7 @@ final class SPI {
         }
 
         if (offset == 0) {
-            result = selected_device.write(Byte(data));
+            transaction_result = selected_device.write(Byte(data));
             if (!chipselect_hold) selected_device.chipselect_fall();
         }
 

@@ -10,7 +10,7 @@ struct RTCParams {
     bool SIO;
     bool CS;
 
-    bool SIO_direction;
+    bool sio_direction;
 }
 
 __gshared RTCHook rtc_hook;
@@ -67,7 +67,7 @@ final class RTC_S_35199A01 {
     bool SCK;
     bool SIO;
     bool CS;
-    bool SIO_direction;
+    bool sio_direction;
 
     ubyte serial_data;
     int   serial_index;
@@ -187,7 +187,7 @@ final class RTC_S_35199A01 {
         bool old_CS  = this.CS;
 
         SCK = rtc_params.SCK;
-        if (rtc_params.SIO_direction) SIO = rtc_params.SIO;
+        if (rtc_params.sio_direction) SIO = rtc_params.SIO;
         CS  = rtc_params.CS;
     
         if (rising_edge(old_CS, CS)) {
@@ -201,7 +201,7 @@ final class RTC_S_35199A01 {
         if (falling_edge(old_SCK, SCK) && state != State.WAITING_FOR_COMMAND) {
             switch (state) {
                 case State.READING_PARAMETERS:
-                    if (!rtc_params.SIO_direction) SIO = bit(this.get_active_register().value, this.serial_index);
+                    if (!rtc_params.sio_direction) SIO = bit(this.get_active_register().value, this.serial_index);
                     serial_index++;
 
                     if (this.serial_index == 8) {
@@ -345,7 +345,7 @@ final class RTC_S_35199A01 {
             SCK,
             SIO,
             CS,
-            SIO_direction
+            sio_direction
         );
     }
 }

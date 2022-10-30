@@ -2,7 +2,6 @@ module emu.hw.timers.timers;
 
 import emu.hw.cpu.interrupt;
 import emu.scheduler;
-
 import util;
 
 __gshared TimerManager timers7;

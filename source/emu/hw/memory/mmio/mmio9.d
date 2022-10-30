@@ -1,7 +1,6 @@
 module emu.hw.memory.mmio.mmio9;
 
 import emu.hw;
-
 import util;
 
 __gshared MMIO!mmio9_registers mmio9;

@@ -1,7 +1,6 @@
 module emu.hw.gpu.pram;
 
 import emu.hw;
-
 import util;
 
 __gshared PRAM pram;

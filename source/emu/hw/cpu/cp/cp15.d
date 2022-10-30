@@ -2,7 +2,6 @@ module emu.hw.cpu.cp.cp15;
 
 import emu.hw.cpu.arm946e_s;
 import emu.hw.cpu.cp.tcm;
-
 import util;
 
 __gshared Cp15 cp15;

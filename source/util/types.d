@@ -58,12 +58,12 @@ struct FixedPoint(uint I, uint F) {
         final switch (s) {
             case "+": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) other << F) + cast(long) this.value));
             case "-": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) other << F) - cast(long) this.value));
-            case "*": return FixedPoint!(I, F).from_repr(cast(int) (((cast(long) other << F) * cast(long) this.value)) >> F);
+            case "*": return FixedPoint!(I, F).from_repr(cast(int) ((cast(long) other << F) * cast(long) this.value) >> F);
             case "/": return FixedPoint!(I, F).from_repr(cast(int) ((cast(float) (other << F) / cast(float) this.value) * (1 << F)));
         }
     }
 
-    T opCast(T)()
+    T opCast(T)() inout
     if (is(T == float)) {
         return cast(float) this.value / (1 << F);
     }
@@ -72,17 +72,17 @@ struct FixedPoint(uint I, uint F) {
         return (cast(float) cast(ulong) this.repr) / (cast(float) (1 << F));
     }
 
-    T opCast(T)()
+    T opCast(T)() inout
     if (is(T == int)) {
         return this.integral_part;
     }
 
-    T opCast(T)()
+    T opCast(T)() inout
     if (is(T == uint)) {
         return this.integral_part & ((1 << I) - 1);
     }
 
-    FixedPoint!(I2, F2) convert(int I2, int F2)() {
+    FixedPoint!(I2, F2) convert(int I2, int F2)() inout {
         int integral_part = sext_32(this.integral_part, I2);
         int fractional_part = this.fractional_part;
         
@@ -92,35 +92,35 @@ struct FixedPoint(uint I, uint F) {
             fractional_part <<= (F2 - F);
         }
 
-        int value = (integral_part << F2) | fractional_part;
-        return FixedPoint!(I2, F2).from_repr(value);
+        int new_value = (integral_part << F2) | fractional_part;
+        return FixedPoint!(I2, F2).from_repr(new_value);
     }
 
     void set_value(int value) {
         this.value = sext_32(value, I + F);
     }
 
-    int integral_part() {
+    int integral_part() inout {
         return value >> F;
     }
 
-    int fractional_part() {
+    int fractional_part() inout {
         return value & util.create_mask(0, F - 1);
     }
 
-    float opCmp(FixedPoint!(I, F) other) {
+    float opCmp(FixedPoint!(I, F) other) inout {
         return cast(float) this - cast(float) other;
     }
 
-    float opCmp(int other) {
+    float opCmp(int other) inout {
         return cast(float) this.value - (other << F);
     }
 
-    bool opEquals(FixedPoint!(I, F) other) {
+    bool opEquals(FixedPoint!(I, F) other) inout {
         return this.value == other.value;
     }
 
-    bool opEquals(int other) {
+    bool opEquals(int other) inout {
         return this.value == (other << F);
     }
 }

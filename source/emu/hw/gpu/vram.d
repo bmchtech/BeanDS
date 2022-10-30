@@ -2,7 +2,6 @@ module emu.hw.gpu.vram;
 
 import emu.hw.gpu.engines;
 import emu.hw.memory.mem;
-
 import util;
 
 enum SlotType {
@@ -12,7 +11,7 @@ enum SlotType {
     OBJ_PAL_B = 3,
     TEXTURE_PAL = 4,
     TEXTURE = 5
-};
+}
 
 __gshared VRAM vram;
 final class VRAM {

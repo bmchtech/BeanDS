@@ -3,15 +3,12 @@ module emu.hw.gpu.gpu3d.rendering_engine;
 import core.sync.condition;
 import core.sync.mutex;
 import core.thread;
-
-import std.algorithm;
-
-import emu.hw.gpu.gpu3d.polygon;
-import emu.hw.gpu.gpu3d.math;
 import emu.hw.gpu.gpu3d.gpu3d;
+import emu.hw.gpu.gpu3d.math;
+import emu.hw.gpu.gpu3d.polygon;
 import emu.hw.gpu.gpu3d.texture;
 import emu.hw.gpu.pixel;
-
+import std.algorithm;
 import util;
 
 bool deboog = false;

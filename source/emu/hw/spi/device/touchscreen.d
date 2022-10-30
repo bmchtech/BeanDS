@@ -1,7 +1,7 @@
 module emu.hw.spi.device.touchscreen;
 
-import emu.hw.spi.device;
 import emu.hw.input;
+import emu.hw.spi.device;
 import util;
 
 __gshared TouchScreen touchscreen;

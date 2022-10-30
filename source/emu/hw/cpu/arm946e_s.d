@@ -1,19 +1,18 @@
 module emu.hw.cpu.arm946e_s;
 
 import emu.debugger.cputrace;
-import emu.hw.cpu.armcpu;
 import emu.hw.cpu.architecture;
+import emu.hw.cpu.armcpu;
 import emu.hw.cpu.cp.cp15;
 import emu.hw.cpu.cp.tcm;
 import emu.hw.cpu.interrupt;
-import emu.hw.memory.cart.cart;
-import emu.scheduler;
-import emu.hw.memory.mem;
-import emu.hw.memory.mem9;
 import emu.hw.cpu.jumptable.jumptable_arm;
 import emu.hw.cpu.jumptable.jumptable_thumb;
+import emu.hw.memory.cart.cart;
+import emu.hw.memory.mem;
+import emu.hw.memory.mem9;
 import emu.hw.spi.device.firmware;
-
+import emu.scheduler;
 import util;
 
 __gshared ARM946E_S arm9;
@@ -182,8 +181,8 @@ final class ARM946E_S : ArmCPU {
         version (quiet) {
             return;
         } else {
-            import std.stdio;
             import std.format;
+            import std.stdio;
 
             writef("LOG_ARM9 [%04d] ", num_log);
         

@@ -1,10 +1,8 @@
 module emu.hw.cpu.jumptable.jumptable_arm;
 
 import core.bitop;
-
 import emu.hw.cpu;
 import emu.hw.memory;
-
 import util;
 
 template execute_arm(T : ArmCPU) {

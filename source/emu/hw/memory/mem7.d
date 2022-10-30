@@ -1,13 +1,12 @@
 module emu.hw.memory.mem7;
 
-import emu.hw.memory.mem;
 import emu.hw.cpu.armcpu;
-import emu.hw.memory.main_memory;
-import emu.hw.memory.wram;
-import emu.hw.memory.mmio;
 import emu.hw.gpu.vram;
+import emu.hw.memory.main_memory;
+import emu.hw.memory.mem;
+import emu.hw.memory.mmio;
+import emu.hw.memory.wram;
 import emu.scheduler;
-
 import util;
 
 __gshared Mem7 mem7;

@@ -1,10 +1,8 @@
 module emu.hw.gpu.gpu3d.texture;
 
-import std.algorithm.comparison;
-
 import emu.hw.gpu.gpu3d.rendering_engine;
 import emu.hw.gpu.vram;
-
+import std.algorithm.comparison;
 import util;
 
 enum TextureFormat {

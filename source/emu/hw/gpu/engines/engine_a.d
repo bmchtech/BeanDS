@@ -1,7 +1,6 @@
 module emu.hw.gpu.engines.engine_a;
 
 import emu.hw;
-
 import util;
 
 __gshared GPUEngineA gpu_engine_a;
@@ -15,7 +14,7 @@ final class GPUEngineA {
     }
 
     int display_mode;
-    int vram_block;
+    int vram_block_index;
     int bg0_selection;
     int bitmap_obj_dimension;
     int bitmap_obj_mapping;
@@ -62,7 +61,7 @@ final class GPUEngineA {
 
             case 2:
                 display_mode          = value[0..1];
-                vram_block            = value[2..3];
+                vram_block_index      = value[2..3];
                 ppu.tile_obj_boundary = value[4..5];
                 bitmap_obj_boundary   = value[6];
                 obj_during_hblank     = value[7];
@@ -105,7 +104,7 @@ final class GPUEngineA {
     }
 
     Byte* get_vram_block() {
-        final switch (vram_block) {
+        final switch (vram_block_index) {
             case 0: return cast(Byte*) vram.vram_a.data;
             case 1: return cast(Byte*) vram.vram_b.data;
             case 2: return cast(Byte*) vram.vram_c.data;
@@ -139,7 +138,7 @@ final class GPUEngineA {
 
             case 2:
                 result[0..1] = Byte(display_mode);
-                result[2..3] = Byte(vram_block);
+                result[2..3] = Byte(vram_block_index);
                 result[4..5] = ppu.tile_obj_boundary;
                 result[6]    = bitmap_obj_boundary;
                 result[7]    = obj_during_hblank;

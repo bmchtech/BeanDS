@@ -1,7 +1,6 @@
 module emu.hw.memory.mmio.mmio7;
 
 import emu.hw;
-
 import util;
 
 __gshared MMIO!mmio7_registers mmio7;

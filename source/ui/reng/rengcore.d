@@ -1,9 +1,8 @@
 module ui.reng.rengcore;
 
-import ui.reng;
-
 import re;
 import re.math;
+import ui.reng;
 
 class RengCore : Core {
     int width;
