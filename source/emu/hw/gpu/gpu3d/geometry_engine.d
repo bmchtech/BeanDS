@@ -751,7 +751,7 @@ final class GeometryEngine {
                             cycles_till_complete += commands[i].cycles * 4;
                             reschedule_interrupt();
                             is_fifo_empty = false;
-                            log_gpu3d("Executing %s %x", commands[i].name, arm9.regs[pc]);
+                            log_gpu3d("Executing %s", commands[i].name);
                             mixin("this.handle_%s(args);".format(commands[i].name));
                         } else {
                             log_gpu3d("Unhandled command: %s", commands[i].name);

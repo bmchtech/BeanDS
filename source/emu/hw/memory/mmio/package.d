@@ -109,7 +109,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
         } else {
             import std.format;
 
-            log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d) (%X %X)", name, address, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
+            log_unimplemented("VERBOSE MMIO: %s Reading from %x (size = %d)", name, address, T.sizeof);
             T value = T(0);
 
             static foreach (MMIORegister mr; mmio_registers) {
@@ -119,7 +119,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
                             mixin("value |= %s.read_%s!T(address %% %d) << (8 * (address - mr.address));".format(mr.component, mr.name, mr.size));
                             static if (is(T == Byte)) return value;
                         } else {
-                            log_unimplemented("Unimplemented %s read: %s (size = %d) with PCS (%x %x)", name, mr.name, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
+                            log_unimplemented("Unimplemented %s read: %s (size = %d)", name, mr.name, T.sizeof);
                             return T(0);
                         }
                     }
@@ -180,7 +180,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
                 }
             }
 
-            default: log_unimplemented("Unimplemented %s read: [%x] with PCS (%x %x)", name, address, arm9.regs[pc], arm7.regs[pc]);
+            default: log_unimplemented("Unimplemented %s read: [%x]", name, address);
         }
 
         return Byte(0);
@@ -190,7 +190,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
         static if (!is_memory_unit!T) {
             error_mmio("Tried to write to MMIO with wrong type (size: %d)", T.sizeof);
         } else {
-            log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d) (%X %X)",  name, value, address, T.sizeof,  arm9.regs[pc], arm7.regs[pc]);
+            log_unimplemented("VERBOSE MMIO: %s Writing %x to %x (size = %d)",  name, value, address, T.sizeof);
 
             import std.format;
             static foreach (MMIORegister mr; mmio_registers) {
@@ -199,7 +199,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
                         static if (mr.implemented) {
                             mixin("%s.write_%s!T(cast(T) (value >> (8 * (address - mr.address))), address %% %d);".format(mr.component, mr.name, mr.size));
                         } else {
-                            log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d) with PCS (%x %x)", name, mr.name, value, T.sizeof, arm9.regs[pc], arm7.regs[pc]);
+                            log_unimplemented("Unimplemented %s write: [%s] = %08x (size = %d)", name, mr.name, value, T.sizeof);
                             return;
                         }
                     }
@@ -258,7 +258,7 @@ final class MMIO(MMIORegister[] mmio_registers) {
                 }
             }
 
-            default: log_unimplemented("Unimplemented %s write: [%x] = %x with PCS (%x %x)", name, address, value, arm9.regs[pc], arm7.regs[pc]);
+            default: log_unimplemented("Unimplemented %s write: [%x] = %x", name, address, value);
         }
     }
 }

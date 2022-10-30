@@ -1,10 +1,8 @@
 module emu.hw.cpu.jit.backend.register_allocator;
 
+import emu.hw.cpu.jit;
 import std.traits;
 import std.typecons;
-
-import emu.hw.cpu.jit;
-
 import util;
 
 final class RegisterAllocator(HostReg) {

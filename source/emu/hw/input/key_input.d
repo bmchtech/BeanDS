@@ -38,7 +38,6 @@ final class KeyInput {
     }
 
     Byte read_KEYINPUT(int target_byte) {
-        log_nds("KEYINPUT READ %x %x %X", target_byte, keys, arm9.regs[pc]);
         return keys[0..15].get_byte(target_byte);
     }
 

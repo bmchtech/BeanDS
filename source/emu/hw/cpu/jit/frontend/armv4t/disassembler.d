@@ -1,8 +1,7 @@
 module emu.hw.cpu.jit.frontend.armv4t.disassembler;
 
-import std.sumtype;
-
 import emu.hw.cpu.jit;
+import std.sumtype;
 import util;
 
 alias DecodeJumptableEntry = void function(IR* ir, Word opcode);

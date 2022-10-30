@@ -69,11 +69,6 @@ final class TCM {
     }
 
     void write_itcm(T)(Word address, T value) {
-        if ((address & (ITCM_PHYSICAL_SIZE - 1)) == (0x1ff8d18 & (ITCM_PHYSICAL_SIZE - 1))) {
-            log_arm9("write to 01ff8d18: %x from PC %x", value, arm9.regs[pc]);
-            // if (arm9.regs[pc] == 0x20647ec) error_arm9("fuckie");
-        }
-
         itcm.write!T(address & (ITCM_PHYSICAL_SIZE - 1), value);
     }
 

@@ -1,6 +1,5 @@
 module emu.scheduler;
 
-import emu;
 import util;
 
 struct Event {

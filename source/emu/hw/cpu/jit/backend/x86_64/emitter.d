@@ -1,11 +1,9 @@
 module emu.hw.cpu.jit.backend.x86_64.emitter;
 
-import std.sumtype;
-
-import xbyak;
-
 import emu.hw.cpu.jit;
+import std.sumtype;
 import util;
+import xbyak;
 
 template Emitter(HostReg) {
     final class Code : CodeGenerator {
