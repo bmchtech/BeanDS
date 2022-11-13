@@ -63,6 +63,7 @@ jobs:
     - name: 'Build BeanDS'
       run: |
         # Build the project, with its main file included, without unittests
+        export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
         dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
