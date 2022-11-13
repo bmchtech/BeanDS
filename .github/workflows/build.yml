@@ -58,6 +58,7 @@ jobs:
         ls /System/Library/Frameworks/
         brew install glew
         brew install glfw
+        brew install coreutils
 
     - name: 'Build BeanDS'
       run: |
