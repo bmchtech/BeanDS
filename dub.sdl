@@ -3,7 +3,6 @@ description "A Nintendo DS Emulator in D"
 authors "zayd"
 copyright "Copyright © 2022, zayd"
 license "GPL 3"
-dependency "silly" version="~>1.1.1"
 dependency "reng" version="~>0.8.8"
 dependency "infoflow" path="ext/infoflow"
 dependency "dunit" version="~>1.0.16"
@@ -34,4 +33,8 @@ configuration "quiet" {
 configuration "ift" {
 	targetType "executable"
 	versions "ift"
+}
+configuration "unittest" {
+	versions "test"
+	dependency "silly" version="~>1.1.1"
 }
