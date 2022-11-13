@@ -8,7 +8,7 @@
 		"dlib": "0.19.2",
 		"dmech": "0.4.1",
 		"dray": "4.2.0-r2",
-		"dray-nuklear": "0.1.5",
+		"dray-nuklear": "0.1.6",
 		"dunit": "1.0.16",
 		"fluent-asserts": "0.13.3",
 		"gperftools_d": "0.1.0",
