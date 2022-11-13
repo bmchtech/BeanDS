@@ -11,7 +11,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ldc-1.30.0
 
     - name: 'Setup'
       run: |
@@ -21,11 +23,11 @@ jobs:
     - name: 'Build BeanDS'
       run: |
         # Build the project, with its main file included, without unittests
-        dub build --compiler=$DC
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
   
   build-redbuild:
     runs-on: ubuntu-latest
@@ -42,7 +44,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ldc-1.30.0
     - uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
@@ -54,22 +58,28 @@ jobs:
         ls /System/Library/Frameworks/
         brew install glew
         brew install glfw
+        brew install coreutils
 
     - name: 'Build BeanDS'
       run: |
         # Build the project, with its main file included, without unittests
-        dub build --compiler=$DC
+        export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
 
   build-windows:
     runs-on: windows-latest
+    env:
+      DRAY_VERSION: 4.2.0-r2
 
     steps:
     - uses: actions/checkout@v3
-    - uses: dlang-community/setup-dlang@4c99aa991ce7d19dd3064de0a4f2f6b2f152e2d7
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ldc-1.30.0
 
     - uses: actions/labeler@v2
       with:
@@ -81,27 +91,23 @@ jobs:
 
         curl -L https://github.com/ldc-developers/ldc/releases/download/v1.29.0/ldc2-1.29.0-windows-x64.7z --output ldc2-1.29.0-windows-x64.7z
         7z x ldc2-1.29.0-windows-x64.7z
-        curl -L https://github.com/redthing1/dray/releases/download/v4.0.0-r4/draylibs_dev_win64_msvc16.7z --output draylibs_dev_win64_msvc16.7z
-        7z x draylibs_dev_win64_msvc16.7z
+        curl -L https://github.com/redthing1/dray/releases/download/v$env:DRAY_VERSION/raylib-dev_win64_msvc16.zip.zip --output raylib-dev_win64_msvc16.zip.zip
+        7z x raylib-dev_win64_msvc16.zip.zip
+        7z x raylib-dev_win64_msvc16.zip
         curl -L https://github.com/redthing1/dray/releases/download/v4.0.0-r3/winlibs_extra.7z --output winlibs_extra.7z
         7z x winlibs_extra.7z
         curl -L https://github.com/glfw/glfw/releases/download/3.3.7/glfw-3.3.7.bin.WIN64.zip --output glfw-3.3.7.bin.WIN64.zip
         unzip glfw-3.3.7.bin.WIN64.zip
-
         move glfw-3.3.7.bin.WIN64/lib-vc2022/glfw3_mt.lib ./glfw3_mt.lib
-
         cd ext
-
-        git clone https://github.com/redthing1/dray/
-
+        git clone --depth 1 --branch v$env:DRAY_VERSION https://github.com/redthing1/dray
         cd dray
-        move ../../draylibs_dev_win64_msvc16/raylib.lib ./raylib.lib
+        move ../../raylib-dev_win64_msvc16/lib/raylib.lib ./raylib.lib
         move ../../WinMM.lib ./WinMM.lib
-
         set WINLIB_BASE="../../ldc2-1.28.1-windows-x64/lib/"
         set WINLIB_MINGW="../../ldc2-1.28.1-windows-x64/lib/mingw"
         echo $WINLIB_BASE
-        dub build
+        dub build --compiler ldc2 -B release
 
         cd ../..
 
@@ -111,10 +117,10 @@ jobs:
       run: |
         # Build the project, with its main file included, without unittests
 
-        dub add-override dray "4.0.0-r5" ./ext/dray
+        dub add-override dray $env:DRAY_VERSION ./ext/dray
         move ext/dray/raylib.lib ./raylib.lib
-        dub build
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
