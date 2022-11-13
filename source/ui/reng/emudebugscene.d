@@ -15,6 +15,10 @@ class EmuDebugInterfaceScene : Scene2D {
         auto ds_screen = create_entity("ds_display");
         auto ds_video = ds_screen.add_component(new DSVideo(screen_scale));
         Core.jar.register(ds_video);
+
+        // add debugger ui
+        auto ds_debugger_nt = create_entity("ds_debugger");
+        ds_debugger_nt.add_component(new DSDebuggerUIRoot());
     }
 
     override void update() {

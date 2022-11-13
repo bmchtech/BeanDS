@@ -3,6 +3,7 @@ module ui.reng;
 public {
     import ui.reng.device;
     import ui.reng.dsvideo;
+    import ui.reng.dsdebugger;
     import ui.reng.emuscene;
     import ui.reng.emudebugscene;
     import ui.reng.rengcore;
