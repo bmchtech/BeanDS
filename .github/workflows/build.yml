@@ -21,11 +21,11 @@ jobs:
     - name: 'Build BeanDS'
       run: |
         # Build the project, with its main file included, without unittests
-        dub build --compiler=$DC
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
   
   build-redbuild:
     runs-on: ubuntu-latest
@@ -58,11 +58,11 @@ jobs:
     - name: 'Build BeanDS'
       run: |
         # Build the project, with its main file included, without unittests
-        dub build --compiler=$DC
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
 
   build-windows:
     runs-on: windows-latest
@@ -101,7 +101,7 @@ jobs:
         set WINLIB_BASE="../../ldc2-1.28.1-windows-x64/lib/"
         set WINLIB_MINGW="../../ldc2-1.28.1-windows-x64/lib/mingw"
         echo $WINLIB_BASE
-        dub build
+        dub build --compiler ldc2 -B release
 
         cd ../..
 
@@ -113,8 +113,8 @@ jobs:
 
         dub add-override dray "4.0.0-r5" ./ext/dray
         move ext/dray/raylib.lib ./raylib.lib
-        dub build
+        dub build --compiler ldc2 -B release
     
     - name: 'Run Tests'
       run: |
-        dub test
+        dub test --compiler ldc2 -B release
