@@ -81,7 +81,7 @@ class DSVideo : Component, Updatable, Renderable2D {
     }
 
     void debug_render() {
-        // leave this blank
+        raylib.DrawRectangleLinesEx(bounds, 1, Colors.RED);
     }
 
     @property Rectangle bounds() {
