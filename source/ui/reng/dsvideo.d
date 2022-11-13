@@ -10,6 +10,8 @@ import std.string;
 enum SCREEN_SEPARATION_HEIGHT = 0;
 enum NDS_SCREEN_WIDTH = 256;
 enum NDS_SCREEN_HEIGHT = 192;
+enum NDS_VIEW_WIDTH = 256;
+enum NDS_VIEW_HEIGHT = NDS_SCREEN_HEIGHT + SCREEN_SEPARATION_HEIGHT + NDS_SCREEN_HEIGHT;
 
 class DSVideo : Component, Updatable, Renderable2D {
     int screen_scale;
@@ -87,8 +89,6 @@ class DSVideo : Component, Updatable, Renderable2D {
     }
 
     @property Rectangle bounds() {
-        // if we're not using culling who cares
-        // problem solved lol
-        return Rectangle(0, 0, 1000, 1080);
+        return Rectangle(0, 0, NDS_VIEW_WIDTH * screen_scale, NDS_VIEW_HEIGHT * screen_scale);
     }
 }
