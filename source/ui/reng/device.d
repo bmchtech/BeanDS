@@ -25,9 +25,9 @@ class RengMultimediaDevice : MultiMediaDevice {
     string rom_title;
     int fps;
 
-    this(int screen_scale) {
+    this(int screen_scale, bool full_ui) {
         Core.target_fps = 999;
-        reng_core = new RengCore(screen_scale);
+        reng_core = new RengCore(screen_scale, full_ui);
 
         InitAudioDevice();
         SetAudioStreamBufferSizeDefault(SAMPLES_PER_UPDATE);
