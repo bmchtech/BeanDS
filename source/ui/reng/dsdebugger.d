@@ -260,14 +260,25 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
 
         if (nk_begin(ctx, "panel 3", RectangleToNuklear(ctx, panel3_bounds),
                 nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
-            nk_layout_row_dynamic(ctx, 30, 1);
-            // have a button and some rows
-            if (nk_button_label(ctx, "button"))
-                TraceLog(TraceLogLevel.LOG_INFO, "button pressed");
-            nk_layout_row_dynamic(ctx, 30, 2);
-            // have some labels and some rows
-            nk_label(ctx, "first label", nk_text_alignment.NK_TEXT_LEFT);
-            nk_label(ctx, "second label", nk_text_alignment.NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, UI_PAD, 1);
+            // // have a button and some rows
+            // if (nk_button_label(ctx, "button"))
+            //     TraceLog(TraceLogLevel.LOG_INFO, "button pressed");
+            // nk_layout_row_dynamic(ctx, 30, 2);
+            // // have some labels and some rows
+            // nk_label(ctx, "first label", nk_text_alignment.NK_TEXT_LEFT);
+            // nk_label(ctx, "second label", nk_text_alignment.NK_TEXT_LEFT);
+
+            nk_layout_row_dynamic(ctx, 480, 1);
+            nk_list_view list_view;
+            if (nk_list_view_begin(ctx, &list_view, "test_list", 0, 12, 1024)) {
+                nk_layout_row_dynamic(ctx, 30, 1);
+                for (int i = 0; i < list_view.count; i++) {
+                    auto id = list_view.begin + i;
+                    nk_button_label(ctx, format("item %d", id).c_str, nk_text_alignment.NK_TEXT_LEFT);
+                }
+                nk_list_view_end(&list_view);
+            }
         }
 
         nk_end(ctx);
