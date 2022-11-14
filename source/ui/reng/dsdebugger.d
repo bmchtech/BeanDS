@@ -126,6 +126,34 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
 
         UpdateNuklear(ctx);
 
+        // nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, 2);
+        // if (nk_tab(ctx, Panel1Tab.Tab1.to!string.c_str, panel1_tab == Panel1Tab.Tab1)) {
+        //     panel1_tab = Panel1Tab.Tab1;
+        // }
+        // if (nk_tab(ctx, Panel1Tab.Tab2.to!string.c_str, panel1_tab == Panel1Tab.Tab2)) {
+        //     panel1_tab = Panel1Tab.Tab2;
+        // }
+
+        auto GEN_NK_TABS(TTabs)(string tab_var) {
+            import std.traits;
+            import std.array : appender;
+
+            auto enum_name = __traits(identifier, TTabs);
+            auto tab_names = EnumMembers!TTabs;
+            auto num_tabs = tab_names.length;
+
+            auto sb = appender!string;
+
+            sb ~= format("nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, %d);", num_tabs);
+
+            foreach (i, tab_name; tab_names) {
+                sb ~= format("if (nk_tab(ctx, \"%s\", %s == %s.%s)) { %s = %s.%s; }",
+                    tab_name, tab_var, enum_name, tab_name, tab_var, enum_name, tab_name);
+            }
+
+            return sb.data;
+        }
+
         // - GUI
 
         if (nk_begin(ctx, "panel 1", RectangleToNuklear(ctx, panel1_bounds),
@@ -151,34 +179,6 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
 
             static auto diff_opt = Difficulty.Easy;
             static auto property = 20;
-
-            // nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, 2);
-            // if (nk_tab(ctx, Panel1Tab.Tab1.to!string.c_str, panel1_tab == Panel1Tab.Tab1)) {
-            //     panel1_tab = Panel1Tab.Tab1;
-            // }
-            // if (nk_tab(ctx, Panel1Tab.Tab2.to!string.c_str, panel1_tab == Panel1Tab.Tab2)) {
-            //     panel1_tab = Panel1Tab.Tab2;
-            // }
-
-            auto GEN_NK_TABS(TTabs)(string tab_var) {
-                import std.traits;
-                import std.array : appender;
-
-                auto enum_name = __traits(identifier, TTabs);
-                auto tab_names = EnumMembers!TTabs;
-                auto num_tabs = tab_names.length;
-
-                auto sb = appender!string;
-
-                sb ~= format("nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, %d);", num_tabs);
-
-                foreach (i, tab_name; tab_names) {
-                    sb ~= format("if (nk_tab(ctx, \"%s\", %s == %s.%s)) { %s = %s.%s; }",
-                        tab_name, tab_var, enum_name, tab_name, tab_var, enum_name, tab_name);
-                }
-
-                return sb.data;
-            }
 
             mixin(GEN_NK_TABS!(Panel1Tab)("panel1_tab"));
 
