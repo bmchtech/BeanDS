@@ -98,7 +98,10 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         // keyboard shortcuts
         if (Input.is_key_down(Keys.KEY_LEFT_CONTROL) && Input.is_key_pressed(Keys.KEY_TAB)) {
             // advance tab
-            // active_tab = cast(int)((active_tab + 1) % tab_mds.length);
+            import std.traits : EnumMembers;
+
+            auto panel1_tabs = EnumMembers!Panel1Tab;
+            panel1_tab = ((panel1_tab.to!int + 1) % panel1_tabs.length).to!Panel1Tab;
         }
     }
 
