@@ -39,7 +39,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         bg = ColorToNuklearF(Colors.RAYWHITE);
         auto ui_font = raylib.LoadFontEx("./res/SourceSansPro-Regular.ttf", UI_FS, null, 0);
         ctx = InitNuklearEx(ui_font, UI_FS);
-        ctx.backend_render_scale = cast(int) (Core.window.scale_dpi);
+        SetNuklearScaling(ctx, cast(int) Core.window.scale_dpi);
 
         // nk_color[nk_style_colors.NK_COLOR_COUNT] table;
         // table[nk_style_colors.NK_COLOR_TEXT] = nk_rgba(190, 190, 190, 255);
@@ -107,7 +107,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         UpdateNuklear(ctx);
 
         // GUI
-        if (nk_begin(ctx, "panel 1", RectangleToNuklearScaled(ctx, panel1_bounds),
+        if (nk_begin(ctx, "panel 1", RectangleToNuklear(ctx, panel1_bounds),
                 nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
             enum EASY = 0;
             enum HARD = 1;
@@ -143,7 +143,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
 
         nk_end(ctx);
 
-        if (nk_begin(ctx, "panel 2", RectangleToNuklearScaled(ctx, panel2_bounds),
+        if (nk_begin(ctx, "panel 2", RectangleToNuklear(ctx, panel2_bounds),
                 nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
             nk_layout_row_dynamic(ctx, 30, 1);
             // have a button and some rows
