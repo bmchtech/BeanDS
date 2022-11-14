@@ -275,7 +275,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
                 nk_layout_row_dynamic(ctx, 30, 1);
                 for (int i = 0; i < list_view.count; i++) {
                     auto id = list_view.begin + i;
-                    nk_button_label(ctx, format("item %d", id).c_str, nk_text_alignment.NK_TEXT_LEFT);
+                    nk_label(ctx, format("item %d", id).c_str, nk_text_alignment.NK_TEXT_LEFT);
                 }
                 nk_list_view_end(&list_view);
             }
