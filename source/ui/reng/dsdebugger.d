@@ -171,7 +171,32 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         nk_end(ctx);
 
         if (nk_begin(ctx, "panel 2", RectangleToNuklear(ctx, panel2_bounds),
-                nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
+                nk_panel_flags.NK_WINDOW_BORDER)) {
+
+            // menu bar
+            nk_menubar_begin(ctx);
+            nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 25, 2);
+            nk_layout_row_push(ctx, 45);
+            if (nk_menu_begin_label(ctx, "File", nk_text_alignment.NK_TEXT_LEFT, nk_vec2_(120, 200))) {
+                nk_layout_row_dynamic(ctx, 25, 1);
+                if (nk_menu_item_label(ctx, "Open", nk_text_alignment.NK_TEXT_LEFT))
+                    TraceLog(TraceLogLevel.LOG_INFO, "Open");
+                if (nk_menu_item_label(ctx, "Close", nk_text_alignment.NK_TEXT_LEFT))
+                    TraceLog(TraceLogLevel.LOG_INFO, "Close");
+                nk_menu_end(ctx);
+            }
+            nk_layout_row_push(ctx, 45);
+            if (nk_menu_begin_label(ctx, "Edit", nk_text_alignment.NK_TEXT_LEFT, nk_vec2_(120, 200))) {
+                nk_layout_row_dynamic(ctx, 25, 1);
+                if (nk_menu_item_label(ctx, "Copy", nk_text_alignment.NK_TEXT_LEFT))
+                    TraceLog(TraceLogLevel.LOG_INFO, "Copy");
+                if (nk_menu_item_label(ctx, "Paste", nk_text_alignment.NK_TEXT_LEFT))
+                    TraceLog(TraceLogLevel.LOG_INFO, "Paste");
+                nk_menu_end(ctx);
+            }
+            nk_menubar_end(ctx);
+            nk_layout_row_dynamic(ctx, UI_PAD, 1);
+
             enum Difficulty {
                 Easy,
                 Hard,
