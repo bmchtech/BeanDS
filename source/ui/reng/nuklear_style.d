@@ -39,8 +39,9 @@ void apply_style(nk_context* ctx) {
     // table[nk_style_colors.NK_COLOR_TAB_HEADER] = nk_rgba(181, 45, 69, 220);
     // nk_style_from_table(ctx, cast(nk_color*) table);
 
-    ctx.style.button.padding.x = UI_PAD;
+    ctx.style.button.padding.x = UI_PAD * 2;
 
-    ctx.style.window.spacing = nk_vec2(UI_PAD, UI_PAD);
+    // ctx.style.window.spacing = nk_vec2(UI_PAD, UI_PAD);
+    ctx.style.window.spacing = nk_vec2(0, 0);
     ctx.style.button.rounding = 0;
 }

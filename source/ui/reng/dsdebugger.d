@@ -91,6 +91,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
     private string status_text = "";
     Rectangle panel1_bounds;
     Rectangle panel2_bounds;
+    Rectangle panel3_bounds;
     Panel1Tab panel1_tab = Panel1Tab.Tab1;
 
     void update() {
@@ -103,17 +104,45 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
 
     void render() {
         auto ds_disp_bounds = ds_video_display.bounds;
-        // panel 1 is to the right of the video display
-        panel1_bounds = Rectangle(ds_disp_bounds.x + ds_disp_bounds.width, ds_disp_bounds.y,
-            bounds.width - ds_disp_bounds.width, ds_disp_bounds.height);
-        // panel 2 is below the video display, but not overlapping the panel 1
-        panel2_bounds = Rectangle(ds_disp_bounds.x, ds_disp_bounds.y + ds_disp_bounds.height,
+        // region 1 is to the right of the video display
+        auto region1_bounds = Rectangle(ds_disp_bounds.x + ds_disp_bounds.width, ds_disp_bounds.y,
+            bounds.width - ds_disp_bounds.width, bounds.height);
+        // regiom 2 is below the video display, but not overlapping the panel 1
+        auto region2_bounds = Rectangle(ds_disp_bounds.x, ds_disp_bounds.y + ds_disp_bounds.height,
             bounds.width, bounds.height - ds_disp_bounds.height);
+
+        // panel 1 is right below the video display on the left
+        panel1_bounds = Rectangle(ds_disp_bounds.x, ds_disp_bounds.y + ds_disp_bounds.height,
+            ds_disp_bounds.width, bounds.height - ds_disp_bounds.height);
+
+        // panel 3 is smaller width and 100% tall, docked to the right
+        const panel3_right_dock_width = cast(int) (region1_bounds.width * 0.3);
+        panel3_bounds = Rectangle(region1_bounds.x + region1_bounds.width - panel3_right_dock_width, region1_bounds.y,
+            panel3_right_dock_width, region1_bounds.height);
+
+        // panel 2 is to the right of the video display, and fairly wide, to the left of panel 3
+        panel2_bounds = Rectangle(region1_bounds.x, region1_bounds.y,
+            region1_bounds.width - panel3_bounds.width, region1_bounds.height);
 
         UpdateNuklear(ctx);
 
-        // GUI
+        // - GUI
+
         if (nk_begin(ctx, "panel 1", RectangleToNuklear(ctx, panel1_bounds),
+                nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
+            nk_layout_row_dynamic(ctx, 30, 1);
+            // have a button and some rows
+            if (nk_button_label(ctx, "button"))
+                TraceLog(TraceLogLevel.LOG_INFO, "button pressed");
+            nk_layout_row_dynamic(ctx, 30, 2);
+            // have some labels and some rows
+            nk_label(ctx, "first label", nk_text_alignment.NK_TEXT_LEFT);
+            nk_label(ctx, "second label", nk_text_alignment.NK_TEXT_LEFT);
+        }
+
+        nk_end(ctx);
+
+        if (nk_begin(ctx, "panel 2", RectangleToNuklear(ctx, panel2_bounds),
                 nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
             enum Difficulty {
                 Easy,
@@ -164,12 +193,11 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
                 }
                 break;
             }
-
         }
 
         nk_end(ctx);
 
-        if (nk_begin(ctx, "panel 2", RectangleToNuklear(ctx, panel2_bounds),
+        if (nk_begin(ctx, "panel 3", RectangleToNuklear(ctx, panel3_bounds),
                 nk_panel_flags.NK_WINDOW_BORDER | nk_panel_flags.NK_WINDOW_TITLE)) {
             nk_layout_row_dynamic(ctx, 30, 1);
             // have a button and some rows
@@ -190,5 +218,6 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         raylib.DrawRectangleLinesEx(bounds, 1, Colors.RED);
         raylib.DrawRectangleLinesEx(panel1_bounds, 1, Colors.PURPLE);
         raylib.DrawRectangleLinesEx(panel2_bounds, 1, Colors.PURPLE);
+        raylib.DrawRectangleLinesEx(panel3_bounds, 1, Colors.PURPLE);
     }
 }

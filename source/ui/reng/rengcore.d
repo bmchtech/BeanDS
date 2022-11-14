@@ -19,7 +19,7 @@ class RengCore : Core {
         this.screen_scale = screen_scale;
 
         if (this.start_full_ui) {
-            this.width = max(this.width, 960);
+            this.width = max(this.width, 1280);
             this.height = max(this.height, 720);
 
             sync_render_window_resolution = true;
