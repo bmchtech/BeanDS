@@ -116,7 +116,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
             ds_disp_bounds.width, bounds.height - ds_disp_bounds.height);
 
         // panel 3 is smaller width and 100% tall, docked to the right
-        const panel3_right_dock_width = cast(int) (region1_bounds.width * 0.3);
+        const panel3_right_dock_width = cast(int)(region1_bounds.width * 0.3);
         panel3_bounds = Rectangle(region1_bounds.x + region1_bounds.width - panel3_right_dock_width, region1_bounds.y,
             panel3_right_dock_width, region1_bounds.height);
 
@@ -149,16 +149,38 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
                 Hard,
             }
 
-            auto diff_opt = Difficulty.Easy;
-            auto property = 20;
+            static auto diff_opt = Difficulty.Easy;
+            static auto property = 20;
 
-            nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, 2);
-            if (nk_tab(ctx, Panel1Tab.Tab1.to!string.c_str, panel1_tab == Panel1Tab.Tab1)) {
-                panel1_tab = Panel1Tab.Tab1;
+            // nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, 2);
+            // if (nk_tab(ctx, Panel1Tab.Tab1.to!string.c_str, panel1_tab == Panel1Tab.Tab1)) {
+            //     panel1_tab = Panel1Tab.Tab1;
+            // }
+            // if (nk_tab(ctx, Panel1Tab.Tab2.to!string.c_str, panel1_tab == Panel1Tab.Tab2)) {
+            //     panel1_tab = Panel1Tab.Tab2;
+            // }
+
+            auto GEN_NK_TABS(TTabs)(string tab_var) {
+                import std.traits;
+                import std.array : appender;
+
+                auto enum_name = __traits(identifier, TTabs);
+                auto tab_names = EnumMembers!TTabs;
+                auto num_tabs = tab_names.length;
+
+                auto sb = appender!string;
+
+                sb ~= format("nk_layout_row_begin(ctx, nk_layout_format.NK_STATIC, 30, %d);", num_tabs);
+
+                foreach (i, tab_name; tab_names) {
+                    sb ~= format("if (nk_tab(ctx, \"%s\", %s == %s.%s)) { %s = %s.%s; }",
+                        tab_name, tab_var, enum_name, tab_name, tab_var, enum_name, tab_name);
+                }
+
+                return sb.data;
             }
-            if (nk_tab(ctx, Panel1Tab.Tab2.to!string.c_str, panel1_tab == Panel1Tab.Tab2)) {
-                panel1_tab = Panel1Tab.Tab2;
-            }
+
+            mixin(GEN_NK_TABS!(Panel1Tab)("panel1_tab"));
 
             nk_layout_row_dynamic(ctx, UI_PAD, 1);
 
@@ -174,7 +196,7 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
                 if (nk_option_label(ctx, "hard", diff_opt == Difficulty.Hard))
                     diff_opt = Difficulty.Hard;
                 break;
-            default:
+            case Panel1Tab.Tab2:
                 nk_layout_row_dynamic(ctx, 25, 1);
                 nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
 
@@ -191,6 +213,12 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
                     bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
                     nk_combo_end(ctx);
                 }
+                break;
+            case Panel1Tab.Tab3:
+                nk_layout_row_dynamic(ctx, 30, 1);
+                nk_label(ctx, "Tab 3", nk_text_alignment.NK_TEXT_LEFT);
+                break;
+            default:
                 break;
             }
         }
