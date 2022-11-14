@@ -11,10 +11,9 @@ dependency "intel-intrinsics" version="~>1.10.8"
 dependency "commandr" version="~>0.2.0"
 dependency "dray" version=">=4.2.0-r2 <4.3.0-0"
 dependency "memoryunit" version="1.0.2"
-subConfiguration "dray-nuklear" "debug"
-dflags "-mattr=+sse4.2" "-mattr=+sse4.1" "-mattr=+ssse3" "-mattr=+sse3" "-mattr=+bmi2" "-mattr=+avx" "-mattr=+avx2" "--enable-cross-module-inlining"
 lflags "-lglew" "-lglfw" "/System/Library/Frameworks/OpenGL.framework/OpenGL" platform="osx"
 lflags "WinMM.lib" "OLDNAMES.lib" "MSVCRT.lib" "raylib.lib" "$PACKAGE_DIR/*.lib $PACKAGE_DIR/glfw3_mt.lib" "user32.lib" "gdi32.lib" platform="windows"
+
 configuration "default" {
 	targetType "executable"
 	versions "default"
@@ -23,6 +22,7 @@ configuration "release" {
 	targetType "executable"
 	dflags "-O3"
 	versions "release" "quiet" "silent"
+	dflags "-mattr=+sse4.2" "-mattr=+sse4.1" "-mattr=+ssse3" "-mattr=+sse3" "-mattr=+bmi2" "-mattr=+avx" "-mattr=+avx2" "--enable-cross-module-inlining"
 }
 configuration "silent" {
 	targetType "executable"
