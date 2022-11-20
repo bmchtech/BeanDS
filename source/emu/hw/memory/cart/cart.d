@@ -28,7 +28,7 @@ final class Cart {
         KEY2,
     }
 
-    this(MemStrategy mem, Byte[] rom) {
+    this(Mem mem, Byte[] rom) {
         cart = this;
         this.rom = new Byte[rom.length];
         this.rom[0..rom.length] = rom[0..rom.length];

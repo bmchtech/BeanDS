@@ -182,7 +182,7 @@ final class RenderingEngine {
 
     TextureResolver texture_resolver;
 
-    this(GPU3D parent, MemStrategy mem) {
+    this(GPU3D parent, Mem mem) {
         this.parent = parent;
         this.start_rendering_mutex    = new Mutex();
         this.start_rendering_condvar  = new Condition(start_rendering_mutex);

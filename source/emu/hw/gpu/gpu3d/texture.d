@@ -19,9 +19,9 @@ enum TextureFormat {
 }
 
 final class TextureResolver {
-    MemStrategy mem;
+    Mem mem;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         this.mem = mem;
     }
 

@@ -7,11 +7,11 @@ import util;
 
 __gshared WRAM wram;
 final class WRAM {
-    MemStrategy mem;
+    Mem mem;
 
     Byte mode;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         this.mem = mem;
     }
 

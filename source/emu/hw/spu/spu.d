@@ -20,7 +20,7 @@ final class SPU {
     bool output_mixer_ch3 = true;
     Half sound_bias;
 
-    MemStrategy mem;
+    Mem mem;
 
     enum OutputSource {
         MIXER        = 0,
@@ -43,7 +43,7 @@ final class SPU {
         UNKNOWN  = 3,
     }
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         this.mem = mem;
     }
 
@@ -81,7 +81,7 @@ final class SPU {
             cycles_since_last_sample_was_calculated = 0;
         }
 
-        Sample get_sample(MemStrategy mem) {
+        Sample get_sample(Mem mem) {
             if (!enabled) return Sample(0, 0);
 
             cycles_since_last_sample_was_calculated += spu.cycles_per_sample;
@@ -99,7 +99,7 @@ final class SPU {
             return sample;
         }
                 
-        void calculate_next_sample(MemStrategy mem) {
+        void calculate_next_sample(Mem mem) {
             short sample_data = 0;
 
             // OMG STARVING INDIE DEV PRODUCT NINTENDO SWITCH HOME OF CELESTE AND HOLLOW KNIGHT AND SUPER MARIO

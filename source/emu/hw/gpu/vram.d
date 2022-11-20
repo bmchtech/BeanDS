@@ -31,12 +31,12 @@ final class VRAM {
     VRAMBlock vram_h;
     VRAMBlock vram_i;
 
-    MemStrategy mem;
+    Mem mem;
 
     bool vram_c_in_ram;
     bool vram_d_in_ram;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         blocks = [
             new VRAMBlock(VRAM_A_SIZE),
             new VRAMBlock(VRAM_B_SIZE),

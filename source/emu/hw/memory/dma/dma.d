@@ -21,9 +21,9 @@ static void dma_maybe_start_cart_transfer() {
 }
 
 final class DMA(HwType H) {
-    MemStrategy mem;
+    Mem mem;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         dma_channels = [
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),

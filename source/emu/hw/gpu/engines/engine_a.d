@@ -8,7 +8,7 @@ final class GPUEngineA {
 
     PPU!(EngineType.A) ppu;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         ppu = new PPU!(EngineType.A)(mem);
         videobuffer = new Pixel[192][256];
     }

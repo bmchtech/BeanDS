@@ -8,12 +8,12 @@ final class Key1Encryption {
     enum KEYBUF_SIZE  = 0x412;
     enum KEYCODE_SIZE = 3;
 
-    MemStrategy mem;
+    Mem mem;
 
     u32[KEYBUF_SIZE]  keybuf;
     u32[KEYCODE_SIZE] keycode;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         this.mem = mem;
 
         keybuf  = new u32[KEYBUF_SIZE];

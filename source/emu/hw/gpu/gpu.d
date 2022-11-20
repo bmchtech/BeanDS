@@ -8,7 +8,7 @@ import util;
 __gshared GPU gpu;
 
 final class GPU {
-    MemStrategy mem;
+    Mem mem;
     
     int  dot;
     int  scanline;
@@ -29,7 +29,7 @@ final class GPU {
 
     void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         dot      = 0;
         scanline = 0;
 

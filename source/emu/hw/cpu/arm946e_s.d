@@ -39,9 +39,9 @@ final class ARM946E_S : ArmCPU {
     InstructionBlock* instruction_block;
     Word current_instruction_block_address = 0x06000000;
 
-    MemStrategy mem;
+    Mem mem;
 
-    this(MemStrategy mem, uint ringbuffer_size) {
+    this(Mem mem, uint ringbuffer_size) {
         current_mode = MODE_USER;
         arm9 = this;
         this.mem = mem;

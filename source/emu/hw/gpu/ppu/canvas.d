@@ -43,7 +43,7 @@ struct PaletteIndex {
     int b;
     int a;
 
-    Pixel resolve(EngineType E)(MemStrategy mem, int pram_offset) {
+    Pixel resolve(EngineType E)(Mem mem, int pram_offset) {
         SlotType bg_slot_type;
         SlotType obj_slot_type;
 
@@ -169,11 +169,11 @@ final class Canvas(EngineType E) {
     ScanlineCompositingInfo[192] scanline_compositing_infos;
     Pixel[192][256] pixels_output;
     PPU!E ppu;
-    MemStrategy mem;
+    Mem mem;
     Background[4] sorted_backgrounds;
     int pram_offset;
 
-    public this(PPU!E ppu, MemStrategy mem, int pram_offset) {
+    public this(PPU!E ppu, Mem mem, int pram_offset) {
         this.ppu         = ppu;
         this.pram_offset = pram_offset;
         this.mem         = mem;

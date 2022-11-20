@@ -35,9 +35,9 @@ final class ARM7TDMI : ArmCPU {
     InstructionBlock* instruction_block;
     Word current_instruction_block_address = 0xFFFFFFFF;
 
-    MemStrategy mem;
+    Mem mem;
 
-    this(MemStrategy mem, uint ringbuffer_size) {
+    this(Mem mem, uint ringbuffer_size) {
         current_mode = MODE_USER;
         
         arm7 = this;

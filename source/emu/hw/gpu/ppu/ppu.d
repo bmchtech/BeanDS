@@ -77,7 +77,7 @@ final class PPU(EngineType E) {
 
     Scheduler scheduler;
 
-    MemStrategy mem;
+    Mem mem;
 
     Background[] backgrounds = [
         Background(),
@@ -114,7 +114,7 @@ final class PPU(EngineType E) {
         static if (is (T == Byte)) return mem.oam_read_byte(address);
     }
 
-    this(MemStrategy mem) {
+    this(Mem mem) {
         scanline = 0;
 
         this.mem = mem;
