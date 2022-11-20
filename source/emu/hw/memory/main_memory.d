@@ -1,14 +1,15 @@
 module emu.hw.memory.main_memory;
 
 import emu.hw.cpu.armcpu;
+import emu.hw.cpu.instructionblock;
 import emu.hw.memory.main_memory;
 import emu.hw.memory.mem;
+import emu.hw.memory.strategy.common;
 import util;
 
 __gshared MainMemory main_memory;
 
 final class MainMemory {
-    enum MAIN_MEMORY_SIZE = 1 << 22;
     Byte[MAIN_MEMORY_SIZE] data;
 
     T read(T)(Word address) {

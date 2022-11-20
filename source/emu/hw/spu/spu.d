@@ -1,6 +1,7 @@
 module emu.hw.spu.spu;
 
 import emu.hw.memory.mem9;
+import emu.hw.memory.strategy.memstrategy;
 import emu.scheduler;
 import ui.device;
 import util;
@@ -18,6 +19,8 @@ final class SPU {
     bool output_mixer_ch1 = true;
     bool output_mixer_ch3 = true;
     Half sound_bias;
+
+    MemStrategy mem;
 
     enum OutputSource {
         MIXER        = 0,
@@ -40,7 +43,8 @@ final class SPU {
         UNKNOWN  = 3,
     }
 
-    this() {
+    this(MemStrategy mem) {
+        this.mem = mem;
     }
 
     void reset() {
@@ -77,7 +81,7 @@ final class SPU {
             cycles_since_last_sample_was_calculated = 0;
         }
 
-        Sample get_sample() {
+        Sample get_sample(MemStrategy mem) {
             if (!enabled) return Sample(0, 0);
 
             cycles_since_last_sample_was_calculated += spu.cycles_per_sample;
@@ -85,7 +89,7 @@ final class SPU {
             auto cycles_till_calculate_next_sample = (0x10000 - timer_value) * 2;
 
             while (cycles_since_last_sample_was_calculated > cycles_till_calculate_next_sample) {
-                calculate_next_sample();
+                calculate_next_sample(mem);
                 cycles_since_last_sample_was_calculated -= cycles_till_calculate_next_sample;
             }
 
@@ -95,18 +99,18 @@ final class SPU {
             return sample;
         }
                 
-        void calculate_next_sample() {
+        void calculate_next_sample(MemStrategy mem) {
             short sample_data = 0;
 
             // OMG STARVING INDIE DEV PRODUCT NINTENDO SWITCH HOME OF CELESTE AND HOLLOW KNIGHT AND SUPER MARIO
             // OMG OMG OMG OMG OMG BUY RN
             switch (format) {
                 case Format.PCM16:
-                    sample_data = mem9.read!Half(current_address);
+                    sample_data = mem.read_data_half9(current_address);
                     this.current_address += 2;
                     break;
                 case Format.PCM8:
-                    sample_data = mem9.read!Byte(current_address);
+                    sample_data = mem.read_data_byte9(current_address);
                     this.current_address += 1;
                     break;
                 default:
@@ -252,7 +256,7 @@ final class SPU {
     void sample() {
         Sample result = Sample(0, 0);
         for (int i = 0; i < 16; i++) {
-            Sample channel_sample = sound_channels[i].get_sample();
+            Sample channel_sample = sound_channels[i].get_sample(mem);
             result.L += channel_sample.L;
             result.R += channel_sample.R;
         }

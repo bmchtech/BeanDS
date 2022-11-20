@@ -8,6 +8,7 @@ import emu.hw.gpu.gpu3d.polygon;
 import emu.hw.gpu.gpu3d.rendering_engine;
 import emu.hw.gpu.gpu3d.shading;
 import emu.hw.gpu.pixel;
+import emu.hw.memory.strategy.memstrategy;
 import util;
 
 enum IRQMode {
@@ -60,9 +61,9 @@ final class GPU3D {
 
     IRQMode irq_mode;
 
-    this() {
+    this(MemStrategy mem) {
         geometry_engine = new GeometryEngine(this);
-        rendering_engine = new RenderingEngine(this);
+        rendering_engine = new RenderingEngine(this, mem);
 
         geometry_buffer  = cast(Polygon!Point_20_12*) &polygon_ram_1;
         rendering_buffer = cast(Polygon!Point_20_12*) &polygon_ram_2;

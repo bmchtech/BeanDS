@@ -3,11 +3,14 @@ module emu.hw.cpu.arm7tdmi;
 import emu.debugger.cputrace;
 import emu.hw.cpu.architecture;
 import emu.hw.cpu.armcpu;
+import emu.hw.cpu.instructionblock;
 import emu.hw.cpu.interrupt;
 import emu.hw.cpu.jumptable.jumptable_arm;
 import emu.hw.cpu.jumptable.jumptable_thumb;
 import emu.hw.memory.mem;
 import emu.hw.memory.mem7;
+import emu.hw.memory.strategy.memstrategy;
+import emu.hw.nds;
 import util;
 
 __gshared ARM7TDMI arm7;
@@ -17,8 +20,6 @@ final class ARM7TDMI : ArmCPU {
 
     Word[2] arm_pipeline;
     Half[2] thumb_pipeline;
-    
-    Mem memory;
 
     InstructionSet instruction_set;   
 
@@ -34,11 +35,13 @@ final class ARM7TDMI : ArmCPU {
     InstructionBlock* instruction_block;
     Word current_instruction_block_address = 0xFFFFFFFF;
 
-    this(Mem memory, uint ringbuffer_size) {
-        this.memory = memory;
+    MemStrategy mem;
+
+    this(MemStrategy mem, uint ringbuffer_size) {
         current_mode = MODE_USER;
         
         arm7 = this;
+        this.mem = mem;
         cpu_trace = new CpuTrace(this, ringbuffer_size);
     }
 
@@ -70,7 +73,7 @@ final class ARM7TDMI : ArmCPU {
         Word requested_instruction_block_address = regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1);
 
         if (current_instruction_block_address != requested_instruction_block_address) {
-            instruction_block = mem7.instruction_read(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
+            instruction_block = mem.read_instruction7(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
             current_instruction_block_address = requested_instruction_block_address;
         }
     }
@@ -459,9 +462,9 @@ final class ARM7TDMI : ArmCPU {
 
     T internal_read(T)(Word address) {
         T result;
-        static if (is (T == Word)) result = memory.read_word(address);
-        static if (is (T == Half)) result = memory.read_half(address);
-        static if (is (T == Byte)) result = memory.read_byte(address);
+        static if (is (T == Word)) result = mem.read_data_word7(address);
+        static if (is (T == Half)) result = mem.read_data_half7(address);
+        static if (is (T == Byte)) result = mem.read_data_byte7(address);
 
         for (int i = 0; i < T.sizeof; i++) {
             version (ift) { IFTDebugger.commit_mem_read(HwType.NDS9, address + i, Word(result.get_byte(i))); }
@@ -470,9 +473,9 @@ final class ARM7TDMI : ArmCPU {
     }
 
     void internal_write(T)(Word address, T value) {
-        static if (is (T == Word)) memory.write_word(address, value);
-        static if (is (T == Half)) memory.write_half(address, value);
-        static if (is (T == Byte)) memory.write_byte(address, value);
+        static if (is (T == Word)) mem.write_data_word7(address, value);
+        static if (is (T == Half)) mem.write_data_half7(address, value);
+        static if (is (T == Byte)) mem.write_data_byte7(address, value);
 
         for (int i = 0; i < T.sizeof; i++) {
             version (ift) { IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i))); }

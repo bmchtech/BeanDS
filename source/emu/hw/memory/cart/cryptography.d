@@ -1,6 +1,6 @@
 module emu.hw.memory.cart.cryptography;
 
-import emu.hw.memory.mem7;
+import emu.hw.memory.strategy.memstrategy;
 
 import util;
 
@@ -8,10 +8,14 @@ final class Key1Encryption {
     enum KEYBUF_SIZE  = 0x412;
     enum KEYCODE_SIZE = 3;
 
+    MemStrategy mem;
+
     u32[KEYBUF_SIZE]  keybuf;
     u32[KEYCODE_SIZE] keycode;
 
-    this() {
+    this(MemStrategy mem) {
+        this.mem = mem;
+
         keybuf  = new u32[KEYBUF_SIZE];
         keycode = new u32[KEYCODE_SIZE];
     }
@@ -54,7 +58,7 @@ final class Key1Encryption {
 
     void init_keycode(Word idcode, int level, int modulo) {
         for (int i = 0; i < KEYBUF_SIZE * 4; i++) {
-            (cast(u8*) keybuf)[i] = mem7.bios[0x30 + i];
+            (cast(u8*) keybuf)[i] = mem.read_data_byte7(Word(0x30 + i));
         }
 
         keycode[0] = idcode;

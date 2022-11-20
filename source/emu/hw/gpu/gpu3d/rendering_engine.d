@@ -8,6 +8,7 @@ import emu.hw.gpu.gpu3d.math;
 import emu.hw.gpu.gpu3d.polygon;
 import emu.hw.gpu.gpu3d.texture;
 import emu.hw.gpu.pixel;
+import emu.hw.memory.strategy.memstrategy;
 import std.algorithm;
 import util;
 
@@ -179,13 +180,16 @@ final class RenderingEngine {
     int       rendering_scanline;
     bool      is_rendering;
 
-    this(GPU3D parent) {
+    TextureResolver texture_resolver;
+
+    this(GPU3D parent, MemStrategy mem) {
         this.parent = parent;
         this.start_rendering_mutex    = new Mutex();
         this.start_rendering_condvar  = new Condition(start_rendering_mutex);
         this.rendering_thread         = new Thread(&rendering_thread_handler).start();
         this.rendering_scanline_mutex = new Mutex();
         this.is_rendering             = false;
+        this.texture_resolver         = new TextureResolver(mem);
     }
 
     void vblank() {
@@ -413,7 +417,7 @@ final class RenderingEngine {
                         auto texcoord_s = interpolate(texcoord_s_l, texcoord_s_r, 1 - factor_scanline);
                         auto texcoord_t = interpolate(texcoord_t_l, texcoord_t_r, 1 - factor_scanline);
                         
-                        auto color = get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p, p.orig.palette_base_address);
+                        auto color = texture_resolver.get_color_from_texture(cast(int) texcoord_s, cast(int) texcoord_t, p, p.orig.palette_base_address);
                         r = cast(int) color[0] << 1;
                         g = cast(int) color[1] << 1;
                         b = cast(int) color[2] << 1;

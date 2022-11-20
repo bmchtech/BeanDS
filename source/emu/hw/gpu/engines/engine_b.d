@@ -7,8 +7,8 @@ __gshared GPUEngineB gpu_engine_b;
 final class GPUEngineB {
     PPU!(EngineType.B) ppu;
 
-    this() {
-        ppu = new PPU!(EngineType.B);
+    this(MemStrategy mem) {
+        ppu = new PPU!(EngineType.B)(mem);
         videobuffer = new Pixel[192][256];
     }
 

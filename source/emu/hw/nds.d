@@ -24,6 +24,7 @@ import emu.hw.memory.mem7;
 import emu.hw.memory.mem9;
 import emu.hw.memory.mmio;
 import emu.hw.memory.slot;
+import emu.hw.memory.strategy.slowmem.slowmem;
 import emu.hw.memory.wram;
 import emu.hw.misc.rtc;
 import emu.hw.misc.sio;
@@ -48,16 +49,17 @@ final class NDS {
     void delegate(Pixel[32][32]) update_icon;
     void delegate(string) update_rom_title;
 
+    SlowMem mem;
+
     this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
         //       either make everything a global variable
         //       or make nothing.
         new Scheduler();
 
-        mem7 = new Mem7();
-        mem9 = new Mem9();
-        arm7 = new ARM7TDMI(mem7, arm7_ringbuffer_size);
-        arm9 = new ARM946E_S(mem9, arm9_ringbuffer_size);
+        mem = new SlowMem();
+        arm7 = new ARM7TDMI(mem, arm7_ringbuffer_size);
+        arm9 = new ARM946E_S(mem, arm9_ringbuffer_size);
 
         interrupt7 = new InterruptManager(arm7);
         interrupt9 = new InterruptManager(arm9);
@@ -67,12 +69,12 @@ final class NDS {
         ipc7.set_remote(ipc9);
         ipc9.set_remote(ipc7);
 
-        wram = new WRAM();
+        wram = new WRAM(mem);
         timers7 = new TimerManager(interrupt7);
         timers9 = new TimerManager(interrupt9);
         spi = new SPI();
         auxspi = new AUXSPI();
-        spu = new SPU();
+        spu = new SPU(mem);
         sound_capture = new SoundCapture();
         slot = new Slot();
 
@@ -83,15 +85,15 @@ final class NDS {
 
         mmio7 = new MMIO!mmio7_registers("MMIO7");
         mmio9 = new MMIO!mmio9_registers("MMIO9");
-        dma7 = new DMA!(HwType.NDS7)();
-        dma9 = new DMA!(HwType.NDS9)();
+        dma7 = new DMA!(HwType.NDS7)(mem);
+        dma9 = new DMA!(HwType.NDS9)(mem);
 
         // TODO: maybe this doesnt belong in nds.d... i need to learn more
         //       about the two GBA engines to find out
-        gpu = new GPU();
-        gpu_engine_a = new GPUEngineA();
-        gpu_engine_b = new GPUEngineB();
-        gpu3d = new GPU3D();
+        gpu = new GPU(mem);
+        gpu_engine_a = new GPUEngineA(mem);
+        gpu_engine_b = new GPUEngineB(mem);
+        gpu3d = new GPU3D(mem);
 
         input = new KeyInput();
         main_memory = new MainMemory();
@@ -121,13 +123,15 @@ final class NDS {
     }
 
     void load_rom(Byte[] rom) {
-        cart = new Cart(rom);
+        cart = new Cart(mem, rom);
         
         if (cart.cart_header.rom_header_size >= cart.rom_size()) {
             error_nds("Malformed ROM - the specified rom header size is greater than the rom size.");
         }
 
-        mem9.memcpy(Word(0x27FFE00), &cart.rom[0], cart.cart_header.rom_header_size);
+        for (int i = 0; i < cart.cart_header.rom_header_size; i++) {
+            mem.write_data_byte9(Word(0x027F_FE00 + i), cart.rom[i]);
+        }
 
         update_icon(
             cart.get_icon()
@@ -139,11 +143,11 @@ final class NDS {
     }
 
     void load_bios7(Byte[] data) {
-        mem7.load_bios(data);
+        mem.load_bios7(data);
     }
 
     void load_bios9(Byte[] data) {
-        mem9.load_bios(data);
+        mem.load_bios9(data);
     }
 
     void load_firmware(Byte[] data) {
@@ -162,17 +166,13 @@ final class NDS {
             error_nds("Malformed ROM - could not direct boot, cart.rom_size is too small. Are you sure the ROM is not corrupted?");
         } 
 
-        mem7.memcpy(
-            cart.cart_header.arm7_ram_address,
-            &cart.rom[cart.cart_header.arm7_rom_offset],
-            cart.cart_header.arm7_size
-        );
+        for (int i = 0; i < cart.cart_header.arm7_size; i++) {
+            mem.write_data_byte7(Word(cart.cart_header.arm7_ram_address + i), cart.rom[cart.cart_header.arm7_rom_offset + i]);
+        }
 
-        mem9.memcpy(
-            cart.cart_header.arm9_ram_address,
-            &cart.rom[cart.cart_header.arm9_rom_offset],
-            cart.cart_header.arm9_size
-        );
+        for (int i = 0; i < cart.cart_header.arm9_size; i++) {
+            mem.write_data_byte9(Word(cart.cart_header.arm9_ram_address + i), cart.rom[cart.cart_header.arm9_rom_offset + i]);
+        }
         
         cart.direct_boot();
 

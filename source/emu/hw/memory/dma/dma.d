@@ -7,6 +7,7 @@ import emu.hw.memory.mem;
 import emu.hw.memory.mem7;
 import emu.hw.memory.mem9;
 import emu.hw.memory.slot;
+import emu.hw.memory.strategy.memstrategy;
 import util;
 
 __gshared DMA!(HwType.NDS7) dma7;
@@ -20,17 +21,18 @@ static void dma_maybe_start_cart_transfer() {
 }
 
 final class DMA(HwType H) {
-    this() {
+    MemStrategy mem;
+
+    this(MemStrategy mem) {
         dma_channels = [
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
             DMAChannel(Word(0), Word(0), Word(0), 0, 0, 0, false, false, false, false, false, false, DestAddrMode.Increment, SourceAddrMode.Increment, DMAStartTiming.Immediately,),
         ];
-    }
 
-    static if (H == HwType.NDS9) alias mem = mem9;
-    static if (H == HwType.NDS7) alias mem = mem7;
+        this.mem = mem;
+    }
 
     static if (H == HwType.NDS9) alias DMAStartTiming = DMAStartTiming9;
     static if (H == HwType.NDS7) alias DMAStartTiming = DMAStartTiming7;
@@ -81,8 +83,8 @@ final class DMA(HwType H) {
                 Word read_address  = dma_channels[current_channel].source_buf + source_offset;
                 Word write_address = dma_channels[current_channel].dest_buf   + dest_offset;
 
-                Word value = mem.read_word(read_address);
-                mem.write_word(write_address, value);
+                Word value = this.read!Word(read_address);
+                this.write!Word(write_address, value);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;
@@ -94,8 +96,8 @@ final class DMA(HwType H) {
                 Word read_address  = dma_channels[current_channel].source_buf + source_offset;
                 Word write_address = dma_channels[current_channel].dest_buf   + dest_offset;
 
-                Half value = mem.read_half(read_address);
-                mem.write_half(write_address, value);
+                Half value = this.read!Half(read_address);
+                this.write!Half(write_address, value);
 
                 source_offset += source_increment;
                 dest_offset   += dest_increment;
@@ -143,7 +145,7 @@ final class DMA(HwType H) {
             static if (H == HwType.NDS7) val = cart.read_ROMRESULT7!Word(0);
             static if (H == HwType.NDS9) val = cart.read_ROMRESULT9!Word(0);
             
-            mem.write_word(address, val);
+            this.write!Word(address, val);
             address += 4;
         }
 
@@ -164,6 +166,34 @@ final class DMA(HwType H) {
 
         dma_channels[ds_cart_transfer_channel].enabled = false;
         is_ds_cart_transfer_queued = false;
+    }
+
+    T read(T)(Word address) {
+        final switch (H) {
+            case HwType.NDS7:
+                static if (is (T == Word)) return mem.read_data_word7(address);
+                static if (is (T == Half)) return mem.read_data_half7(address);
+                static if (is (T == Byte)) return mem.read_data_byte7(address);
+            case HwType.NDS9:
+                static if (is (T == Word)) return mem.read_data_word9(address);
+                static if (is (T == Half)) return mem.read_data_half9(address);
+                static if (is (T == Byte)) return mem.read_data_byte9(address);
+        }
+    }
+
+    void write(T)(Word address, T value) {
+        final switch (H) {
+            case HwType.NDS7:
+                static if (is (T == Word)) mem.write_data_word7(address, value);
+                static if (is (T == Half)) mem.write_data_half7(address, value);
+                static if (is (T == Byte)) mem.write_data_byte7(address, value);
+                break;
+            case HwType.NDS9:
+                static if (is (T == Word)) mem.write_data_word9(address, value);
+                static if (is (T == Half)) mem.write_data_half9(address, value);
+                static if (is (T == Byte)) mem.write_data_byte9(address, value);
+                break;
+        }
     }
 
     static if (is(H == HwType.NDS7)) {
@@ -225,7 +255,8 @@ final class DMA(HwType H) {
         }
 
         if (unimplemented_dma) {
-            error_dma("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
+            return;
+            // error_dma("tried to do a dma i dont do: %s", dma_channels[dma_id].dma_start_timing);
         }
     }
 

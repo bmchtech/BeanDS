@@ -53,7 +53,7 @@ final class Runner {
 
         while (running) {
             if (frontend.should_cycle_nds() || frontend.should_fast_forward()) {
-                // nds.cycle(33_513_982 / 60);
+                nds.cycle(33_513_982 / 60);
                 fps++;
             }
             

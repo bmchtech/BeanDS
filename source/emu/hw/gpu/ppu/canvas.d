@@ -4,8 +4,9 @@ import core.stdc.string;
 import emu.hw.gpu.engines;
 import emu.hw.gpu.pixel;
 import emu.hw.gpu.ppu;
-import emu.hw.gpu.pram;
+import emu.hw.gpu.slottype;
 import emu.hw.gpu.vram;
+import emu.hw.memory.strategy.memstrategy;
 import inteli.smmintrin;
 import std.algorithm;
 import std.stdio;
@@ -42,7 +43,7 @@ struct PaletteIndex {
     int b;
     int a;
 
-    Pixel resolve(EngineType E)(int pram_offset) {
+    Pixel resolve(EngineType E)(MemStrategy mem, int pram_offset) {
         SlotType bg_slot_type;
         SlotType obj_slot_type;
 
@@ -59,10 +60,10 @@ struct PaletteIndex {
             p.b = b;
             p.a = a;
         } else {
-            if (slot == -1) p = Pixel(pram.read!Half(Word(pram_offset + index * 2)));
+            if (slot == -1) p = Pixel(mem.pram_read_half(Word(pram_offset + index * 2)));
             else {
-                if (is_obj) p = Pixel(vram.read_slot!Half(obj_slot_type, slot, Word(index * 2)));
-                else        p = Pixel(vram.read_slot!Half(bg_slot_type,  slot, Word(index * 2)));
+                if (is_obj) p = Pixel(mem.vram_read_slot_half(obj_slot_type, slot, Word(index * 2)));
+                else        p = Pixel(mem.vram_read_slot_half(bg_slot_type,  slot, Word(index * 2)));
             }
         }
         
@@ -168,12 +169,14 @@ final class Canvas(EngineType E) {
     ScanlineCompositingInfo[192] scanline_compositing_infos;
     Pixel[192][256] pixels_output;
     PPU!E ppu;
+    MemStrategy mem;
     Background[4] sorted_backgrounds;
     int pram_offset;
 
-    public this(PPU!E ppu, int pram_offset) {
+    public this(PPU!E ppu, MemStrategy mem, int pram_offset) {
         this.ppu         = ppu;
         this.pram_offset = pram_offset;
+        this.mem         = mem;
         
         reset();
     }
@@ -404,12 +407,12 @@ final class Canvas(EngineType E) {
     private pragma(inline, true) Pixel blend(PaletteIndex[] index, int blendable_pixels, Blending effective_blending_type, ScanlineCompositingInfo* current_scanline_compositing_info) {
         final switch (effective_blending_type) {
             case Blending.NONE:
-                return index[0].resolve!E(pram_offset);
+                return index[0].resolve!E(this.mem, pram_offset);
 
             case Blending.BRIGHTNESS_INCREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = index[0].resolve!E(pram_offset);
+                Pixel output = index[0].resolve!E(this.mem, pram_offset);
                 
                 __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
                 __m128i diff__vec = _mm_sub_epi8(_mm_set1_epi8(63), output__vec); 
@@ -424,7 +427,7 @@ final class Canvas(EngineType E) {
             case Blending.BRIGHTNESS_DECREASE:
                 if (blendable_pixels < 1) goto case Blending.NONE;
 
-                Pixel output = index[0].resolve!E(pram_offset);
+                Pixel output = index[0].resolve!E(this.mem, pram_offset);
                 
                 __m128i output__vec = _mm_loadu_si128(cast(__m128i*) &output);
                 __m128i diff__vec = _mm_mullo_epi16(output__vec, _mm_set1_epi16(cast(short) current_scanline_compositing_info.mmio_info.evy_coeff));
@@ -438,8 +441,8 @@ final class Canvas(EngineType E) {
             case Blending.ALPHA:
                 if (blendable_pixels < 2) goto case Blending.NONE;
 
-                Pixel input_A = index[0].resolve!E(pram_offset);
-                Pixel input_B = index[1].resolve!E(pram_offset);
+                Pixel input_A = index[0].resolve!E(this.mem, pram_offset);
+                Pixel input_B = index[1].resolve!E(this.mem, pram_offset);
                 Pixel output;
 
                 int effective_blend_a = current_scanline_compositing_info.mmio_info.blend_a;
