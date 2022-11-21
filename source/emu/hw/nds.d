@@ -24,7 +24,7 @@ import emu.hw.memory.mem7;
 import emu.hw.memory.mem9;
 import emu.hw.memory.mmio;
 import emu.hw.memory.slot;
-import emu.hw.memory.strategy.slowmem.slowmem;
+import emu.hw.memory.strategy.memstrategy;
 import emu.hw.memory.wram;
 import emu.hw.misc.rtc;
 import emu.hw.misc.sio;
@@ -49,7 +49,7 @@ final class NDS {
     void delegate(Pixel[32][32]) update_icon;
     void delegate(string) update_rom_title;
 
-    SlowMem mem;
+    Mem mem;
 
     this(uint arm7_ringbuffer_size, uint arm9_ringbuffer_size) {
         // TODO: find some way to standardize this global variable mess.
@@ -57,7 +57,7 @@ final class NDS {
         //       or make nothing.
         new Scheduler();
 
-        mem = new SlowMem();
+        mem = new Mem();
         arm7 = new ARM7TDMI(mem, arm7_ringbuffer_size);
         arm9 = new ARM946E_S(mem, arm9_ringbuffer_size);
 

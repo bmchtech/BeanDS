@@ -3,10 +3,11 @@ module emu.hw.memory.strategy.memstrategy;
 import emu.hw.cpu.instructionblock;
 import emu.hw.gpu.slottype;
 import emu.hw.gpu.vramblock;
+import emu.hw.memory.strategy.fastmem;
 import emu.hw.memory.strategy.slowmem;
 import util;
 
-alias Mem = SlowMem;
+alias Mem = FastMem;
 
 interface MemStrategy {
     Word read_data_word7(Word address);

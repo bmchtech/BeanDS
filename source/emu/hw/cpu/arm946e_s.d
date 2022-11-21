@@ -161,7 +161,7 @@ final class ARM946E_S : ArmCPU {
         
         version (release) {
         } else {
-            cpu_trace.capture();
+            // cpu_trace.capture();
         }
         
         if (num_log > 0) {
@@ -175,6 +175,7 @@ final class ARM946E_S : ArmCPU {
             execute!Word(opcode);
         } else {
             Half opcode = fetch!Half();
+            if (opcode == 0) error_arm7("ARM9 is probably executing data");
             execute!Half(opcode);
         }
     }

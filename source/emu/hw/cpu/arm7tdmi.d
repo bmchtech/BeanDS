@@ -131,7 +131,7 @@ final class ARM7TDMI : ArmCPU {
 
         version (release) {
         } else {
-            cpu_trace.capture();
+            // cpu_trace.capture();
         }
 
         if (num_log > 0) {
@@ -145,6 +145,7 @@ final class ARM7TDMI : ArmCPU {
             execute!Word(opcode);
         } else {
             Half opcode = fetch!Half();
+            if (opcode == 0) error_arm7("ARM7 is probably executing data");
             execute!Half(opcode);
         }
     }

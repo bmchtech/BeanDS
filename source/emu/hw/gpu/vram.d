@@ -4,21 +4,12 @@ import emu.hw.gpu.engines;
 import emu.hw.gpu.slottype;
 import emu.hw.gpu.vramblock;
 import emu.hw.memory.mem;
+import emu.hw.memory.strategy.common;
 import emu.hw.memory.strategy.memstrategy;
 import util;
 
 __gshared VRAM vram;
 final class VRAM {
-    enum VRAM_A_SIZE = 1 << 17;
-    enum VRAM_B_SIZE = 1 << 17;
-    enum VRAM_C_SIZE = 1 << 17;
-    enum VRAM_D_SIZE = 1 << 17;
-    enum VRAM_E_SIZE = 1 << 16;
-    enum VRAM_F_SIZE = 1 << 14;
-    enum VRAM_G_SIZE = 1 << 14;
-    enum VRAM_H_SIZE = 1 << 15;
-    enum VRAM_I_SIZE = 1 << 14;
-
     VRAMBlock[10] blocks;
 
     VRAMBlock vram_a;

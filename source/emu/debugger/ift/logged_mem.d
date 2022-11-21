@@ -75,8 +75,8 @@ MemoryPageMirrorPair get_page_nds7_wram(Word address) {
 }
 
 MemoryPageMirrorPair get_page_nds7_vram(Word address) {
-    if (vram.vram_c_in_ram && vram.vram_c.in_range(address)) return MemoryPageMirrorPair(MemoryPage.VRAM_BANK_C, address % VRAM.VRAM_C_SIZE);
-    if (vram.vram_d_in_ram && vram.vram_d.in_range(address)) return MemoryPageMirrorPair(MemoryPage.VRAM_BANK_D, address % VRAM.VRAM_D_SIZE);
+    if (vram.vram_c_in_ram && vram.vram_c.in_range(address)) return MemoryPageMirrorPair(MemoryPage.VRAM_BANK_C, address % VRAM_C_SIZE);
+    if (vram.vram_d_in_ram && vram.vram_d.in_range(address)) return MemoryPageMirrorPair(MemoryPage.VRAM_BANK_D, address % VRAM_D_SIZE);
 
     return MemoryPageMirrorPair(MemoryPage.INVALID, address);
 }
