@@ -35,6 +35,8 @@ detect_container_engine() {
         CONTAINER_ENGINE="podman"
     elif testcmd docker; then
         CONTAINER_ENGINE="docker"
+        # i don't like docker
+        printf "WARNING: docker is not recommended, use podman instead\n"
     else
         echo "ERROR: no suitable container engine found. please install podman or docker."
         exit 1
