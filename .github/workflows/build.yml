@@ -27,7 +27,7 @@ jobs:
     
     - name: 'Run Tests'
       run: |
-        dub test --compiler ldc2 -B release
+        dub test --compiler ldc2
   
   build-redbuild:
     runs-on: ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
     
     - name: 'Run Tests'
       run: |
-        dub test --compiler ldc2 -B release
+        dub test --compiler ldc2
 
   build-windows:
     runs-on: windows-latest
@@ -123,4 +123,4 @@ jobs:
     
     - name: 'Run Tests'
       run: |
-        dub test --compiler ldc2 -B release
+        dub test --compiler ldc2
