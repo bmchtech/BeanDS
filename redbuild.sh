@@ -11,7 +11,7 @@ print_logo() {
 }
 # print_logo
 print_info() {
-    echo "REDBUILD v2.1.0"
+    echo "REDBUILD v2.2.0"
     echo " container engine: $CONTAINER_ENGINE"
     printf " host: $(uname -s)/$(uname -m) $(uname -r)\n"
     printf "\n"
@@ -46,7 +46,11 @@ detect_container_engine() {
 detect_container_engine
 print_info
 
-export BUILDER_TAG=builder_$(head /dev/urandom | tr -dc a-z0-9 | head -c10) # random tag to avoid name collisions
+CWD_DIRNAME=$(basename "$CWD")
+CWD_HASH=$(echo "$CWD" | sha256sum | head -c 8)
+
+# BUILDER_TAG=builder_$(head /dev/urandom | tr -dc a-z0-9 | head -c10)
+BUILDER_TAG=builder_${CWD_DIRNAME}_${CWD_HASH}
 
 # build the builder image
 build_builder_image() {
