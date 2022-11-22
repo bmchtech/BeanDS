@@ -1,10 +1,10 @@
 module emu.hw.gpu.ppu.ppu;
 
 import emu.hw.gpu.engines;
-import emu.hw.gpu.oam;
 import emu.hw.gpu.pixel;
 import emu.hw.gpu.ppu.canvas;
 import emu.hw.gpu.vram;
+import emu.hw.memory.strategy.memstrategy;
 import emu.scheduler;
 import std.algorithm;
 import std.stdio;
@@ -77,6 +77,8 @@ final class PPU(EngineType E) {
 
     Scheduler scheduler;
 
+    Mem mem;
+
     Background[] backgrounds = [
         Background(),
         Background(),
@@ -85,25 +87,40 @@ final class PPU(EngineType E) {
     ];
 
     T read_bg_vram(T)(int offset) {
-        static if (E == EngineType.A) return vram.read_ppu!T(Word(0x0600_0000) + offset);
-        static if (E == EngineType.B) return vram.read_ppu!T(Word(0x0620_0000) + offset);
+        Word address;
+        static if (E == EngineType.A) address = 0x0600_0000 + offset;
+        static if (E == EngineType.B) address = 0x0620_0000 + offset;
+
+        static if (is (T == Word)) return mem.vram_read_word(address);
+        static if (is (T == Half)) return mem.vram_read_half(address);
+        static if (is (T == Byte)) return mem.vram_read_byte(address);
     }
 
     T read_obj_vram(T)(int offset) {
-        static if (E == EngineType.A) return vram.read_ppu!T(Word(0x0640_0000) + offset);
-        static if (E == EngineType.B) return vram.read_ppu!T(Word(0x0660_0000) + offset);
+        Word address;
+        static if (E == EngineType.A) address = 0x0640_0000 + offset;
+        static if (E == EngineType.B) address = 0x0660_0000 + offset;
+
+        static if (is (T == Word)) return mem.vram_read_word(address);
+        static if (is (T == Half)) return mem.vram_read_half(address);
+        static if (is (T == Byte)) return mem.vram_read_byte(address);
     }
 
     T read_oam(T)(Word address) {
-        static if (E == EngineType.A) return oam.read!T(address);
-        static if (E == EngineType.B) return oam.read!T(address + 0x400);
+        static if (E == EngineType.B) address += 0x400;
+
+        static if (is (T == Word)) return mem.oam_read_word(address);
+        static if (is (T == Half)) return mem.oam_read_half(address);
+        static if (is (T == Byte)) return mem.oam_read_byte(address);
     }
 
-    this() {
+    this(Mem mem) {
         scanline = 0;
 
-        static if (E == EngineType.A) canvas = new Canvas!E(this, 0);
-        static if (E == EngineType.B) canvas = new Canvas!E(this, 0x400);
+        this.mem = mem;
+
+        static if (E == EngineType.A) canvas = new Canvas!E(this, mem, 0);
+        static if (E == EngineType.B) canvas = new Canvas!E(this, mem, 0x400);
 
         for (int i = 0; i < 4; i++) {
             backgrounds[i].id = i;

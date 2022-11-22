@@ -9,6 +9,7 @@ import emu.hw.memory.cart.header;
 import emu.hw.memory.dma;
 import emu.hw.memory.mem;
 import emu.hw.memory.slot;
+import emu.hw.memory.strategy.memstrategy;
 import emu.hw.spi.auxspi;
 import util;
 
@@ -27,15 +28,15 @@ final class Cart {
         KEY2,
     }
 
-    this(Byte[] rom) {
+    this(Mem mem, Byte[] rom) {
         cart = this;
         this.rom = new Byte[rom.length];
         this.rom[0..rom.length] = rom[0..rom.length];
         
         this.cart_header = get_cart_header(rom);
 
-        key1_encryption_level2 = new Key1Encryption();
-        key1_encryption_level3 = new Key1Encryption();
+        key1_encryption_level2 = new Key1Encryption(mem);
+        key1_encryption_level3 = new Key1Encryption(mem);
     }
 
     void reset() {

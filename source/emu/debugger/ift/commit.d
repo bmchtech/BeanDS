@@ -117,9 +117,9 @@ struct IFTDebugger {
         }
         }
 
-        snapshot_mem_region(snapshot, "MAIN_MEMORY", cast(Byte*) main_memory.data, MainMemory.MAIN_MEMORY_SIZE, 0x0200_0000);
-        snapshot_mem_region(snapshot, "PRAM",        cast(Byte*) pram.data,        PRAM.PRAM_SIZE,              0x0500_0000);
-        snapshot_mem_region(snapshot, "OAM",         cast(Byte*) oam.data,         OAM.OAM_SIZE,                0x0700_0000);
+        // snapshot_mem_region(snapshot, "MAIN_MEMORY", cast(Byte*) main_memory.data, MAIN_MEMORY_SIZE, 0x0200_0000);
+        // snapshot_mem_region(snapshot, "PRAM",        cast(Byte*) pram.data,        PRAM.PRAM_SIZE,   0x0500_0000);
+        // snapshot_mem_region(snapshot, "OAM",         cast(Byte*) oam.data,         OAM.OAM_SIZE,     0x0700_0000);
 
         return snapshot;
     }

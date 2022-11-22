@@ -18,7 +18,8 @@ version (unittest) {
 
 		auto nds = new NDS(cli_args.arm7_ringbuffer_size, cli_args.arm9_ringbuffer_size);
 		
-		auto reng = new RengMultimediaDevice(cli_args.screen_scale);
+		auto show_full_ui = cli_args.detailed_ui;
+		auto reng = new RengMultimediaDevice(cli_args.screen_scale, show_full_ui);
 		nds.set_multimedia_device(reng);
 
 		// sure i could put the bios in the cli_args... and i *will*

@@ -1,6 +1,7 @@
 module emu.hw.cpu.cp.tcm;
 
 import emu.hw.cpu.armcpu;
+import emu.hw.cpu.instructionblock;
 import emu.hw.memory.mem;
 import util;
 
