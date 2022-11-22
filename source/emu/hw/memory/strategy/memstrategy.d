@@ -48,15 +48,7 @@ interface MemStrategy {
     Half pram_read_half(Word address);
     Byte pram_read_byte(Word address);
 
-    void pram_write_word(Word address, Word data);
-    void pram_write_half(Word address, Half data);
-    void pram_write_byte(Word address, Byte data);
-
     Word oam_read_word(Word address);
     Half oam_read_half(Word address);
     Byte oam_read_byte(Word address);
-
-    void oam_write_word(Word address, Word data);
-    void oam_write_half(Word address, Half data);
-    void oam_write_byte(Word address, Byte data);
 }

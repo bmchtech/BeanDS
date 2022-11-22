@@ -36,7 +36,7 @@ final class VirtualMemoryManager {
     // but it'll work just fine
     private MemoryRegion* illegal_access_page;
 
-    this(size_t size) {
+    this() {
         sigaction_t sa;
         sa.sa_flags = SA_SIGINFO;
         sa.sa_sigaction = &segfault_handler;
@@ -73,36 +73,37 @@ final class VirtualMemoryManager {
         }
     }
 
-    void map(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address) {
+    void unmap(VirtualMemorySpace* space, u64 address, u64 size) {
         version (Posix) {
             void* host_address = this.to_host_address(space, address);
-            
-            int unmap_error = munmap(host_address, memory_region.size);
+            int unmap_error = munmap(host_address, size);
             if (unmap_error < 0) {
                 perror("unmap");
                 error_nds("Failed to unmap memory region");
                 assert(0);
             }
 
-            void* map_error = mmap(host_address, memory_region.size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, memory_region.descriptor, 0);
-            if (cast(u64) map_error < 0) {
-                error_nds("Failed to map memory region");
-                assert(0);
-            }
+            mmap(host_address, size, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
         } else {
             error_nds("VirtualMemoryManager not implemented for non-posix systems");
             assert(0);
         }
     }
 
+    void map(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address) {
+        map_generic(space, memory_region, address, memory_region.size, memory_region.size, 0);
+    }
+
     void map_with_length(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 size) {
-        map_with_stride(space, memory_region, address, size, memory_region.size);
+        map_generic(space, memory_region, address, size, memory_region.size, 0);
     }
 
     void map_with_stride(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 size, u64 stride) {
-        for (u64 i = 0; i < size; i += stride) {
-            this.map(space, memory_region, address + i);
-        }
+        map_generic(space, memory_region, address, size, stride, 0);
+    }
+
+    void map_with_offset(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 offset) {
+        map_generic(space, memory_region, address, memory_region.size, memory_region.size, offset);
     }
 
     void* to_host_address(VirtualMemorySpace* space, u64 address) {
@@ -124,6 +125,30 @@ final class VirtualMemoryManager {
     bool in_range(VirtualMemorySpace* space, void* address) {
         return address >= space.base_address && address < space.base_address + space.size;
     }
+
+    private void map_generic(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 size, u64 stride, u64 offset) {
+        for (u64 i = 0; i < size; i += stride) {
+            version (Posix) {
+                void* host_address = this.to_host_address(space, address + i);
+
+                int unmap_error = munmap(host_address, memory_region.size);
+                if (unmap_error < 0) {
+                    perror("unmap");
+                    error_nds("Failed to unmap memory region");
+                    assert(0);
+                }
+
+                void* map_error = mmap(host_address, memory_region.size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, memory_region.descriptor, offset);
+                if (cast(u64) map_error < 0) {
+                    error_nds("Failed to map memory region");
+                    assert(0);
+                }
+            } else {
+                error_nds("VirtualMemoryManager not implemented for non-posix systems");
+                assert(0);
+            }
+        }
+    }
 }
 
 __gshared VirtualMemoryManager _virtual_memory_manager;
@@ -133,9 +158,6 @@ version (Posix) {
         for (int i = 0; i < _virtual_memory_manager.memory_spaces.length; i++) {
             VirtualMemorySpace* space = &_virtual_memory_manager.memory_spaces[i];
             if (_virtual_memory_manager.in_range(space, info.si_addr)) {
-                if (_virtual_memory_manager.to_guest_address(space, info.si_addr) == 0x0400_0000) error_nds("shit.");
-
-                log_nds("Illegal memory access in space %s at address 0x%08x. Fixing via mmap... (%x)", space.name, _virtual_memory_manager.to_guest_address(space, info.si_addr), info.si_addr);
                 _virtual_memory_manager.map(space, _virtual_memory_manager.illegal_access_page, _virtual_memory_manager.to_guest_address(space, cast(void*) (cast(u64) info.si_addr & ~0xFFF)));
                 return;
             }

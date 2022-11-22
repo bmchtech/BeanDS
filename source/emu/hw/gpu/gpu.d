@@ -105,6 +105,7 @@ final class GPU {
 
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
+        log_ppu("pointers: %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr);
         if (display_swap) {
             present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         } else {

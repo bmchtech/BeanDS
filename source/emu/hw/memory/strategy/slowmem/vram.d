@@ -141,9 +141,10 @@ final class SlowMemVRAM {
         } else {
             T result = 0;
 
-            for (int i = 2; i < 4; i++) {
-                if (i == 2 && vram_c_in_ram && blocks[2].in_range(address)) result |= blocks[2].read!T(address);
-                if (i == 2 && vram_d_in_ram && blocks[3].in_range(address)) result |= blocks[3].read!T(address);
+            if (vram_c_in_ram && blocks[2].in_range(address)) result |= blocks[2].read!T(address);
+            if (vram_d_in_ram && blocks[3].in_range(address)) result |= blocks[3].read!T(address);
+            if (!vram_c_in_ram && !vram_d_in_ram) {
+                error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
             }
             
             return result;
@@ -154,9 +155,10 @@ final class SlowMemVRAM {
         static if (!is_memory_unit!T) {
             error_vram("Tried to write to VRAM with wrong type (size: %d)", T.sizeof);
         } else {
-            for (int i = 2; i < 4; i++) {
-                if (i == 2 && vram_c_in_ram && blocks[2].in_range(address)) blocks[2].write!T(address, value);
-                if (i == 2 && vram_d_in_ram && blocks[3].in_range(address)) blocks[3].write!T(address, value);
+            if (vram_c_in_ram && blocks[2].in_range(address)) blocks[2].write!T(address, value);
+            if (vram_d_in_ram && blocks[3].in_range(address)) blocks[3].write!T(address, value);
+            if (!vram_c_in_ram && !vram_d_in_ram) {
+                error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
             }
         }
     }

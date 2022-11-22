@@ -229,16 +229,8 @@ final class SlowMem : MemStrategy {
         Half pram_read_half(Word address) { return pram.read!Half(address); }
         Byte pram_read_byte(Word address) { return pram.read!Byte(address); }
 
-        void pram_write_word(Word address, Word value) { pram.write!Word(address, value); }
-        void pram_write_half(Word address, Half value) { pram.write!Half(address, value); }
-        void pram_write_byte(Word address, Byte value) { pram.write!Byte(address, value); }
-
         Word oam_read_word(Word address) { return oam.read!Word(address); }
         Half oam_read_half(Word address) { return oam.read!Half(address); }
         Byte oam_read_byte(Word address) { return oam.read!Byte(address); }
-
-        void oam_write_word(Word address, Word value) { oam.write!Word(address, value); }
-        void oam_write_half(Word address, Half value) { oam.write!Half(address, value); }
-        void oam_write_byte(Word address, Byte value) { oam.write!Byte(address, value); }
     }
 }

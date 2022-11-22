@@ -88,7 +88,16 @@ final class Scheduler {
     }
 
     pragma(inline, true) void process_events() {
-        while (current_timestamp >= events[0].timestamp) process_event();
+        while (current_timestamp >= events[0].timestamp) {
+            if (scheduler.get_current_time_relative_to_cpu() >= 0x000000000e5fa630) {
+                import std.stdio;
+            }
+            process_event();
+        }
+            if (scheduler.get_current_time_relative_to_cpu() >= 0x000000000e5fa630) {
+                import std.stdio;
+            }
+
     }
 
     pragma(inline, true) ulong get_current_time() {

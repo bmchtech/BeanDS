@@ -193,11 +193,11 @@ final class NDS {
             arm9.run_instruction();
             scheduler.tick(1);
             scheduler.process_events();
-        }
 
-        while (arm7.halted && arm9.halted) {
-            scheduler.tick_to_next_event();
-            scheduler.process_events();
+            while (arm7.halted && arm9.halted) {
+                scheduler.tick_to_next_event();
+                scheduler.process_events();
+            }
         }
     }
 

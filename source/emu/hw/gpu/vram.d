@@ -145,7 +145,6 @@ final class VRAM {
         vram_c.offset      = offset;
         vram_c.slot_mapped = mst == 3;
 
-        mem.vram_set_c_block_mapping(mst == 2);
         final switch (mst) {
             case 0: vram_c.address = 0x0684_0000; break;
             case 1: vram_c.address = 0x0600_0000 + offset * 0x20000; break;
@@ -155,6 +154,7 @@ final class VRAM {
         }
 
         mem.vram_remap_slots(blocks);
+        mem.vram_set_c_block_mapping(mst == 2);
     }
 
     void set_vram_D(int mst, int offset) {
@@ -162,7 +162,6 @@ final class VRAM {
         vram_d.offset      = offset;
         vram_d.slot_mapped = mst == 3;
 
-        mem.vram_set_d_block_mapping(mst == 2);
         final switch (mst) {
             case 0: vram_d.address = 0x0686_0000; break;
             case 1: vram_d.address = 0x0600_0000 + offset * 0x20000; break;
@@ -172,6 +171,7 @@ final class VRAM {
         }
 
         mem.vram_remap_slots(blocks);
+        mem.vram_set_d_block_mapping(mst == 2);
     }
 
     void set_vram_E(int mst) {

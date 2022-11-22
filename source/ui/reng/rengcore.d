@@ -27,7 +27,7 @@ class RengCore : Core {
             auto_compensate_hidpi = true;
         }
 
-        raylib.SetConfigFlags(raylib.ConfigFlags.FLAG_WINDOW_RESIZABLE);
+        // raylib.SetConfigFlags(raylib.ConfigFlags.FLAG_WINDOW_RESIZABLE);
         super(width, height, "BeanDS");
     }
 
