@@ -366,8 +366,9 @@ template execute_thumb(T : ArmCPU) {
         cpu.swi();
     }
 
-    static void create_undefined_instruction(T cpu, Half opcode) {      
-        error_unimplemented("Tried to execute undefined THUMB instruction: %04x", opcode);
+    static void create_undefined_instruction(T cpu, Half opcode) {
+        static if (v5TE!T) error_unimplemented("ARM9 tried to execute undefined THUMB instruction: %04x", opcode);
+        static if (v4T!T)  error_unimplemented("ARM7 tried to execute undefined THUMB instruction: %04x", opcode);
     }
 
     static JumptableEntry[256] create_jumptable() {

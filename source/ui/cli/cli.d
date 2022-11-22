@@ -10,6 +10,7 @@ struct CLIArgs {
     uint screen_scale;
     bool direct_boot;
     bool reset_firmware;
+    bool detailed_ui;
 }
 
 CLIArgs parse_cli_args(string[] args) {
@@ -22,6 +23,7 @@ CLIArgs parse_cli_args(string[] args) {
 		.add(new Option("s", "screen_scale", "the screen scale (default: 1)").optional.defaultValue("1"))
         .add(new Flag("d", "direct_boot", "skip the firmware"))
         .add(new Flag("r", "reset_firmware", "factory reset the firmware before booting"))
+        .add(new Flag("u", "detailed_ui", "show the detailed ui"))
         .parse(args);
 
     return CLIArgs(
@@ -30,6 +32,7 @@ CLIArgs parse_cli_args(string[] args) {
         to!int(program.option("arm9_ringbuffer_size")),
         to!int(program.option("screen_scale")),
         program.hasFlag("direct_boot"),
-        program.hasFlag("reset_firmware")
+        program.hasFlag("reset_firmware"),
+        program.hasFlag("detailed_ui"),
     );
 }

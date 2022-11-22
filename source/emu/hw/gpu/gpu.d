@@ -8,6 +8,8 @@ import util;
 __gshared GPU gpu;
 
 final class GPU {
+    Mem mem;
+    
     int  dot;
     int  scanline;
     bool enabled;
@@ -27,7 +29,7 @@ final class GPU {
 
     void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
 
-    this() {
+    this(Mem mem) {
         dot      = 0;
         scanline = 0;
 
@@ -35,9 +37,7 @@ final class GPU {
 
         enabled = true;
 
-        pram = new PRAM();
-        vram = new VRAM();
-        oam  = new OAM();
+        vram = new VRAM(mem);
     }
 
     // void set_frontend_vblank_callback(void delegate(Pixel[192][256]) frontend_vblank_callback) {
@@ -105,6 +105,7 @@ final class GPU {
 
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
+        log_ppu("pointers: %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr);
         if (display_swap) {
             present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         } else {

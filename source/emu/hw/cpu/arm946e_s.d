@@ -5,12 +5,14 @@ import emu.hw.cpu.architecture;
 import emu.hw.cpu.armcpu;
 import emu.hw.cpu.cp.cp15;
 import emu.hw.cpu.cp.tcm;
+import emu.hw.cpu.instructionblock;
 import emu.hw.cpu.interrupt;
 import emu.hw.cpu.jumptable.jumptable_arm;
 import emu.hw.cpu.jumptable.jumptable_thumb;
 import emu.hw.memory.cart.cart;
 import emu.hw.memory.mem;
 import emu.hw.memory.mem9;
+import emu.hw.memory.strategy.memstrategy;
 import emu.hw.spi.device.firmware;
 import emu.scheduler;
 import util;
@@ -22,8 +24,6 @@ final class ARM946E_S : ArmCPU {
 
     Word[2] arm_pipeline;
     Half[2] thumb_pipeline;
-    
-    Mem memory;
 
     InstructionSet instruction_set;   
 
@@ -39,10 +39,12 @@ final class ARM946E_S : ArmCPU {
     InstructionBlock* instruction_block;
     Word current_instruction_block_address = 0x06000000;
 
-    this(Mem memory, uint ringbuffer_size) {
-        this.memory = memory;
+    Mem mem;
+
+    this(Mem mem, uint ringbuffer_size) {
         current_mode = MODE_USER;
         arm9 = this;
+        this.mem = mem;
 
         cpu_trace = new CpuTrace(this, ringbuffer_size);
         cp15 = new Cp15();
@@ -99,7 +101,7 @@ final class ARM946E_S : ArmCPU {
                 scheduler.tick(1);
                 instruction_block = tcm.read_itcm_instruction(requested_instruction_block_address);
             } else {
-                instruction_block = mem9.instruction_read(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
+                instruction_block = mem.read_instruction9(regs[pc] & ~(INSTRUCTION_BLOCK_SIZE - 1));
             }
 
             current_instruction_block_address = requested_instruction_block_address;
@@ -159,7 +161,7 @@ final class ARM946E_S : ArmCPU {
         
         version (release) {
         } else {
-            cpu_trace.capture();
+            // cpu_trace.capture();
         }
         
         if (num_log > 0) {
@@ -173,6 +175,7 @@ final class ARM946E_S : ArmCPU {
             execute!Word(opcode);
         } else {
             Half opcode = fetch!Half();
+            if (opcode == 0) error_arm7("ARM9 is probably executing data");
             execute!Half(opcode);
         }
     }
@@ -506,7 +509,9 @@ final class ARM946E_S : ArmCPU {
         else if (tcm.can_read_dtcm(address)) { scheduler.tick(1); result = tcm.read_dtcm!T(address); }
         
         else {
-            result = mem9.read!T(address);
+            static if (is(T == Word)) result = mem.read_data_word9(address);
+            static if (is(T == Half)) result = mem.read_data_half9(address);
+            static if (is(T == Byte)) result = mem.read_data_byte9(address);
         }
 
         for (int i = 0; i < T.sizeof; i++) {
@@ -519,7 +524,9 @@ final class ARM946E_S : ArmCPU {
         if (tcm.can_write_itcm(address)) { scheduler.tick(1); tcm.write_itcm!T(address, value); return; }
         if (tcm.can_write_dtcm(address)) { scheduler.tick(1); tcm.write_dtcm!T(address, value); return; }
         
-        mem9.write(address, value);
+        static if (is(T == Word)) mem.write_data_word9(address, value);
+        static if (is(T == Half)) mem.write_data_half9(address, value);
+        static if (is(T == Byte)) mem.write_data_byte9(address, value);
 
         for (int i = 0; i < T.sizeof; i++) {
             version (ift) { IFTDebugger.commit_mem_write(HwType.NDS9, address + i, Word(value.get_byte(i))); }

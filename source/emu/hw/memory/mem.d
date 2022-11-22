@@ -1,27 +1,29 @@
 module emu.hw.memory.mem;
 
-import emu.hw.cpu.armcpu;
+import emu.hw.cpu.instructionblock;
+
+// import emu.hw.cpu.armcpu;
 import util;
 
-enum AccessType {
-    NONSEQUENTIAL,
-    SEQUENTIAL
-}
+// enum AccessType {
+//     NONSEQUENTIAL,
+//     SEQUENTIAL
+// }
 
-abstract class Mem {
-    void memcpy(Word address, Byte* source, size_t size) {
-        for (int i = 0; i < size; i++) {
-            this.write_byte(address + i, source[i]);
-        }
-    }
+// abstract class Mem {
+//     void memcpy(Word address, Byte* source, size_t size) {
+//         for (int i = 0; i < size; i++) {
+//             this.write_byte(address + i, source[i]);
+//         }
+//     }
 
-    abstract void write_word(Word address, Word value);
-    abstract void write_half(Word address, Half value);
-    abstract void write_byte(Word address, Byte value);
-    abstract Word read_word(Word address);
-    abstract Half read_half(Word address);
-    abstract Byte read_byte(Word address);
-}
+//     abstract void write_word(Word address, Word value);
+//     abstract void write_half(Word address, Half value);
+//     abstract void write_byte(Word address, Byte value);
+//     abstract Word read_word(Word address);
+//     abstract Half read_half(Word address);
+//     abstract Byte read_byte(Word address);
+// }
 
 auto get_region(Word address) {
     return address[24..27];
