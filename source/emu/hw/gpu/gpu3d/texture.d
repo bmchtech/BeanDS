@@ -29,9 +29,9 @@ final class TextureResolver {
         int slot = address >> 17;
         if (slot > 4) slot = 4;
 
-        static if (is (T == Word)) return mem.vram_read_slot_word(slot_type, slot, address);
-        static if (is (T == Half)) return mem.vram_read_slot_half(slot_type, slot, address);
-        static if (is (T == Byte)) return mem.vram_read_slot_byte(slot_type, slot, address);
+        static if (is (T == Word)) return mem.vram_read_slot_word(slot_type, slot, address % (1 << 17));
+        static if (is (T == Half)) return mem.vram_read_slot_half(slot_type, slot, address % (1 << 17));
+        static if (is (T == Byte)) return mem.vram_read_slot_byte(slot_type, slot, address % (1 << 17));
     }
 
     float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_base_address) {
