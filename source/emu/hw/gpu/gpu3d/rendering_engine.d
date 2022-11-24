@@ -288,8 +288,6 @@ final class RenderingEngine {
         for (int i = 0; i < num_polygons; i++) {
             // log_gpu3d("rendering funky polygon #%d", i);
             auto p = annotated_polygons[i];
-            auto left_xy  = p.viewport_coords[p.left_index] [0..2];
-            auto right_xy = p.viewport_coords[p.right_index][0..2];
 
             auto effective_top_y = clamp(p.top_y, 0, 191);
             auto effective_bot_y = clamp(p.bot_y, 0, 191);
@@ -297,6 +295,9 @@ final class RenderingEngine {
             // log_gpu3d("determined. do we even render? %d >= %d >= %d. (%d %d)", p.top_y, 0, p.bot_y, effective_top_y, effective_bot_y);
 
             for (int effective_scanline = effective_top_y; effective_scanline >= effective_bot_y; effective_scanline--) {
+                auto left_xy  = [p.viewport_coords[p.left_index] [0], p.viewport_coords[p.left_index] [1]];
+                auto right_xy = [p.viewport_coords[p.right_index][0], p.viewport_coords[p.right_index][1]];
+
                 auto start_x = (effective_scanline - cast(int) left_xy[1]) / 
                     get_slope(
                         p.viewport_coords[p.previous_left_index][1] - p.viewport_coords[p.left_index][1], 
@@ -336,9 +337,9 @@ final class RenderingEngine {
                 int effective_end_x   = end_x.integral_part;
 
                 if (start_x < 0)   effective_start_x = 0;
-                if (start_x > 256) effective_start_x = 256;
+                if (start_x > 255) effective_start_x = 255;
                 if (end_x < 0)     effective_end_x = 0;
-                if (end_x > 256)   effective_end_x = 256;
+                if (end_x > 255)   effective_end_x = 255;
 
                 if (effective_start_x == 0 && effective_end_x == 0) {
                     // log_gpu3d("bug!");
@@ -443,7 +444,7 @@ final class RenderingEngine {
                     parent.plot(191 - effective_scanline, Pixel(r, g, b, a), x, z, w);
                 }
 
-                if (effective_scanline == p.bot_y) {
+                for (int limit = 0; limit < 2 && effective_scanline == p.bot_y; limit++) {
                     p.top_y = p.bot_y;
 
                     if (p.annotated_vertices[p.annotated_vertex_next].left) {
