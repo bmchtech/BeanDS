@@ -2,6 +2,7 @@ module emu.hw.gpu.gpu3d.geometry_engine;
 
 import emu.hw.cpu.interrupt;
 import emu.hw.gpu.gpu3d;
+import emu.hw.gpu.gpu3d.textureblending;
 import emu.scheduler;
 import util;
 
@@ -133,6 +134,13 @@ final class GeometryEngine {
     int vertex_index = 0;
 
     Word upcoming_polygon_attributes;
+    int light_enable;
+    TextureBlendingMode texture_blending_mode;
+    int alpha;
+
+    int emission_r;
+    int emission_g;
+    int emission_b;
 
     int texture_vram_offset;
     bool texture_repeat_s_direction;
@@ -464,6 +472,10 @@ final class GeometryEngine {
     }
 
     void handle_BEGIN_VTXS(Word* args) {
+        light_enable          =                           upcoming_polygon_attributes[0..3];
+        texture_blending_mode = cast(TextureBlendingMode) upcoming_polygon_attributes[4..5];
+        alpha                 =                           upcoming_polygon_attributes[16..20];
+
         polygon_type = cast(PolygonType) args[0][0..1];
         if (args[0][2..31]) {
             error_gpu3d("there's probably an issue with command decoding.");
@@ -578,6 +590,8 @@ final class GeometryEngine {
         polygon.texture_format              = texture_format;
         polygon.texture_color_0_transparent = texture_color_0_transparent;
         polygon.palette_base_address        = palette_base_address;
+        polygon.texture_blending_mode       = texture_blending_mode;
+        polygon.alpha                       = alpha;
 
         // log_gpu3d("SUBMIT POLYGON #[%d]", polygon_index);
         // log_gpu3d("    uses_textures               : %d", polygon.uses_textures               );
@@ -638,6 +652,21 @@ final class GeometryEngine {
             texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[1][0] * normal_vector[1] + texture_matrix[2][0] * normal_vector[2] + texcoord[0];
             texcoord_prime[1] = texture_matrix[0][1] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[2][1] * normal_vector[2] + texcoord[1];
         }
+
+        log_gpu3d("set emission colors: %x %x %x", emission_r, emission_g, emission_b);
+
+        current_color_r = emission_r;
+        current_color_g = emission_g;
+        current_color_b = emission_b;
+
+        for (int i = 0; i < 3; i++) {
+        }
+    }
+
+    void handle_SPE_EMI(Word* args) {
+        emission_r = args[0][16..20];
+        emission_g = args[0][21..25];
+        emission_b = args[0][26..30];
     }
 
     void handle_VEC_TEST(Word* args) {
@@ -833,7 +862,7 @@ static GPU3DCommand[256] generate_commands()() {
     commands[0x2A] = GPU3DCommand("TEXIMAGE_PARAM",   0x2A, 1,  1,   true);
     commands[0x2B] = GPU3DCommand("PLTT_BASE",        0x2B, 1,  1,   true);
     commands[0x30] = GPU3DCommand("DIF_AMB",          0x30, 1,  4,   false);
-    commands[0x31] = GPU3DCommand("SPE_EMI",          0x31, 1,  4,   false);
+    commands[0x31] = GPU3DCommand("SPE_EMI",          0x31, 1,  4,   true);
     commands[0x32] = GPU3DCommand("LIGHT_VECTOR",     0x32, 1,  6,   false);
     commands[0x33] = GPU3DCommand("LIGHT_COLOR",      0x33, 1,  1,   false);
     commands[0x34] = GPU3DCommand("SHININESS",        0x34, 32, 32,  false);

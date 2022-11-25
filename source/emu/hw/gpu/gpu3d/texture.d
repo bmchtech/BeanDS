@@ -37,6 +37,7 @@ final class TextureResolver {
     float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_base_address) {
         auto texture_s_size = (8 << p.orig.texture_s_size);
         auto texture_t_size = (8 << p.orig.texture_t_size);
+        int polygon_alpha = 31;
 
         if (p.orig.texture_repeat_s_direction) {
             if (p.orig.texture_flip_s_direction) {
@@ -90,7 +91,7 @@ final class TextureResolver {
                     color[0..4],
                     color[5..9],
                     color[10..14],
-                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : polygon_alpha
                 ];
             
             case TextureFormat.COLOR_PALETTE_16:
@@ -103,7 +104,7 @@ final class TextureResolver {
                     color[0..4],
                     color[5..9],
                     color[10..14],
-                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : polygon_alpha
                 ];
 
             case TextureFormat.COLOR_PALETTE_256:
@@ -117,7 +118,7 @@ final class TextureResolver {
                     color[0..4],
                     color[5..9],
                     color[10..14],
-                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : 31.0
+                    (texel == 0 && p.orig.texture_color_0_transparent) ? 0.0 : polygon_alpha
                 ];
             
             case TextureFormat.TEXEL_COMPRESSED_4x4:
@@ -161,7 +162,7 @@ final class TextureResolver {
                         h[0..4],
                         h[5..9],
                         h[10..14],
-                        31.0,
+                        polygon_alpha,
                     ];
                 }
 
@@ -183,7 +184,7 @@ final class TextureResolver {
                                     (color0[0..4]   + color1[0..4])   / 2,
                                     (color0[5..9]   + color1[5..9])   / 2,
                                     (color0[10..14] + color1[10..14]) / 2,
-                                    31.0
+                                    polygon_alpha
                                 ];
                             
                             case 3:
@@ -193,7 +194,7 @@ final class TextureResolver {
                                     (color0[0..4]   * 5 + color1[0..4]   * 3) / 8,
                                     (color0[5..9]   * 5 + color1[5..9]   * 3) / 8,
                                     (color0[10..14] * 5 + color1[10..14] * 3) / 8,
-                                    31.0
+                                    polygon_alpha
                                 ];
                         }
                     
@@ -218,7 +219,7 @@ final class TextureResolver {
                                     (color0[0..4]   * 3 + color1[0..4]   * 5) / 8,
                                     (color0[5..9]   * 3 + color1[5..9]   * 5) / 8,
                                     (color0[10..14] * 3 + color1[10..14] * 5) / 8,
-                                    31.0
+                                    polygon_alpha
                                 ];
                         }
                 }

@@ -48,6 +48,66 @@ final class GPU3D {
     Polygon!Point_20_12* geometry_buffer;
     Polygon!Point_20_12* rendering_buffer;
 
+    struct TaggedPixel {
+        Coord_14_18 z;
+        Coord_14_18 w;
+        Pixel p;
+    }
+
+    struct PixelList {
+        TaggedPixel[10] pixels;
+        int count;
+
+        void add(Pixel pixel, Coord_14_18 z, Coord_14_18 w, bool depth_buffering_mode, bool enable_alpha_blending) {
+            if (enable_alpha_blending) {
+                // sort by either w or z depending on depth_buffering_mode
+                for (int i = 0; i < count; i++) {
+                    Coord_14_18 current_pixel_depth = depth_buffering_mode ? pixels[i].w : pixels[i].z;
+                    Coord_14_18 new_pixel_depth     = depth_buffering_mode ? w           : z;
+                    if (new_pixel_depth < current_pixel_depth) {
+                        for (int j = count; j > i; j--) {
+                            pixels[j] = pixels[j - 1];
+                        }
+                        pixels[i] = TaggedPixel(z, w, pixel);
+                        count++;
+                        if (count > 9) count = 9;
+                        return;
+                    }
+                }
+                pixels[count++] = TaggedPixel(z, w, pixel);
+                if (count > 9) count = 9;
+            } else {
+                pixels[0] = TaggedPixel(z, w, pixel);
+            }
+        }
+
+        Pixel blend(bool enable_alpha_blending) {
+            // for (int i = 0; i < count && count > 5; i++) {
+                // if (pixels[i].w != Coord_14_18.from_repr(0x7FFFFFFF))
+                // log_gpu3d("sussy baka[%d / %d]: %f", i, count, cast(float) pixels[i].w);
+            // }
+
+            if (enable_alpha_blending) {
+                import std.algorithm;
+                
+                Pixel result = pixels[0].p;
+
+                for (int i = 1; i < count; i++) {
+                    if (result.a == 31) break;
+                    result.r = (result.r * (31 - pixels[i].p.a) + pixels[i].p.r * pixels[i].p.a) >> 5;
+                    result.g = (result.g * (31 - pixels[i].p.a) + pixels[i].p.g * pixels[i].p.a) >> 5;
+                    result.b = (result.b * (31 - pixels[i].p.a) + pixels[i].p.b * pixels[i].p.a) >> 5;
+                    result.a = max(result.a, pixels[i].p.a);
+                }
+
+                return result;
+            } else {
+                return pixels[0].p;
+            }
+        }
+    }
+
+    PixelList  [256][192] framebuffer_pixellist;
     Pixel      [256][192] framebuffer;
     Coord_14_18[256][192] depth_buffer;
     bool depth_buffering_mode;
@@ -84,16 +144,23 @@ final class GPU3D {
 
         if (depth_buffering_mode ? (w < 0) : (z < 0)) return;
         
-        if (depth_buffer[scanline][x] >= depth_value && p.a != 0) {
-            framebuffer [scanline][x] = p;
-            depth_buffer[scanline][x] = depth_value;
-        }
+        // if (depth_buffer[scanline][x] >= depth_value && p.a != 0) {
+            // depth_buffer[scanline][x] = depth_value;
+            framebuffer_pixellist[scanline][x].add(p, z, w, depth_buffering_mode, enable_alpha_blending);
+        // }
     }
 
     void start_rendering() {
         for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
             framebuffer[y][x] = Pixel(0, 0, 0, 0);
+            for (int i = 0; i < 10; i++) {
+                framebuffer_pixellist[y][x].pixels[i] = TaggedPixel(
+                    Coord_14_18.from_repr(0x7FFFFFFF), 
+                    Coord_14_18.from_repr(0x7FFFFFFF), 
+                    Pixel(0, 0, 0, 0)
+                );
+            }
 
             // TODO: what should the reset value be?
             depth_buffer[y][x] = Coord_14_18.from_repr(0x7FFFFFFF);
@@ -102,7 +169,7 @@ final class GPU3D {
     }
 
     void stop_rendering_scanline() {
-        // i'll keep this around in case i need to put something here later
+
     }
 
     void draw_scanlines_to_canvas() {
@@ -110,7 +177,7 @@ final class GPU3D {
 
         for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            auto pixel = framebuffer[y][x];
+            auto pixel = framebuffer_pixellist[y][x].blend(enable_alpha_blending);
             gpu_engine_a.ppu.canvas.draw_3d_pixel(y, x, pixel, pixel.a == 0);
         }
         }

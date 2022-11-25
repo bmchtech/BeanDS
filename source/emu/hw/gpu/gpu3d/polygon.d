@@ -2,6 +2,7 @@ module emu.hw.gpu.gpu3d.polygon;
 
 import emu.hw.gpu.gpu3d.math;
 import emu.hw.gpu.gpu3d.texture;
+import emu.hw.gpu.gpu3d.textureblending;
 
 import util;
 
@@ -29,6 +30,8 @@ struct Polygon(T) {
     TextureFormat texture_format;
     bool texture_color_0_transparent;
     Word palette_base_address;
+    int alpha;
+    TextureBlendingMode texture_blending_mode;
 }
 
 interface PolygonAssembler {

@@ -8,4 +8,5 @@ public {
     import emu.hw.gpu.gpu3d.rendering_engine;
     import emu.hw.gpu.gpu3d.shading;
     import emu.hw.gpu.gpu3d.texture;
+    import emu.hw.gpu.gpu3d.textureblending;
 }
