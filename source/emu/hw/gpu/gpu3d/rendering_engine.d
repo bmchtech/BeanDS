@@ -235,6 +235,7 @@ final class RenderingEngine {
     // not a perfect implementation of the above yet but... 
     // TODO???: maybe make interpolation more accurate?
     Coord_14_18 get_interpolation_factor(Coord_14_18 xmax, Coord_14_18 x, Coord_14_18 w0, Coord_14_18 w1) {
+        if ((xmax - x) + x == 0) return Coord_14_18(0.0f);
         return ((xmax - x) * 1) / ((xmax - x) * 1 + x * 1);
     }
 
@@ -348,8 +349,8 @@ final class RenderingEngine {
                 int effective_end_x   = end_x.integral_part;
 
                 if (start_x < 0)   effective_start_x = 0;
-                if (start_x > 255) effective_start_x = 255;
-                if (end_x < 0)     effective_end_x = 0;
+                if (start_x > 255) effective_start_x = 256;
+                if (end_x < 0)     effective_end_x = -1;
                 if (end_x > 255)   effective_end_x = 255;
 
                 if (effective_start_x == 0 && effective_end_x == 0) {
@@ -414,6 +415,9 @@ final class RenderingEngine {
                         w_r
                     );
 
+                    // TODO: this is a hack to work around polygon clipping! when we implement that, we can remove this
+                    if (factor_scanline < 0 || factor_scanline > 1) factor_scanline = Coord_14_18(0); // error_gpu3d("calculating factor scanline: %d %d %d %f %f %f", cast(int) end_x, cast(int) start_x, cast(int) x, cast(float) w_l, cast(float) w_r, cast(float) factor_scanline);
+
                     factor_l = clamp(factor_l, Coord_14_18(0.0f), Coord_14_18(1.0f));
                     factor_r = clamp(factor_r, Coord_14_18(0.0f), Coord_14_18(1.0f));
 
@@ -443,6 +447,11 @@ final class RenderingEngine {
                         int tex_g = cast(int) color[1] << 1;
                         int tex_b = cast(int) color[2] << 1;
                         int tex_a = cast(int) color[3];
+
+
+                        int old_r = r;
+                        int old_g = g;
+                        int old_b = b;
 
                         final switch (p.orig.texture_blending_mode) {
                             case TextureBlendingMode.MODULATION:

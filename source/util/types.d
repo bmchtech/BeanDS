@@ -63,6 +63,10 @@ struct FixedPoint(uint I, uint F) {
         }
     }
 
+    FixedPoint!(I, F) opUnary(string s : "-")() {
+        return FixedPoint!(I, F).from_repr(-this.value);
+    }
+
     T opCast(T)() inout
     if (is(T == float)) {
         return cast(float) this.value / (1 << F);

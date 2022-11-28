@@ -81,12 +81,7 @@ final class GPU3D {
             }
         }
 
-        Pixel blend(bool enable_alpha_blending) {
-            // for (int i = 0; i < count && count > 5; i++) {
-                // if (pixels[i].w != Coord_14_18.from_repr(0x7FFFFFFF))
-                // log_gpu3d("sussy baka[%d / %d]: %f", i, count, cast(float) pixels[i].w);
-            // }
-
+        Pixel resolve(bool enable_alpha_blending) {
             if (enable_alpha_blending) {
                 import std.algorithm;
                 
@@ -177,7 +172,7 @@ final class GPU3D {
 
         for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            auto pixel = framebuffer_pixellist[y][x].blend(enable_alpha_blending);
+            auto pixel = framebuffer_pixellist[y][x].resolve(enable_alpha_blending);
             gpu_engine_a.ppu.canvas.draw_3d_pixel(y, x, pixel, pixel.a == 0);
         }
         }

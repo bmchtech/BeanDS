@@ -142,6 +142,12 @@ final class GeometryEngine {
     int emission_g;
     int emission_b;
 
+    int[3] specular_color;
+    int[3] diffuse_color;
+    int[3] ambient_color;
+    int[4][3] light_color;
+    Point_20_12[4] light_vector;
+
     int texture_vram_offset;
     bool texture_repeat_s_direction;
     bool texture_repeat_t_direction;
@@ -274,6 +280,9 @@ final class GeometryEngine {
             
             case MatrixMode.TEXTURE:
                 texture_matrix = matrix;
+                for (int x = 0; x < 4; x++) {
+                    log_gpu3d("TEXMATR %f %f %f %f", cast(float) texture_matrix[x][0], cast(float) texture_matrix[x][1], cast(float) texture_matrix[x][2], cast(float) texture_matrix[x][3]);
+                }
                 break;
         }
     }
@@ -392,6 +401,17 @@ final class GeometryEngine {
 
     void handle_MTX_LOAD_4x4(Word* args) {
         auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
+
+        if (matrix_mode == MatrixMode.TEXTURE) {
+            for (int x = 0; x < 4; x++) {
+                log_gpu3d("TEXMATR input %08x %08x %08x %08x", 
+                    args[x * 4 + 0],
+                    args[x * 4 + 1],
+                    args[x * 4 + 2],
+                    args[x * 4 + 3]
+                );
+            }
+        }
         
         set_current_matrix(
             Matrix([
@@ -649,24 +669,122 @@ final class GeometryEngine {
         ]);
 
         if (texture_transformation_mode == TextureTransformationMode.NORMAL) {
-            texcoord_prime[0] = texture_matrix[0][0] * normal_vector[0] + texture_matrix[1][0] * normal_vector[1] + texture_matrix[2][0] * normal_vector[2] + texcoord[0];
-            texcoord_prime[1] = texture_matrix[0][1] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[2][1] * normal_vector[2] + texcoord[1];
+            texcoord_prime[0] = ((texture_matrix[0][0] * normal_vector[0] + texture_matrix[0][1] * normal_vector[1] + texture_matrix[0][2] * normal_vector[2]) / 16) + texcoord[0];
+            texcoord_prime[1] = ((texture_matrix[1][0] * normal_vector[0] + texture_matrix[1][1] * normal_vector[1] + texture_matrix[1][2] * normal_vector[2]) / 16) + texcoord[1];
         }
+        normal_vector = position_vector_matrix * normal_vector;
 
-        log_gpu3d("set emission colors: %x %x %x", emission_r, emission_g, emission_b);
+        // current_color_r = emission_r;
+        // current_color_g = emission_g;
+        // current_color_b = emission_b;
 
-        current_color_r = emission_r;
-        current_color_g = emission_g;
-        current_color_b = emission_b;
+        // for (int i = 0; i < 3; i++) {
+        //     if ((light_enable >> i) & 1) {
+        //         import std.algorithm;
 
-        for (int i = 0; i < 3; i++) {
+        //         auto half_vector = Point_20_12([
+        //             light_vector[i][0] / 2,
+        //             light_vector[i][1] / 2,
+        //             (light_vector[i][2] - 1) / 2,
+        //             Coord_20_12(1.0f)
+        //         ]);
+
+        //         // for (int x = 0; x < 4; x++) {
+        //         // // for (int y = 0; y < 4; y++) {
+        //         // //     log_gpu3d("    %f", position_vector_matrix[i][x][y]);
+        //         // // }
+        //         //     log_gpu3d("MATR %f %f %f %f", cast(float) position_vector_matrix[x][0], cast(float) position_vector_matrix[x][1], cast(float) position_vector_matrix[x][2], cast(float) position_vector_matrix[x][3]);
+        //         // }
+
+
+        //         Point_20_12 light_vector_prime = position_vector_matrix * light_vector[i];
+
+
+        //         // log_gpu3d("light vector %f %f %f %f", light_vector_prime[0].to_float(), light_vector_prime[1].to_float(), light_vector_prime[2].to_float(), light_vector_prime[3].to_float());
+
+        //         float diffuse   = -cast(float) ((normal_vector).dot(light_vector_prime));
+        //         float shininess = cast(float) (((half_vector.negation()).dot(normal_vector) * (half_vector.negation()).dot(normal_vector)));
+        //         // log_gpu3d("diffuse nd shininess: %f, %f", diffuse, shininess);
+        //         // // log_gpu3d("normal_vector: %f, %f, %f", cast(float) normal_vector[0], cast(float) normal_vector[1], cast(float) normal_vector[2]);
+        //         // log_gpu3d("light_vector: %f, %f, %f %f", cast(float) light_vector[i][0], cast(float) light_vector[i][1], cast(float) light_vector[i][2], cast(float) light_vector[i][3]);
+        //         // log_gpu3d("light_color: %f, %f, %f", cast(float) light_vector_prime[0], cast(float) light_vector_prime[1], cast(float) light_vector_prime[2]);
+        //         // log_gpu3d("diffuse products: %f %f %f", cast(float) diffuse_color[0] * cast(float) light_vector_prime[0], cast(float) diffuse_color[1] * cast(float) light_vector_prime[1], cast(float) diffuse_color[2] * cast(float) light_vector_prime[2]);
+        //         // log_gpu3d("diffuse products: %f %f %f", diffuse_color [0] * cast(float) diffuse_color[0] * cast(float) light_vector_prime[0], diffuse_color [1] * cast(float) diffuse_color[1] * cast(float) light_vector_prime[1], diffuse_color [2] * cast(float) diffuse_color[2] * cast(float) light_vector_prime[2]);
+        //         // log_gpu3d("specular: %d %d %d", specular_color[0], specular_color[1], specular_color[2]);
+        //         if (diffuse   < 0) diffuse = 0;
+        //         if (shininess < 0) shininess = 0;
+
+        //         // log_gpu3d("color before: %f %f %f", cast(float) current_color_r, cast(float) current_color_g, cast(float) current_color_b);
+                
+        //         current_color_r += cast(int) (
+        //             specular_color[0] * shininess * cast(float) light_vector_prime[0] + 
+        //             diffuse_color [0] * diffuse   * cast(float) light_vector_prime[0] +
+        //             ambient_color [0] *             cast(float) light_vector_prime[0]
+        //         );
+
+        //         current_color_g += cast(int) (
+        //             specular_color[1] * shininess * cast(float) light_vector_prime[1] + 
+        //             diffuse_color [1] * diffuse   * cast(float) light_vector_prime[1] +
+        //             ambient_color [1] *             cast(float) light_vector_prime[1]
+        //         );
+
+        //         current_color_b += cast(int) (
+        //             specular_color[2] * shininess * cast(float) light_vector_prime[2] + 
+        //             diffuse_color [2] * diffuse   * cast(float) light_vector_prime[2] +
+        //             ambient_color [2] *             cast(float) light_vector_prime[2]
+        //         );
+
+        //         if (current_color_r > 0x1F) current_color_r = 0x1F;
+        //         if (current_color_g > 0x1F) current_color_g = 0x1F;
+        //         if (current_color_b > 0x1F) current_color_b = 0x1F;
+        //         log_gpu3d("color after: %f %f %f", cast(float) current_color_r, cast(float) current_color_g, cast(float) current_color_b);
+        //     }
+        // }
+    }
+
+    void handle_DIF_AMB(Word* args) {
+        diffuse_color[0] = args[0][0 .. 4];
+        diffuse_color[1] = args[0][5 .. 9];
+        diffuse_color[2] = args[0][10..14];
+
+        ambient_color[0] = args[0][16..20];
+        ambient_color[1] = args[0][21..25];
+        ambient_color[2] = args[0][26..30];
+
+        if (args[0][15]) {
+            current_color_r = diffuse_color[0];
+            current_color_g = diffuse_color[1];
+            current_color_b = diffuse_color[2];
         }
     }
 
     void handle_SPE_EMI(Word* args) {
+        specular_color[0] = args[0][0 .. 4];
+        specular_color[1] = args[0][5 .. 9];
+        specular_color[2] = args[0][10..14];
+
         emission_r = args[0][16..20];
         emission_g = args[0][21..25];
         emission_b = args[0][26..30];
+    }
+
+    void handle_LIGHT_VECTOR(Word* args) {
+        auto convert = (Word x) => FixedPoint!(23, 9).from_repr(sext_32!Word(Word(x), 10)).convert!(20, 12);
+        int light_vector_index = args[0][30..31];
+        light_vector[light_vector_index] = Point_20_12([
+            convert(args[0][0..9]),
+            convert(args[0][10..19]),
+            convert(args[0][20..29]),
+            Coord_20_12(0.0f)
+        ]);
+    }
+
+    void handle_LIGHT_COLOR(Word* args) {
+        int light_color_index = args[0][30..31];
+
+        light_color[light_color_index][0] = args[0][0 .. 4];
+        light_color[light_color_index][1] = args[0][5 .. 9];
+        light_color[light_color_index][2] = args[0][10..14];
     }
 
     void handle_VEC_TEST(Word* args) {
@@ -861,10 +979,10 @@ static GPU3DCommand[256] generate_commands()() {
     commands[0x29] = GPU3DCommand("POLYGON_ATTR",     0x29, 1,  1,   true);
     commands[0x2A] = GPU3DCommand("TEXIMAGE_PARAM",   0x2A, 1,  1,   true);
     commands[0x2B] = GPU3DCommand("PLTT_BASE",        0x2B, 1,  1,   true);
-    commands[0x30] = GPU3DCommand("DIF_AMB",          0x30, 1,  4,   false);
+    commands[0x30] = GPU3DCommand("DIF_AMB",          0x30, 1,  4,   true);
     commands[0x31] = GPU3DCommand("SPE_EMI",          0x31, 1,  4,   true);
-    commands[0x32] = GPU3DCommand("LIGHT_VECTOR",     0x32, 1,  6,   false);
-    commands[0x33] = GPU3DCommand("LIGHT_COLOR",      0x33, 1,  1,   false);
+    commands[0x32] = GPU3DCommand("LIGHT_VECTOR",     0x32, 1,  6,   true);
+    commands[0x33] = GPU3DCommand("LIGHT_COLOR",      0x33, 1,  1,   true);
     commands[0x34] = GPU3DCommand("SHININESS",        0x34, 32, 32,  false);
     commands[0x40] = GPU3DCommand("BEGIN_VTXS",       0x40, 1,  1,   true);
     commands[0x41] = GPU3DCommand("END_VTXS",         0x41, 0,  1,   true);

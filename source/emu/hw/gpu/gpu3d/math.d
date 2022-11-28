@@ -36,6 +36,14 @@ struct Vec(int N, T) {
 
         return result;
     }
+
+    Vec!(N, T) negation() {
+        Vec!(N, T) result;
+        for (int i = 0; i < N; i++) {
+            result[i] = -this.data[i];
+        }
+        return result;
+    }
 }
 
 struct SquareMatrix(int N,T) {
