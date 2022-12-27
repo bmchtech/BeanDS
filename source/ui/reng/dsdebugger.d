@@ -292,4 +292,8 @@ class DSDebuggerUIRoot : Component, Renderable2D, Updatable {
         raylib.DrawRectangleLinesEx(panel2_bounds, 1, Colors.PURPLE);
         raylib.DrawRectangleLinesEx(panel3_bounds, 1, Colors.PURPLE);
     }
+
+    override void destroy() {
+        UnloadNuklear(ctx);
+    }
 }
