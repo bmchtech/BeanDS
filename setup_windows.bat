@@ -11,7 +11,7 @@ curl -L https://github.com/glfw/glfw/releases/download/3.3.7/glfw-3.3.7.bin.WIN6
 unzip glfw-3.3.7.bin.WIN64.zip
 move glfw-3.3.7.bin.WIN64/lib-vc2022/glfw3_mt.lib ./glfw3_mt.lib
 cd ext
-git clone --depth 1 --branch v%env%:DRAY_VERSION https://github.com/redthing1/dray
+git clone --depth 1 https://github.com/redthing1/dray
 cd dray
 move ../../raylib-dev_win64_msvc16/lib/raylib.lib ./raylib.lib
 move ../../WinMM.lib ./WinMM.lib
