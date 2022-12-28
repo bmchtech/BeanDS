@@ -37,23 +37,29 @@ final class VirtualMemoryManager {
     private MemoryRegion* illegal_access_page;
 
     this() {
-        sigaction_t sa;
-        sa.sa_flags = SA_SIGINFO;
-        sa.sa_sigaction = &segfault_handler;
-        sigaction(SIGSEGV, &sa, null);
+        version (Posix) {
+            sigaction_t sa;
+            sa.sa_flags = SA_SIGINFO;
+            sa.sa_sigaction = &segfault_handler;
+            sigaction(SIGSEGV, &sa, null);
+        }
+
         _virtual_memory_manager = this;
 
         illegal_access_page = create_memory_region("illegal_access_page", 0x1000);
     }
 
     VirtualMemorySpace* create_memory_space(string name, u64 size) {
-        VirtualMemorySpace space = VirtualMemorySpace(
-            name,
-            mmap(null, size, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0),
-            size
-        );
+        version (Posix) {
+            VirtualMemorySpace space = VirtualMemorySpace(
+                name,
+                mmap(null, size, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0),
+                size
+            );
+            
+            this.memory_spaces ~= space;
+        }
 
-        this.memory_spaces ~= space;
         return &this.memory_spaces[$ - 1];
     }
 

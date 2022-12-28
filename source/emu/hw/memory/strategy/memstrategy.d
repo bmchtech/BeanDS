@@ -7,7 +7,7 @@ import emu.hw.memory.strategy.fastmem;
 import emu.hw.memory.strategy.slowmem;
 import util;
 
-alias Mem = FastMem;
+alias Mem = SlowMem;
 
 interface MemStrategy {
     Word read_data_word7(Word address);
