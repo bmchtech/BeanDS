@@ -11,6 +11,7 @@ struct CLIArgs {
     bool direct_boot;
     bool reset_firmware;
     bool detailed_ui;
+    bool test_ui;
 }
 
 CLIArgs parse_cli_args(string[] args) {
@@ -24,6 +25,7 @@ CLIArgs parse_cli_args(string[] args) {
         .add(new Flag("d", "direct_boot", "skip the firmware"))
         .add(new Flag("r", "reset_firmware", "factory reset the firmware before booting"))
         .add(new Flag("u", "detailed_ui", "show the detailed ui"))
+        .add(new Flag("t", "test_ui", "test the ui (used for CI)"))
         .parse(args);
 
     return CLIArgs(
@@ -34,5 +36,6 @@ CLIArgs parse_cli_args(string[] args) {
         program.hasFlag("direct_boot"),
         program.hasFlag("reset_firmware"),
         program.hasFlag("detailed_ui"),
+        program.hasFlag("test_ui")
     );
 }
