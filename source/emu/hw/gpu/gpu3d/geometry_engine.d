@@ -799,6 +799,7 @@ final class GeometryEngine {
     }
 
     void raise_interrupt() {
+        log_gpu3d("gpu3d irq");
         interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO);
     }
 }

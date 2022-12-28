@@ -48,6 +48,7 @@ final class SPU {
     }
 
     void reset() {
+        log_gpu3d("spu reset()");
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 
@@ -254,6 +255,8 @@ final class SPU {
     }
     
     void sample() {
+        log_gpu3d("spu sample()");
+
         Sample result = Sample(0, 0);
         for (int i = 0; i < 16; i++) {
             Sample channel_sample = sound_channels[i].get_sample(mem);
@@ -264,7 +267,9 @@ final class SPU {
         result.L += sound_bias;
         result.R += sound_bias;
 
+        log_gpu3d("spu sample pushing callback()");
         push_sample_callback(result);
+        log_gpu3d("spu sample pushed callback()");
 
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }

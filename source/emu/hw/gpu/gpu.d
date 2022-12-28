@@ -45,6 +45,8 @@ final class GPU {
     // }
 
     void on_hblank_start() {
+        log_gpu3d("on_hblank_start()");
+
         if (hblank_irq_enabled9) interrupt9.raise_interrupt(Interrupt.LCD_HBLANK);
         if (hblank_irq_enabled7) interrupt7.raise_interrupt(Interrupt.LCD_HBLANK);
 
@@ -63,6 +65,8 @@ final class GPU {
     }
 
     void on_hblank_end() {
+        log_gpu3d("on_hblank_end()");
+
         hblank = false;
 
         scanline++;
@@ -82,6 +86,8 @@ final class GPU {
     }
 
     void set_hblank_flag() {
+        log_gpu3d("set_hblank_flag()");
+        
         hblank = true;
 
         if (0 <= scanline && scanline < 192) {
