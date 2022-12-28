@@ -71,8 +71,11 @@ final class GPU {
 
         scanline++;
 
+        log_gpu3d("here3");
         gpu_engine_a.ppu.canvas.on_hblank_end(scanline);
+        log_gpu3d("here5");
         gpu_engine_b.ppu.canvas.on_hblank_end(scanline);
+        log_gpu3d("here4");
         
         if (scanline == 192) on_vblank_start();
         if (scanline == 263) on_vblank_end();
@@ -87,7 +90,7 @@ final class GPU {
 
     void set_hblank_flag() {
         log_gpu3d("set_hblank_flag()");
-        
+
         hblank = true;
 
         if (0 <= scanline && scanline < 192) {
@@ -109,8 +112,10 @@ final class GPU {
         vblank = false;
         scanline = 0;
 
+        log_gpu3d("here11");
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
+        log_gpu3d("here12");
         log_ppu("pointers: %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr);
         if (display_swap) {
             present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
@@ -241,8 +246,14 @@ final class GPU {
     int master_brightness_b;
 
     void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
+        log_gpu3d("here");
+        log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(top, master_brightness_a, master_bright_mode_a);
+        log_gpu3d("here");
+        log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(bot, master_brightness_b, master_bright_mode_b);
+        log_gpu3d("here");
+        log_gpu3d("here %x %x", top, bot);
     }
 
     void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {
