@@ -87,7 +87,7 @@ jobs:
 
     - name: 'Setup'
       run: |
-        setup_windows.bat
+        start setup_windows.bat
 
     - name: 'Build BeanDS'
       run: |
