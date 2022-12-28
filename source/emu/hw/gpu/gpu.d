@@ -65,7 +65,7 @@ final class GPU {
     }
 
     void on_hblank_end() {
-        log_gpu3d("on_hblank_end()");
+        log_gpu3d("on_hblank_end(%d)", scanline);
 
         hblank = false;
 
