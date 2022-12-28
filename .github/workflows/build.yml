@@ -124,3 +124,4 @@ jobs:
     - name: 'Run Tests'
       run: |
         dub test --compiler ldc2
+        ./beands foo
