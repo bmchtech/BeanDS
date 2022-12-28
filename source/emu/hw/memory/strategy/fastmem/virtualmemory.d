@@ -2,7 +2,7 @@ module emu.hw.memory.strategy.fastmem.virtualmemory;
 
 import util;
 
-version (Posix) {
+version (linux) {
     import core.sys.posix.signal;
     import core.sys.posix.sys.mman;
     import core.sys.posix.unistd;
@@ -37,7 +37,7 @@ final class VirtualMemoryManager {
     private MemoryRegion* illegal_access_page;
 
     this() {
-        version (Posix) {
+        version (linux) {
             sigaction_t sa;
             sa.sa_flags = SA_SIGINFO;
             sa.sa_sigaction = &segfault_handler;
@@ -50,13 +50,13 @@ final class VirtualMemoryManager {
     }
 
     VirtualMemorySpace* create_memory_space(string name, u64 size) {
-        version (Posix) {
+        version (linux) {
             VirtualMemorySpace space = VirtualMemorySpace(
                 name,
                 mmap(null, size, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0),
                 size
             );
-            
+
             this.memory_spaces ~= space;
         }
 
@@ -64,7 +64,7 @@ final class VirtualMemoryManager {
     }
 
     MemoryRegion* create_memory_region(string name, u64 size) {
-        version (Posix) {
+        version (linux) {
             MemoryRegionDescriptor descriptor = memfd_create(cast(char*) name, 0);
             int result = ftruncate(descriptor, size);
 
@@ -80,7 +80,7 @@ final class VirtualMemoryManager {
     }
 
     void unmap(VirtualMemorySpace* space, u64 address, u64 size) {
-        version (Posix) {
+        version (linux) {
             void* host_address = this.to_host_address(space, address);
             int unmap_error = munmap(host_address, size);
             if (unmap_error < 0) {
@@ -134,7 +134,7 @@ final class VirtualMemoryManager {
 
     private void map_generic(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 size, u64 stride, u64 offset) {
         for (u64 i = 0; i < size; i += stride) {
-            version (Posix) {
+            version (linux) {
                 void* host_address = this.to_host_address(space, address + i);
 
                 int unmap_error = munmap(host_address, memory_region.size);
@@ -158,7 +158,7 @@ final class VirtualMemoryManager {
 }
 
 __gshared VirtualMemoryManager _virtual_memory_manager;
-version (Posix) {
+version (linux) {
     extern(C) 
     private void segfault_handler(int signum, siginfo_t* info, void* context) {
         for (int i = 0; i < _virtual_memory_manager.memory_spaces.length; i++) {

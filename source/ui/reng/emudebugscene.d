@@ -18,7 +18,9 @@ class EmuDebugInterfaceScene : Scene2D {
 
         // add debugger ui
         auto ds_debugger_nt = create_entity("ds_debugger");
-        ds_debugger_nt.add_component(new DSDebuggerUIRoot());
+
+        // TODO: figure this out!
+        // ds_debugger_nt.add_component(new DSDebuggerUIRoot());
     }
 
     override void update() {
