@@ -2,7 +2,7 @@ git submodule update --init --recursive
 
 curl -L https://github.com/ldc-developers/ldc/releases/download/v1.29.0/ldc2-1.29.0-windows-x64.7z --output ldc2-1.29.0-windows-x64.7z
 7z x ldc2-1.29.0-windows-x64.7z
-curl -L https://github.com/redthing1/dray/releases/download/v$env:DRAY_VERSION/raylib-dev_win64_msvc16.zip.zip --output raylib-dev_win64_msvc16.zip.zip
+curl -L https://github.com/redthing1/dray/releases/download/v4.2.0-r2/raylib-dev_win64_msvc16.zip.zip --output raylib-dev_win64_msvc16.zip.zip
 7z x raylib-dev_win64_msvc16.zip.zip
 7z x raylib-dev_win64_msvc16.zip
 curl -L https://github.com/redthing1/dray/releases/download/v4.0.0-r3/winlibs_extra.7z --output winlibs_extra.7z
