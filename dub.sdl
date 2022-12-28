@@ -12,7 +12,7 @@ dependency "commandr" version="~>0.2.0"
 dependency "dray" version=">=4.2.0-r2 <4.3.0-0"
 dependency "memoryunit" version="1.0.2"
 lflags "-lglew" "-lglfw" "/System/Library/Frameworks/OpenGL.framework/OpenGL" platform="osx"
-lflags "WinMM.lib" "OLDNAMES.lib" "raylib.lib" "$PACKAGE_DIR/*.lib $PACKAGE_DIR/glfw3_mt.lib" "user32.lib" "gdi32.lib" platform="windows"
+lflags "WinMM.lib" "OLDNAMES.lib" "MSVCRT.lib" "raylib.lib" "$PACKAGE_DIR/*.lib $PACKAGE_DIR/glfw3_mt.lib" "user32.lib" "gdi32.lib" "/NODEFAULTLIB:libcmt" "/NODEFAULTLIB:libvcruntime" platform="windows"
 subConfiguration "dray-nuklear" "debug"
 
 configuration "default" {
