@@ -9,7 +9,7 @@ final class GPUEngineB {
 
     this(Mem mem) {
         ppu = new PPU!(EngineType.B)(mem);
-        videobuffer = new Pixel[192][256];
+        // videobuffer = new Pixel[192][256];
     }
 
     int display_mode;
