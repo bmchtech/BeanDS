@@ -78,6 +78,9 @@ final class GPU {
         log_gpu3d("here4 %d", scanline);
         
         if (scanline == 192) on_vblank_start();
+        log_gpu3d("here68");
+        import std.stdio;
+        readln();
         if (scanline == 263) on_vblank_end();
 
         if (scanline == vcount_lyc) {
