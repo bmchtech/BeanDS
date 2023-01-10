@@ -80,7 +80,6 @@ final class GPU {
         if (scanline == 192) on_vblank_start();
         log_gpu3d("here68");
         import std.stdio;
-        readln();
         if (scanline == 263) on_vblank_end();
 
         if (scanline == vcount_lyc) {
@@ -115,14 +114,14 @@ final class GPU {
 
         log_gpu3d("here69");
         import std.stdio;
-        readln();
+        // readln();
 
         vblank = false;
         scanline = 0;
 
         log_gpu3d("here11");
         import std.stdio;
-        readln();
+        // readln();
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
         log_gpu3d("here12");
@@ -257,15 +256,15 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
     void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
         import std.stdio;
         log_gpu3d("here");
-        readln();
+        // readln();
         // log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(top, master_brightness_a, master_bright_mode_a);
         log_gpu3d("here");
-        readln();
+        // readln();
         // log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(bot, master_brightness_b, master_bright_mode_b);
         log_gpu3d("here");
-        readln();
+        // readln();
         // log_gpu3d("here %x %x", top, bot);
     }
 
@@ -273,12 +272,12 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
 
         if (master_bright_mode == MasterBrightMode.DISABLED) return;
         log_gpu3d("here2");
-        readln();
+        // readln();
 
         for (int x = 0; x < 256; x++) {
         for (int y = 0; y < 192; y++) {
             log_gpu3d("here6");
-            readln();
+            // readln();
             video_buffer[x][y].r = (video_buffer[x][y].r * master_brightness) / 64;
             video_buffer[x][y].g = (video_buffer[x][y].g * master_brightness) / 64;
             video_buffer[x][y].b = (video_buffer[x][y].b * master_brightness) / 64;

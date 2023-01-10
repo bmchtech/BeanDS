@@ -107,11 +107,11 @@ final class SPU {
             // OMG OMG OMG OMG OMG BUY RN
             switch (format) {
                 case Format.PCM16:
-                    sample_data = mem.read_data_half9(current_address);
+                    sample_data = mem.read_data_half7(current_address);
                     this.current_address += 2;
                     break;
                 case Format.PCM8:
-                    sample_data = mem.read_data_byte9(current_address);
+                    sample_data = mem.read_data_byte7(current_address) << 8;
                     this.current_address += 1;
                     break;
                 default:
@@ -255,8 +255,6 @@ final class SPU {
     }
     
     void sample() {
-        log_gpu3d("spu sample()");
-
         Sample result = Sample(0, 0);
         for (int i = 0; i < 16; i++) {
             Sample channel_sample = sound_channels[i].get_sample(mem);
@@ -267,10 +265,7 @@ final class SPU {
         result.L += sound_bias;
         result.R += sound_bias;
 
-        log_gpu3d("spu sample pushing callback()");
         push_sample_callback(result);
-        log_gpu3d("spu sample pushed callback()");
-
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 
