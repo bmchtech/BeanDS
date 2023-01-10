@@ -116,8 +116,7 @@ final class GPU {
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
         log_gpu3d("here12");
-        log_ppu("pointers: %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr);
-        if (display_swap) {
+log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr, gpu_engine_a.videobuffer.length, gpu_engine_b.videobuffer.length);        if (display_swap) {
             present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         } else {
             present_videobuffers(gpu_engine_b.videobuffer, gpu_engine_a.videobuffer);
@@ -247,13 +246,13 @@ final class GPU {
 
     void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
         log_gpu3d("here");
-        log_gpu3d("here %x %x", top, bot);
+        // log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(top, master_brightness_a, master_bright_mode_a);
         log_gpu3d("here");
-        log_gpu3d("here %x %x", top, bot);
+        // log_gpu3d("here %x %x", top, bot);
         apply_master_brightness_to_video_buffer(bot, master_brightness_b, master_bright_mode_b);
         log_gpu3d("here");
-        log_gpu3d("here %x %x", top, bot);
+        // log_gpu3d("here %x %x", top, bot);
     }
 
     void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {
