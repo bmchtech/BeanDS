@@ -75,7 +75,7 @@ final class GPU {
         gpu_engine_a.ppu.canvas.on_hblank_end(scanline);
         log_gpu3d("here5");
         gpu_engine_b.ppu.canvas.on_hblank_end(scanline);
-        log_gpu3d("here4");
+        log_gpu3d("here4 %d", scanline);
         
         if (scanline == 192) on_vblank_start();
         if (scanline == 263) on_vblank_end();
@@ -109,10 +109,17 @@ final class GPU {
     }
 
     void on_vblank_end() {
+
+        log_gpu3d("here69");
+        import std.stdio;
+        readln();
+
         vblank = false;
         scanline = 0;
 
         log_gpu3d("here11");
+        import std.stdio;
+        readln();
         apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
         
         log_gpu3d("here12");
