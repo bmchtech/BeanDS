@@ -27,7 +27,7 @@ final class GPU {
 
     int vcount_lyc;
 
-    void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers;
+    void delegate(Pixel[192][256]*, Pixel[192][256]*) present_videobuffers;
 
     this(Mem mem) {
         dot      = 0;
@@ -122,13 +122,13 @@ final class GPU {
         log_gpu3d("here11");
         import std.stdio;
         // readln();
-        apply_master_brightness_to_video_buffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
+        apply_master_brightness_to_video_buffers(&gpu_engine_a.videobuffer, &gpu_engine_b.videobuffer);
         
         log_gpu3d("here12");
 log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.videobuffer.ptr, gpu_engine_a.videobuffer.length, gpu_engine_b.videobuffer.length);        if (display_swap) {
-            present_videobuffers(gpu_engine_a.videobuffer, gpu_engine_b.videobuffer);
+            present_videobuffers(&gpu_engine_a.videobuffer, &gpu_engine_b.videobuffer);
         } else {
-            present_videobuffers(gpu_engine_b.videobuffer, gpu_engine_a.videobuffer);
+            present_videobuffers(&gpu_engine_b.videobuffer, &gpu_engine_a.videobuffer);
         }
     }
 
@@ -137,7 +137,7 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
         gpu_engine_b.render(scanline);
     }
 
-    void set_present_videobuffers_callback(void delegate(Pixel[192][256], Pixel[192][256]) present_videobuffers) {
+    void set_present_videobuffers_callback(void delegate(Pixel[192][256]*, Pixel[192][256]*) present_videobuffers) {
         this.present_videobuffers = present_videobuffers;
     }
 
@@ -253,7 +253,7 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
     int master_bright_factor_b;
     int master_brightness_b;
 
-    void apply_master_brightness_to_video_buffers(ref Pixel[192][256] top, ref Pixel[192][256] bot) {
+    void apply_master_brightness_to_video_buffers(Pixel[192][256]* top, Pixel[192][256]* bot) {
         import std.stdio;
         log_gpu3d("here");
         // readln();
@@ -268,7 +268,7 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
         // log_gpu3d("here %x %x", top, bot);
     }
 
-    void apply_master_brightness_to_video_buffer(ref Pixel[192][256] video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {        import std.stdio;
+    void apply_master_brightness_to_video_buffer(Pixel[192][256]* video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {        import std.stdio;
 
         if (master_bright_mode == MasterBrightMode.DISABLED) return;
         log_gpu3d("here2");
@@ -278,9 +278,9 @@ log_ppu("pointers: %x %x %x %x", gpu_engine_a.videobuffer.ptr, gpu_engine_b.vide
         for (int y = 0; y < 192; y++) {
             log_gpu3d("here6");
             // readln();
-            video_buffer[x][y].r = (video_buffer[x][y].r * master_brightness) / 64;
-            video_buffer[x][y].g = (video_buffer[x][y].g * master_brightness) / 64;
-            video_buffer[x][y].b = (video_buffer[x][y].b * master_brightness) / 64;
+            (*video_buffer)[x][y].r = ((*video_buffer)[x][y].r * master_brightness) / 64;
+            (*video_buffer)[x][y].g = ((*video_buffer)[x][y].g * master_brightness) / 64;
+            (*video_buffer)[x][y].b = ((*video_buffer)[x][y].b * master_brightness) / 64;
         }
         }
     }

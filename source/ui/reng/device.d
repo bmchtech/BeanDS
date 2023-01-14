@@ -39,18 +39,18 @@ class RengMultimediaDevice : MultiMediaDevice {
 
     override {
         // video stuffs
-        void present_videobuffers(Pixel[192][256] buffer_top, Pixel[192][256] buffer_bot) {
+        void present_videobuffers(Pixel[192][256]* buffer_top, Pixel[192][256]* buffer_bot) {
             for (int y = 0; y < 192; y++) {
             for (int x = 0; x < 256;  x++) {
                     ds_video.videobuffer_top[y * 256 + x] = 
-                        (buffer_top[x][y].r << 2 <<  0) |
-                        (buffer_top[x][y].g << 2 <<  8) |
-                        (buffer_top[x][y].b << 2 << 16) |
+                        ((*buffer_top)[x][y].r << 2 <<  0) |
+                        ((*buffer_top)[x][y].g << 2 <<  8) |
+                        ((*buffer_top)[x][y].b << 2 << 16) |
                         0xFF000000;
                     ds_video.videobuffer_bot[y * 256 + x] = 
-                        (buffer_bot[x][y].r << 2 <<  0) |
-                        (buffer_bot[x][y].g << 2 <<  8) |
-                        (buffer_bot[x][y].b << 2 << 16) |
+                        ((*buffer_bot)[x][y].r << 2 <<  0) |
+                        ((*buffer_bot)[x][y].g << 2 <<  8) |
+                        ((*buffer_bot)[x][y].b << 2 << 16) |
                         0xFF000000;
             }
             }
