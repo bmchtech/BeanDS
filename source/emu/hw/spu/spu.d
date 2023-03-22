@@ -123,8 +123,11 @@ final class SPU {
             }
 
             Sample sample;
-            sample.L = cast(short) (current_sample.L * (127 - panning) / 128);
-            sample.R = cast(short) (current_sample.R * (      panning) / 128);
+            sample.L = cast(short) (((current_sample.L) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128;
+            sample.R = cast(short) (((current_sample.R) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128;
+
+            sample.L = cast(short) (sample.L * (127 - panning) / 128);
+            sample.R = cast(short) (sample.R * (      panning) / 128);
             return sample;
         }
                 
