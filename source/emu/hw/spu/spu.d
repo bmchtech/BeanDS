@@ -25,7 +25,7 @@ static immutable short[] ADPCM_TABLE = [
     0x7FFF
 ];
 
-// TODO: REMOVE!
+// TODO: Deldeldel
 static bool shouldLog = 0;
 
 __gshared SPU spu;
