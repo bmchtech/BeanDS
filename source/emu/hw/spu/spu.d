@@ -123,11 +123,12 @@ final class SPU {
             }
 
             Sample sample;
-            sample.L = cast(short) (((current_sample.L) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128;
-            sample.R = cast(short) (((current_sample.R) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128;
+            sample.L = cast(short) ((((current_sample.L) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128);
+            sample.R = cast(short) ((((current_sample.R) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128);
 
             sample.L = cast(short) (sample.L * (127 - panning) / 128);
             sample.R = cast(short) (sample.R * (      panning) / 128);
+
             return sample;
         }
                 
@@ -379,12 +380,17 @@ final class SPU {
     
     void sample() {
         Sample result = Sample(0, 0);
+        int Lholder = 0;
+        int Rholder = 0;
         for (int i = 0; i < 16; i++) {
             shouldLog = (i == 4) ? 1 : 0; // TODO: Remove!!
             Sample channel_sample = sound_channels[i].get_sample(mem);
-            result.L += channel_sample.L;
-            result.R += channel_sample.R;
+            Lholder += cast(int) channel_sample.L;
+            Rholder += cast(int) channel_sample.R;
         }
+
+        result.L = cast(short) Lholder;
+        result.R = cast(short) Rholder;
 
         result.L += sound_bias;
         result.R += sound_bias;
