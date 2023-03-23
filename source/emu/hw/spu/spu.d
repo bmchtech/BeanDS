@@ -102,11 +102,14 @@ final class SPU {
         private {
             Word current_address;
             Sample current_sample;
-            bool half_read;
+
             int  extra_cycles;
             int  cycles_since_last_sample_was_calculated;
 
+            bool half_read;
+            bool record_pnt;
             ImaInfo current_ima;
+            ImaInfo looping_ima;
         }
 
         void reset() {
@@ -167,6 +170,7 @@ final class SPU {
 
                         this.current_address += 4;
                         this.half_read = 0;
+                        this.record_pnt = 1;
                     }
                     else {
                         byte data4bit = 0;
@@ -205,8 +209,19 @@ final class SPU {
             // PNT + LEN = N words
             if (repeat_mode == RepeatMode.LOOP_INF) {
 
-                // Edit:  All sounds should rewind if [LEN] away from loopstart
-                // Edit2: Rewind sound to loopstart, not actual sound start
+                // IMA should record PNT once for looping
+                if (this.format == Format.IMA_ADPCM && this.record_pnt &&
+                    (this.current_address == this.source_address +
+                    (4*(1 + this.loopstart)))) {
+                    // this.looping_ima.ima_byte = this.current_ima.ima_byte;
+                    this.looping_ima.ima_pcm16bit = this.current_ima.ima_pcm16bit;
+                    this.looping_ima.ima_index = this.current_ima.ima_index;
+
+                    // Don't read PNT again until a new header
+                    this.record_pnt = 0;
+                } 
+
+                // Main looping logic
                 if (current_address >=
                    (source_address + (4*(this.loopstart + this.length)))) {
                     // IMA_ADPCM should rewind to the data segment, not the
@@ -215,18 +230,16 @@ final class SPU {
                     // For now, assuming it's off of the header, so 
                     // [Header][LOOPSTARTHERE][DATA]...
 
-                    // if (format != Format.IMA_ADPCM) {
-                    if (1) {
+                    if (format != Format.IMA_ADPCM) {
+                    // if (1) {
                         this.current_address = this.source_address +
                           (4*this.loopstart);
                     }
                     else {
-                        // Reload data start + PNT values... how???
-                        this.current_address = this.source_address;
-                        Word header_data = mem.read_data_word7(current_address);
-                        this.current_ima.ima_index = header_data[16..22];
-                        this.current_ima.ima_index &= 0x7F;
-                        this.current_address += 4*(1 + this.loopstart);
+                        this.current_ima.ima_pcm16bit = this.looping_ima.ima_pcm16bit;
+                        this.current_ima.ima_index = this.looping_ima.ima_index;
+                        this.current_address = this.source_address + 
+                          (4*(1 + this.loopstart));
                     }
                 }
             }
