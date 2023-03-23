@@ -191,23 +191,36 @@ final class SPU {
                     break;
             }
 
-            // IMA_ADPCM should rewind to the first sample, not header
+            // TODO: IMA_ADPCM should rewind to the first sample, not header
             // Sound Model:
             // [PNT][LEN]
             // Loop: [PNT][LEN][LEN][LEN][LEN][LEN][LEN]
             // PNT + LEN = N words
-            // PCM8:  4N     samples
-            // PCM16: 2N     samples
-            // IMA:   8(N-1) samples
             if (repeat_mode == RepeatMode.LOOP_INF) {
 
-                if (format != Format.IMA_ADPCM &&
-                    current_address >= source_address + length * 4) {
-                    this.current_address = this.source_address;
-                }
-                else if (format == Format.IMA_ADPCM &&
-                    current_address >= source_address + (8*(length - 1))) {
-                    this.current_address = this.source_address + 4;
+                // Edit:  All sounds should rewind if [LEN] away from loopstart
+                // Edit2: Rewind sound to loopstart, not actual sound start
+                if (current_address >=
+                   (source_address + (4*(this.loopstart + this.length)))) {
+                    // IMA_ADPCM should rewind to the data segment, not the
+                    // header, so should the loopstart offset be given off the
+                    // data start or the data start?
+                    // For now, assuming it's off of the header, so 
+                    // [Header][LOOPSTARTHERE][DATA]...
+
+                    // if (format != Format.IMA_ADPCM) {
+                    if (1) {
+                        this.current_address = this.source_address +
+                          (4*this.loopstart);
+                    }
+                    else {
+                        // Reload data start + PNT values... how???
+                        this.current_address = this.source_address;
+                        Word header_data = mem.read_data_word7(current_address);
+                        this.ima_index = header_data[16..22];
+                        this.ima_index &= 0x7F;
+                        this.current_address += 4*(1 + this.loopstart);
+                    }
                 }
             }
             
@@ -217,6 +230,7 @@ final class SPU {
         short interpret_ima_sample(byte data4bit) {
             short pcm16bit = this.ima_pcm16bit;
             short adpentry = cast(short) (this.ima_index > 88) ?
+            // IMA:   8(N-1) samples
                 0 : ADPCM_TABLE[this.ima_index];
             short diff = adpentry / 8;
 
@@ -246,6 +260,7 @@ final class SPU {
             if (this.ima_index > 88)
                 this.ima_index = 88;
 
+            this.ima_pcm16bit = pcm16bit;
             return pcm16bit;
         }
     }
