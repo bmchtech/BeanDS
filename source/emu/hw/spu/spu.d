@@ -65,6 +65,14 @@ final class SPU {
         UNKNOWN  = 3,
     }
 
+    struct ImaInfo {
+        public {
+            Byte  ima_byte;
+            short ima_pcm16bit;
+            int   ima_index;
+        }
+    }
+
     this(Mem mem) {
         this.mem = mem;
     }
@@ -98,9 +106,7 @@ final class SPU {
             int  extra_cycles;
             int  cycles_since_last_sample_was_calculated;
 
-            Byte  ima_byte;
-            short ima_pcm16bit;
-            int   ima_index;
+            ImaInfo current_ima;
         }
 
         void reset() {
@@ -155,9 +161,10 @@ final class SPU {
                             log_spu("--------------------------------");
                         }                       
                         Word header_data = mem.read_data_word7(current_address);
-                        this.ima_pcm16bit = cast(short) header_data[0..15];
-                        this.ima_index = header_data[16..22];
-                        this.ima_index &= 0x7F;
+                        this.current_ima.ima_pcm16bit = cast(short) header_data[0..15];
+                        this.current_ima.ima_index = header_data[16..22];
+                        this.current_ima.ima_index &= 0x7F;
+
                         this.current_address += 4;
                         this.half_read = 0;
                     }
@@ -168,8 +175,8 @@ final class SPU {
                                 log_spu("IMA Half Read 1");
                                 log_spu("IMA Current Address: %d", this.current_address);
                             }
-                            this.ima_byte = mem.read_data_byte7(current_address);
-                            data4bit = this.ima_byte[0..3];
+                            this.current_ima.ima_byte = mem.read_data_byte7(current_address);
+                            data4bit = this.current_ima.ima_byte[0..3];
                             this.half_read = 1;
                         }
                         else {
@@ -177,7 +184,7 @@ final class SPU {
                                 log_spu("IMA Half Read 2");
                                 log_spu("IMA Current Address: %d", this.current_address);
                             }
-                            data4bit = this.ima_byte[4..7];
+                            data4bit = this.current_ima.ima_byte[4..7];
                             this.half_read = 0;
                             this.current_address += 1;
                         }
@@ -217,8 +224,8 @@ final class SPU {
                         // Reload data start + PNT values... how???
                         this.current_address = this.source_address;
                         Word header_data = mem.read_data_word7(current_address);
-                        this.ima_index = header_data[16..22];
-                        this.ima_index &= 0x7F;
+                        this.current_ima.ima_index = header_data[16..22];
+                        this.current_ima.ima_index &= 0x7F;
                         this.current_address += 4*(1 + this.loopstart);
                     }
                 }
@@ -228,10 +235,10 @@ final class SPU {
         }
 
         short interpret_ima_sample(byte data4bit) {
-            short pcm16bit = this.ima_pcm16bit;
-            short adpentry = cast(short) (this.ima_index > 88) ?
-            // IMA:   8(N-1) samples
-                0 : ADPCM_TABLE[this.ima_index];
+            short pcm16bit = this.current_ima.ima_pcm16bit;
+            short adpentry = cast(short) (this.current_ima.ima_index > 88) ?
+                0 : ADPCM_TABLE[this.current_ima.ima_index];
+
             short diff = adpentry / 8;
 
             if (data4bit & 1) 
@@ -254,13 +261,15 @@ final class SPU {
                     pcm16bit = -0x7fff;
             }
             
-            this.ima_index = this.ima_index + IMA_INDEX_TABLE[data4bit & 7];
-            if (this.ima_index < 0) 
-                this.ima_index = 0;
-            if (this.ima_index > 88)
-                this.ima_index = 88;
+            this.current_ima.ima_index += IMA_INDEX_TABLE[data4bit & 7];
 
-            this.ima_pcm16bit = pcm16bit;
+            if (this.current_ima.ima_index < 0) 
+                this.current_ima.ima_index = 0;
+            if (this.current_ima.ima_index > 88)
+                this.current_ima.ima_index = 88;
+
+
+            this.current_ima.ima_pcm16bit = pcm16bit;
             return pcm16bit;
         }
     }
