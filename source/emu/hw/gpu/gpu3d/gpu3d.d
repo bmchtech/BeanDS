@@ -137,7 +137,7 @@ final class GPU3D {
     void plot(int scanline, Pixel p, int x, Coord_14_18 z, Coord_14_18 w) {
         Coord_14_18 depth_value = depth_buffering_mode ? w : z;
 
-        if (depth_buffering_mode ? (w < 0) : (z < 0)) return;
+        if (depth_buffering_mode ? (w < 0) : (w < 0)) return;
         
         // if (depth_buffer[scanline][x] >= depth_value && p.a != 0) {
             // depth_buffer[scanline][x] = depth_value;

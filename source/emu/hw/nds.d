@@ -150,8 +150,8 @@ final class NDS {
         mem.load_bios9(data);
     }
 
-    void load_firmware(Byte[] data) {
-        firmware.load_firmware(data);
+    void load_firmware(MmFile mm_file) {
+        firmware.load_firmware(mm_file);
     }
 
     void direct_boot() {
@@ -191,7 +191,7 @@ final class NDS {
             arm7.run_instruction();
             arm9.run_instruction();
             arm9.run_instruction();
-            scheduler.tick(1);
+            scheduler.tick(2);
             scheduler.process_events();
 
             while (arm7.halted && arm9.halted) {

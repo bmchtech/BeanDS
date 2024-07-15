@@ -2,6 +2,7 @@ module emu.hw.spi.device.firmware;
 
 import emu.hw.memory.mem;
 import emu.hw.spi.device;
+import std.mmfile;
 import util;
 
 enum FirmwareLanguage {
@@ -74,7 +75,7 @@ final class Firmware : SPIDevice {
 
     int access_number;
 
-    Byte[0x1000000] data;
+    MmFile data;
     Word address;
 
     this() {
@@ -88,17 +89,17 @@ final class Firmware : SPIDevice {
         power_on = true;
     }
 
-    void load_firmware(Byte[] data) {
-        this.data[0..FIRMWARE_SIZE] = data[0..FIRMWARE_SIZE];
+    void load_firmware(MmFile mm_file) {
+        this.data = mm_file;
 
-        user_settings.adc_x1 = data.read!Half(0x3FE58);
-        user_settings.adc_y1 = data.read!Half(0x3FE5A);
-        user_settings.scr_x1 = data.read!Byte(0x3FE5C);
-        user_settings.scr_y1 = data.read!Byte(0x3FE5D);
-        user_settings.adc_x2 = data.read!Half(0x3FE5E);
-        user_settings.adc_y2 = data.read!Half(0x3FE60);
-        user_settings.scr_x2 = data.read!Byte(0x3FE62);
-        user_settings.scr_y2 = data.read!Byte(0x3FE63);
+        user_settings.adc_x1 = (cast(Byte[]) data[]).read!Half(0x3FE58);
+        user_settings.adc_y1 = (cast(Byte[]) data[]).read!Half(0x3FE5A);
+        user_settings.scr_x1 = (cast(Byte[]) data[]).read!Byte(0x3FE5C);
+        user_settings.scr_y1 = (cast(Byte[]) data[]).read!Byte(0x3FE5D);
+        user_settings.adc_x2 = (cast(Byte[]) data[]).read!Half(0x3FE5E);
+        user_settings.adc_y2 = (cast(Byte[]) data[]).read!Half(0x3FE60);
+        user_settings.scr_x2 = (cast(Byte[]) data[]).read!Byte(0x3FE62);
+        user_settings.scr_y2 = (cast(Byte[]) data[]).read!Byte(0x3FE63);
 
         touchscreen.recalibrate();
     }
@@ -232,7 +233,7 @@ final class Firmware : SPIDevice {
             case 0xDB: command = Command.PageErase;                return true;
             case 0xD8: command = Command.SectorErase;              return true;
 
-            default: error_eeprom("invalid eeprom command dummy"); return false;
+            default: log_eeprom("invalid eeprom command dummy"); return false;
         }
     }
 }

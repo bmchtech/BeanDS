@@ -135,7 +135,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             case 0x9F: state = State.READING_JEDEC_ID; break;
             case 0x06: write_enable_latch = true;  break;
             case 0x04: write_enable_latch = false; break;
-            default: error_eeprom("invalid eeprom command dummy: %x", b);
+            default: log_eeprom("invalid eeprom command dummy: %x", b);
         }
     }
 }

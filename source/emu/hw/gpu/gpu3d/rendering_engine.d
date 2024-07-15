@@ -295,9 +295,6 @@ final class RenderingEngine {
         parent.start_rendering();
 
         for (int i = 0; i < num_polygons; i++) {
-            // if (i == 1) continue;
-            if (i == 1) log_gpu3d("alpha: %x", annotated_polygons[i].orig.alpha);
-
             // log_gpu3d("rendering funky polygon #%d", i);
             auto p = annotated_polygons[i];
 

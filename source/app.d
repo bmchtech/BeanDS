@@ -31,7 +31,10 @@ version (unittest) {
 			// shoot me, but im hardcoding it for now.
 			nds.load_bios7(load_file_as_bytes("roms/biosnds7.rom"));
 			nds.load_bios9(load_file_as_bytes("roms/biosnds9.rom"));
-			nds.load_firmware(load_file_as_bytes("roms/firmware.rom"));
+
+			MmFile firmware_file = new MmFile("roms/firmware.rom", MmFile.Mode.readWrite, 262144, null, 0);
+			nds.load_firmware(firmware_file);
+			
 			nds.load_rom(load_file_as_bytes(cli_args.rom_path));
 
 			auto save_path = cli_args.rom_path.stripExtension().setExtension(".bsv");
@@ -41,8 +44,8 @@ version (unittest) {
 				}
 			}
 
-			MmFile mm_file = new MmFile(save_path, MmFile.Mode.readWrite, nds.get_backup_size(), null, 0);
-			nds.load_save_mmfile(mm_file);
+			MmFile save_file = new MmFile(save_path, MmFile.Mode.readWrite, nds.get_backup_size(), null, 0);
+			nds.load_save_mmfile(save_file);
 
 			nds.set_sample_rate(48_000);
 

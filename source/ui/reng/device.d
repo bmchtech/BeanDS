@@ -7,6 +7,7 @@ import std.format;
 import std.string;
 import ui.device;
 import ui.reng;
+import util.log;
 
 class RengMultimediaDevice : MultiMediaDevice {
     enum SAMPLE_RATE            = 48_000;
@@ -20,14 +21,16 @@ class RengMultimediaDevice : MultiMediaDevice {
     DSVideo  ds_video;
     AudioStream stream;
 
-    bool fast_foward;
+    bool fast_forward;
 
     string rom_title;
     int fps;
+    int screen_scale;
 
     this(int screen_scale, bool full_ui) {
-        Core.target_fps = 999;
+        Core.target_fps = 60;
         reng_core = new RengCore(screen_scale, full_ui);
+        this.screen_scale = screen_scale;
 
         InitAudioDevice();
         SetAudioStreamBufferSizeDefault(SAMPLES_PER_UPDATE);
@@ -90,12 +93,16 @@ class RengMultimediaDevice : MultiMediaDevice {
         int buffer_cursor = 0;
 
         void push_sample(Sample s) {
-            buffer[buffer_cursor + 0] = s.L;
-            buffer[buffer_cursor + 1] = s.R;
+            if (buffer_cursor >= NUM_CHANNELS * SAMPLES_PER_UPDATE * BUFFER_SIZE_MULTIPLIER) return;
+
+            buffer[buffer_cursor + 0] = cast(short) (s.L << 5);
+            buffer[buffer_cursor + 1] = cast(short) (s.R << 5);
             buffer_cursor += 2;
         }
 
         void update() {
+            Core.target_fps = buffer_cursor < NUM_CHANNELS * SAMPLES_PER_UPDATE * (BUFFER_SIZE_MULTIPLIER - 1) ? 999 : 60;
+
             handle_input();
             handle_audio();
             reng_core.update_pub();
@@ -106,7 +113,8 @@ class RengMultimediaDevice : MultiMediaDevice {
         }
 
         bool should_cycle_nds() {
-            return buffer_cursor < NUM_CHANNELS * BUFFER_SIZE_MULTIPLIER * SAMPLES_PER_UPDATE - (SAMPLE_RATE / 60) * 2;
+            return true;
+            // return buffer_cursor < NUM_CHANNELS * (BUFFER_SIZE_MULTIPLIER - 1) * SAMPLES_PER_UPDATE;
         }
 
         void handle_input() {
@@ -117,19 +125,19 @@ class RengMultimediaDevice : MultiMediaDevice {
             auto mouse_position = Input.mouse_position();
 
             update_touchscreen_position(
-                clamp(cast(int) mouse_position.x,       0, 256),
-                clamp(cast(int) mouse_position.y - 192, 0, 192)
+                clamp(cast(int) mouse_position.x / screen_scale,                      0, 256),
+                clamp(cast(int) mouse_position.y / screen_scale - 192 * screen_scale, 0, 192 * screen_scale)
             );
             
             static foreach (re_key, gba_key; keys) {
                 update_key(gba_key, Input.is_key_down(re_key));
             }
 
-            fast_foward = Input.is_key_down(FAST_FOWARD_KEY);
+            fast_forward = Input.is_key_down(FAST_FOWARD_KEY);
         }
 
         bool should_fast_forward() {
-            return fast_foward;
+            return fast_forward;
         }
     }
 
@@ -138,8 +146,26 @@ class RengMultimediaDevice : MultiMediaDevice {
         ds_video.update_title("%s [FPS: %d]".format(rom_title, fps));
     }
 
+    short[200] sine_buffer;
+    import std.math;
+    int sine_cursor = 0;
+    void sine_wave() {
+        int period = 100;
+        for (int i = 0; i < 100; i++) {
+            sine_buffer[i * 2 + 0] = cast(short) (sin(2 * PI * i / period) * 1000);
+            sine_buffer[i * 2 + 1] = cast(short) (sin(2 * PI * i / period) * 1000);
+        }
+    }
+
     void handle_audio() {
         if (IsAudioStreamProcessed(stream)) {
+            // sine_wave();
+            // for (int i = 0; i < SAMPLES_PER_UPDATE * NUM_CHANNELS; i++) {
+            //     buffer[i] = sine_buffer[sine_cursor % (100 * NUM_CHANNELS)];
+            //     sine_cursor++;
+            //     sine_cursor %= 100 * NUM_CHANNELS;
+            // }
+
             UpdateAudioStream(stream, cast(void*) buffer, SAMPLES_PER_UPDATE);
             
             for (int i = 0; i < NUM_CHANNELS * SAMPLES_PER_UPDATE * (BUFFER_SIZE_MULTIPLIER - 1); i++) {
@@ -147,9 +173,12 @@ class RengMultimediaDevice : MultiMediaDevice {
             }
 
             buffer_cursor -= NUM_CHANNELS * SAMPLES_PER_UPDATE;
-            if (buffer_cursor < 0) buffer_cursor = 0;
+            if (buffer_cursor < 0) {
+                buffer_cursor = 0;
+                log_nds("Audio buffer underflowed");
+            }
 
-            if (fast_foward) buffer_cursor = 0;
+            if (fast_forward) buffer_cursor = 0;
         }
     }
 

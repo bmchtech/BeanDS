@@ -280,9 +280,6 @@ final class GeometryEngine {
             
             case MatrixMode.TEXTURE:
                 texture_matrix = matrix;
-                for (int x = 0; x < 4; x++) {
-                    log_gpu3d("TEXMATR %f %f %f %f", cast(float) texture_matrix[x][0], cast(float) texture_matrix[x][1], cast(float) texture_matrix[x][2], cast(float) texture_matrix[x][3]);
-                }
                 break;
         }
     }
@@ -401,17 +398,6 @@ final class GeometryEngine {
 
     void handle_MTX_LOAD_4x4(Word* args) {
         auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
-
-        if (matrix_mode == MatrixMode.TEXTURE) {
-            for (int x = 0; x < 4; x++) {
-                log_gpu3d("TEXMATR input %08x %08x %08x %08x", 
-                    args[x * 4 + 0],
-                    args[x * 4 + 1],
-                    args[x * 4 + 2],
-                    args[x * 4 + 3]
-                );
-            }
-        }
         
         set_current_matrix(
             Matrix([

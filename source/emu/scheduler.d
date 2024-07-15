@@ -42,7 +42,7 @@ final class Scheduler {
     }
 
     private ulong add_event(void delegate() callback, ulong timestamp) {
-        int insert_at;
+        int insert_at = 0;
 
         for (; insert_at < events_in_queue; insert_at++) {
             if (timestamp < events[insert_at].timestamp) {

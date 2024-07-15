@@ -3,6 +3,7 @@ module emu.hw.spu.spu;
 import emu.hw.memory.mem9;
 import emu.hw.memory.strategy.memstrategy;
 import emu.scheduler;
+import std.algorithm;
 import ui.device;
 import util;
 
@@ -70,8 +71,13 @@ final class SPU {
     }
 
     void reset() {
-        log_gpu3d("spu reset()");
+        // log_gpu3d("spu reset()");
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
+    }
+
+    struct ChannelSample {
+        s32 L;
+        s32 R;
     }
 
     struct SoundChannel {
@@ -93,7 +99,7 @@ final class SPU {
 
         private {
             Word current_address;
-            Sample current_sample;
+            ChannelSample current_sample;
             bool half_read;
             int  extra_cycles;
             int  cycles_since_last_sample_was_calculated;
@@ -101,17 +107,20 @@ final class SPU {
             Byte  ima_byte;
             short ima_pcm16bit;
             int   ima_index;
+            Byte  ima_byte_at_pnt;
+            short ima_pcm16bit_at_pnt;
+            int   ima_index_at_pnt;
         }
 
         void reset() {
             current_address = source_address;
-            current_sample  = Sample(0, 0);
+            current_sample  = ChannelSample(0, 0);
             cycles_since_last_sample_was_calculated = 0;
             half_read = 0;
         }
 
-        Sample get_sample(Mem mem) {
-            if (!enabled) return Sample(0, 0);
+        ChannelSample get_sample(Mem mem) {
+            if (!enabled) return ChannelSample(0, 0);
 
             cycles_since_last_sample_was_calculated += spu.cycles_per_sample;
 
@@ -122,14 +131,38 @@ final class SPU {
                 cycles_since_last_sample_was_calculated -= cycles_till_calculate_next_sample;
             }
 
-            Sample sample;
-            sample.L = cast(short) ((((current_sample.L) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128);
-            sample.R = cast(short) ((((current_sample.R) / (this.volume_div + 1.0f)) * (this.volume_mul)) / 128);
+            int divider = this.volume_div;
+            if (this.volume_div == 3) {
+                divider = 4;
+            }
 
-            sample.L = cast(short) (sample.L * (127 - panning) / 128);
-            sample.R = cast(short) (sample.R * (      panning) / 128);
+            long l = cast(long) cast(int) this.current_sample.L;
+            long r = cast(long) cast(int) this.current_sample.R;
 
-            return sample;
+            // log_spu("Sample: %x %x", l, r);
+            
+            l <<= 4;
+            r <<= 4;
+
+
+            l >>= divider;
+            r >>= divider;
+            // log_spu("Sample after div: %x %x", l, r);
+
+            l *= (this.volume_mul == 127) ? 128 : this.volume_mul;
+            r *= (this.volume_mul == 127) ? 128 : this.volume_mul;
+
+            // log_spu("Sample after mul: %x %x", l, r);
+            l *= (128 - (this.panning == 127 ? 128 : this.panning));
+            r *= (      (this.panning == 127 ? 128 : this.panning));
+
+            // log_spu("Sample after pan: %x %x", l, r);
+
+            l >>= 10;
+            r >>= 10;
+
+            // log_spu("Sample after shift: %x %x", l, r);
+            return ChannelSample(cast(s32) l, cast(s32) r);
         }
                 
         void calculate_next_sample(Mem mem) {
@@ -144,15 +177,23 @@ final class SPU {
                     break;
                 case Format.PCM8:
                     sample_data = cast(short)(( mem.read_data_byte7(current_address)) << 8);
+                    long index_int_channel_array = &this - &spu.sound_channels[0];
+                    log_spu("Sample Data: %x %x %x", index_int_channel_array,sample_data, current_address);
                     this.current_address += 1;
                     break;
                 case Format.IMA_ADPCM:
+                    if (this.current_address == this.source_address + this.loopstart * 4 && !this.half_read) {
+                        this.ima_byte_at_pnt     = this.ima_byte;
+                        this.ima_index_at_pnt    = this.ima_index;
+                        this.ima_pcm16bit_at_pnt = this.ima_pcm16bit;
+                    }
+
                     if (this.current_address == this.source_address) {
                         if (shouldLog) {
-                            log_spu("--------------------------------");
-                            log_spu("Reading IMA Header");
-                            log_spu("IMA Source Address: %d", this.source_address);
-                            log_spu("--------------------------------");
+                            // log_spu("--------------------------------");
+                            // log_spu("Reading IMA Header");
+                            // log_spu("IMA Source Address: %d", this.source_address);
+                            // log_spu("--------------------------------");
                         }                       
                         Word header_data = mem.read_data_word7(current_address);
                         this.ima_pcm16bit = cast(short) header_data[0..15];
@@ -165,8 +206,8 @@ final class SPU {
                         byte data4bit = 0;
                         if (!this.half_read) {
                             if (shouldLog) {
-                                log_spu("IMA Half Read 1");
-                                log_spu("IMA Current Address: %d", this.current_address);
+                                // log_spu("IMA Half Read 1");
+                                // log_spu("IMA Current Address: %d", this.current_address);
                             }
                             this.ima_byte = mem.read_data_byte7(current_address);
                             data4bit = this.ima_byte[0..3];
@@ -174,8 +215,8 @@ final class SPU {
                         }
                         else {
                             if (shouldLog) {
-                                log_spu("IMA Half Read 2");
-                                log_spu("IMA Current Address: %d", this.current_address);
+                                // log_spu("IMA Half Read 2");
+                                // log_spu("IMA Current Address: %d", this.current_address);
                             }
                             data4bit = this.ima_byte[4..7];
                             this.half_read = 0;
@@ -199,19 +240,31 @@ final class SPU {
             // PCM8:  4N     samples
             // PCM16: 2N     samples
             // IMA:   8(N-1) samples
-            if (repeat_mode == RepeatMode.LOOP_INF) {
 
-                if (format != Format.IMA_ADPCM &&
-                    current_address >= source_address + length * 4) {
-                    this.current_address = this.source_address;
-                }
-                else if (format == Format.IMA_ADPCM &&
-                    current_address >= source_address + (8*(length - 1))) {
-                    this.current_address = this.source_address + 4;
-                }
+            final switch (repeat_mode) {
+                case RepeatMode.MANUAL:
+                    break;
+                case RepeatMode.ONESHOT:
+                    if (this.current_address == this.source_address + this.loopstart * 4 + this.length * 4) {
+                        this.enabled = false;
+                    }
+                    break;
+                case RepeatMode.LOOP_INF:
+                    if (this.current_address >= this.source_address + this.loopstart * 4 + 4 * this.length) {
+                        this.current_address = this.source_address + 4 * this.loopstart;
+
+                        if (format == Format.IMA_ADPCM) {
+                            this.ima_byte     = this.ima_byte_at_pnt;
+                            this.ima_index    = this.ima_index_at_pnt;
+                            this.ima_pcm16bit = this.ima_pcm16bit_at_pnt;
+                        }
+                    }
+                    break;
+                case RepeatMode.UNKNOWN:
+                    break;
             }
             
-            current_sample = Sample(sample_data, sample_data);
+            current_sample = ChannelSample(sample_data, sample_data);
         }
 
         short interpret_ima_sample(byte data4bit) {
@@ -295,7 +348,7 @@ final class SPU {
 
                 if (sound_channels[x].enabled) { 
                     sound_channels[x].reset(); 
-                    // log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
+                    // // log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
                     //     x,
                     //     cast(Format) sound_channels[x].format,
                     //     ((cast(int) read_SOUNDxCNT(0, x) << 0) |
@@ -379,23 +432,36 @@ final class SPU {
     }
     
     void sample() {
-        Sample result = Sample(0, 0);
-        int Lholder = 0;
-        int Rholder = 0;
+        s64 mixed_sample_L = 0;
+        s64 mixed_sample_R = 0;
+
         for (int i = 0; i < 16; i++) {
-            shouldLog = (i == 4) ? 1 : 0; // TODO: Remove!!
-            Sample channel_sample = sound_channels[i].get_sample(mem);
-            Lholder += cast(int) channel_sample.L;
-            Rholder += cast(int) channel_sample.R;
+            ChannelSample channel_sample = sound_channels[i].get_sample(mem);
+            mixed_sample_L += channel_sample.L;
+            mixed_sample_R += channel_sample.R;
         }
 
-        result.L = cast(short) Lholder;
-        result.R = cast(short) Rholder;
 
-        result.L += sound_bias;
-        result.R += sound_bias;
+        // log_spu("Sample after mixing: %x %x", mixed_sample_L, mixed_sample_R);
 
-        push_sample_callback(result);
+        mixed_sample_L *= (master_volume == 127) ? 128 : master_volume;
+        mixed_sample_R *= (master_volume == 127) ? 128 : master_volume;
+
+        // log_spu("Sample after master volume: %x %x", mixed_sample_L, mixed_sample_R);
+        mixed_sample_L >>= 21;
+        mixed_sample_R >>= 21;
+
+        // log_spu("Sample after clipping: %x %x", mixed_sample_L, mixed_sample_R);
+
+        mixed_sample_L += sound_bias;
+        mixed_sample_R += sound_bias;
+
+        // log_spu("Sample after bias: %x %x", mixed_sample_L, mixed_sample_R);
+
+        // mixed_sample_L = mixed_sample_L.clamp(0, 0x3FF);
+        // mixed_sample_R = mixed_sample_R.clamp(0, 0x3FF);
+        // log_spu("Samples: %x %x", mixed_sample_L, mixed_sample_R);
+        push_sample_callback(Sample(cast(short) mixed_sample_L, cast(short) mixed_sample_R));
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 

@@ -305,14 +305,6 @@ final class RTC_S_35199A01 {
         this.date_time_hh.value          = to_bcd(st.hour);
         this.date_time_mm.value          = to_bcd(st.minute);
         this.date_time_ss.value          = to_bcd(st.second);
-
-        this.date_time_year.value        = 0; // to_bcd(st.year - 2000);
-        this.date_time_month.value       = 0; //to_bcd(st.month);
-        this.date_time_day.value         = 0; //to_bcd(st.day);
-        this.date_time_day_of_week.value = 0; //to_bcd(st.dayOfWeek);
-        this.date_time_hh.value          = 0; //to_bcd(st.hour);
-        this.date_time_mm.value          = 0; //to_bcd(st.minute);
-        this.date_time_ss.value          = 0; //to_bcd(st.second);
     }
 
     void reset() {
