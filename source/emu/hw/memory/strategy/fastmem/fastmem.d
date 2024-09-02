@@ -250,4 +250,8 @@ final class FastMem : MemStrategy {
         Half oam_read_half(Word address) { return read9_notick!Half(Word(0x0700_0000) + address); }
         Byte oam_read_byte(Word address) { return read9_notick!Byte(Word(0x0700_0000) + address); }
     }
+
+    void dump() {
+        
+    }
 }

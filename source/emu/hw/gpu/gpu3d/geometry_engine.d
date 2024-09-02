@@ -1,5 +1,6 @@
 module emu.hw.gpu.gpu3d.geometry_engine;
 
+import emu.hw.input.key_input;
 import emu.hw.cpu.interrupt;
 import emu.hw.gpu.gpu3d;
 import emu.hw.gpu.gpu3d.textureblending;
@@ -242,6 +243,22 @@ final class GeometryEngine {
 
         auto clip_matrix_point = (projection_matrix * modelview_matrix) * expand_point(point);
 
+            if (polygon_index == 4) {
+            if ((input.keys & DSKeyCode.DOWN) == 0) {
+                log_gpu3d("Current projection matrix:");
+                for (int i = 0; i < 4; i++) {
+                    log_gpu3d("    %f %f %f %f", cast(float) projection_matrix[i][0], cast(float) projection_matrix[i][1], cast(float) projection_matrix[i][2], cast(float) projection_matrix[i][3]);
+                }
+
+                log_gpu3d("Current modelview matrix:");
+                for (int i = 0; i < 4; i++) {
+                    log_gpu3d("    %f %f %f %f", cast(float) modelview_matrix[i][0], cast(float) modelview_matrix[i][1], cast(float) modelview_matrix[i][2], cast(float) modelview_matrix[i][3]);
+                }
+
+                log_gpu3d("Current point before projection: %f %f %f %f", cast(float) point[0], cast(float) point[1], cast(float) point[2], cast(float) point[3]);
+                log_gpu3d("Current point after projection: %f %f %f %f", cast(float) clip_matrix_point[0], cast(float) clip_matrix_point[1], cast(float) clip_matrix_point[2], cast(float) clip_matrix_point[3]);
+            }
+            }
         // if (texture_transformation_mode == TextureTransformationMode.VERTEX) {
         //     texture_matrix[3][0] = texcoord[0];
         //     texture_matrix[3][1] = texcoord[1];
@@ -457,6 +474,11 @@ final class GeometryEngine {
 
     void handle_MTX_TRANS(Word* args) {
         auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
+        if (polygon_index == 4) {
+            if ((input.keys & DSKeyCode.DOWN) == 0) {
+                log_gpu3d("translating by %f %f %f", cast(float) convert(args[0]), cast(float) convert(args[1]), cast(float) convert(args[2]));
+            }
+        }
 
         multiply_matrix(Matrix([
             [Coord_20_12(1.0f), Coord_20_12(0.0f), Coord_20_12(0.0f), convert(args[0])],
@@ -468,7 +490,11 @@ final class GeometryEngine {
 
     void handle_MTX_SCALE(Word* args) {
         auto convert = (Word x) => FixedPoint!(20, 12).from_repr(x); 
-
+        if (polygon_index == 4) {
+            if ((input.keys & DSKeyCode.DOWN) == 0) {
+                log_gpu3d("scaling by %f %f %f", cast(float) convert(args[0]), cast(float) convert(args[1]), cast(float) convert(args[2]));
+            }
+        }
         multiply_matrix(Matrix([
             [convert(args[0]),  Coord_20_12(0.0f), Coord_20_12(0.0f), Coord_20_12(0.0f)],
             [Coord_20_12(0.0f), convert(args[1]),  Coord_20_12(0.0f), Coord_20_12(0.0f)],
@@ -553,6 +579,7 @@ final class GeometryEngine {
     void handle_SWAP_BUFFERS(Word* args) {
         bool translucent_polygon_y_sorting = args[0][0];
         bool depth_buffering_mode          = args[0][1];
+        // print out all polygons  and info
 
         parent.queue_buffer_swap(polygon_index, translucent_polygon_y_sorting, depth_buffering_mode);
 
@@ -932,7 +959,6 @@ final class GeometryEngine {
     }
 
     void raise_interrupt() {
-        log_gpu3d("gpu3d irq");
         interrupt9.raise_interrupt(Interrupt.GEOMETRY_COMMAND_FIFO);
     }
 }

@@ -239,14 +239,44 @@ final class GPU {
     }
 
     void apply_master_brightness_to_video_buffer(Pixel[192][256]* video_buffer, ref int master_brightness, ref MasterBrightMode master_bright_mode) {        import std.stdio;
-        if (master_bright_mode == MasterBrightMode.DISABLED) return;
+        final switch (master_bright_mode) {
+            case MasterBrightMode.UP:
+                for (int x = 0; x < 256; x++) {
+                for (int y = 0; y < 192; y++) {
+                    auto pixel = (*video_buffer)[x][y];
 
-        for (int x = 0; x < 256; x++) {
-        for (int y = 0; y < 192; y++) {
-            (*video_buffer)[x][y].r = ((*video_buffer)[x][y].r * master_brightness) / 64;
-            (*video_buffer)[x][y].g = ((*video_buffer)[x][y].g * master_brightness) / 64;
-            (*video_buffer)[x][y].b = ((*video_buffer)[x][y].b * master_brightness) / 64;
-        }
+                    pixel.r = (pixel.r + (63 - pixel.r) * master_brightness / 16);
+                    pixel.g = (pixel.g + (63 - pixel.g) * master_brightness / 16);
+                    pixel.b = (pixel.b + (63 - pixel.b) * master_brightness / 16);
+
+                    pixel.r = clamp(pixel.r, 0, 63);
+                    pixel.g = clamp(pixel.g, 0, 63);
+                    pixel.b = clamp(pixel.b, 0, 63);
+                }
+                }
+                break;
+
+            case MasterBrightMode.DOWN:
+                for (int x = 0; x < 256; x++) {
+                for (int y = 0; y < 192; y++) {
+                    auto pixel = (*video_buffer)[x][y];
+
+                    pixel.r = (pixel.r - pixel.r * master_brightness / 16);
+                    pixel.g = (pixel.g - pixel.g * master_brightness / 16);
+                    pixel.b = (pixel.b - pixel.b * master_brightness / 16);
+
+                    pixel.r = clamp(pixel.r, 0, 63);
+                    pixel.g = clamp(pixel.g, 0, 63);
+                    pixel.b = clamp(pixel.b, 0, 63);
+                }
+                }
+                break;
+
+            case MasterBrightMode.DISABLED:
+                break;
+            
+            case MasterBrightMode.RESERVED:
+                break;
         }
     }
 
@@ -265,12 +295,10 @@ final class GPU {
 
                 switch (master_bright_mode) {
                     case MasterBrightMode.UP:
-                        master_brightness += ((63 - master_brightness) * master_bright_factor) / 16;
                         master_brightness = clamp(master_brightness, 0, 63);
                         break;
 
                     case MasterBrightMode.DOWN:
-                        master_brightness -= ((master_brightness) * master_bright_factor) / 16;
                         master_brightness = clamp(master_brightness, 0, 63);
                         break;
                     

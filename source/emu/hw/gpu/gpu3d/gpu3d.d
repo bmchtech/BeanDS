@@ -59,6 +59,20 @@ final class GPU3D {
         int count;
 
         void add(Pixel pixel, Coord_14_18 z, Coord_14_18 w, bool depth_buffering_mode, bool enable_alpha_blending) {
+            if (z > w || z < -w) return;
+            if (w < 0) return;
+            // pixel.r = -(cast(float) w) > 31 ? 31 : - cast(int) cast(float) w;
+            // pixel.g = 0;
+            // pixel.b = 0;
+            if (w < 5) return;
+
+            if (cast(float) w < 5) {
+                pixel.r = 31;
+                pixel.g = 0;
+                pixel.b = 0;
+                pixel.a = 31;
+            }
+            
             if (enable_alpha_blending) {
                 // sort by either w or z depending on depth_buffering_mode
                 for (int i = 0; i < count; i++) {
@@ -77,7 +91,11 @@ final class GPU3D {
                 pixels[count++] = TaggedPixel(z, w, pixel);
                 if (count > 9) count = 9;
             } else {
-                pixels[0] = TaggedPixel(z, w, pixel);
+                auto current_pixel_depth = depth_buffering_mode ? pixels[0].w : pixels[0].z;
+                auto new_pixel_depth     = depth_buffering_mode ? w           : z;
+                if (new_pixel_depth < current_pixel_depth) {
+                    pixels[0] = TaggedPixel(z, w, pixel);
+                }
             }
         }
 
@@ -137,7 +155,7 @@ final class GPU3D {
     void plot(int scanline, Pixel p, int x, Coord_14_18 z, Coord_14_18 w) {
         Coord_14_18 depth_value = depth_buffering_mode ? w : z;
 
-        if (depth_buffering_mode ? (w < 0) : (w < 0)) return;
+        // if (depth_buffering_mode ? (w < 0) : (w < 0)) return;
         
         // if (depth_buffer[scanline][x] >= depth_value && p.a != 0) {
             // depth_buffer[scanline][x] = depth_value;

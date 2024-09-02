@@ -75,6 +75,10 @@ final class SPU {
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }
 
+    void direct_boot() {
+        this.sound_bias = 0x200;
+    }
+
     struct ChannelSample {
         s32 L;
         s32 R;
@@ -103,6 +107,7 @@ final class SPU {
             bool half_read;
             int  extra_cycles;
             int  cycles_since_last_sample_was_calculated;
+            int  psg_index;
 
             Byte  ima_byte;
             short ima_pcm16bit;
@@ -110,6 +115,7 @@ final class SPU {
             Byte  ima_byte_at_pnt;
             short ima_pcm16bit_at_pnt;
             int   ima_index_at_pnt;
+            int   psg_noise_shifter;
         }
 
         void reset() {
@@ -117,6 +123,8 @@ final class SPU {
             current_sample  = ChannelSample(0, 0);
             cycles_since_last_sample_was_calculated = 0;
             half_read = 0;
+            psg_index = 0;
+            psg_noise_shifter = 0x7FFF;
         }
 
         ChannelSample get_sample(Mem mem) {
@@ -143,10 +151,9 @@ final class SPU {
             
             l <<= 4;
             r <<= 4;
-
-
             l >>= divider;
             r >>= divider;
+
             // log_spu("Sample after div: %x %x", l, r);
 
             l *= (this.volume_mul == 127) ? 128 : this.volume_mul;
@@ -170,13 +177,13 @@ final class SPU {
 
             // OMG STARVING INDIE DEV PRODUCT NINTENDO SWITCH HOME OF CELESTE AND HOLLOW KNIGHT AND SUPER MARIO
             // OMG OMG OMG OMG OMG BUY RN
-            switch (format) {
+            final switch (format) {
                 case Format.PCM16:
                     sample_data = mem.read_data_half7(current_address);
                     this.current_address += 2;
                     break;
                 case Format.PCM8:
-                    sample_data = cast(short)(( mem.read_data_byte7(current_address)) << 8);
+                    sample_data = cast(short) ((cast(short) mem.read_data_byte7(current_address)) << 8);
                     long index_int_channel_array = &this - &spu.sound_channels[0];
                     log_spu("Sample Data: %x %x %x", index_int_channel_array,sample_data, current_address);
                     this.current_address += 1;
@@ -228,7 +235,27 @@ final class SPU {
                         // Should increment address be done here?
                     }
                     break;
-                default:
+                case Format.PSG_NOISE:
+                    // cursed as fuck but deal with it 
+                    auto channel = &this - &spu.sound_channels[0];
+
+                    if (channel >= 8 && channel <= 13) {
+                        // PSG
+                        sample_data = psg_index < (7 - this.wave_duty) ? cast(short) -0x7FFF : cast(short) 0x7FFF;
+                        psg_index++;
+                        psg_index &= 7;
+                    } else if (channel > 13) {
+                        int carry = psg_noise_shifter & 1;
+                        psg_noise_shifter >>= 1;
+                        sample_data = carry ? cast(short) -0x7FFF : cast(short) 0x7FFF;
+                        
+                        if (carry) {
+                            psg_noise_shifter ^= 0x6000;
+                        }
+                    } else {
+                        sample_data = 0;
+                    } 
+                    
                     break;
             }
 
@@ -250,6 +277,7 @@ final class SPU {
                     }
                     break;
                 case RepeatMode.LOOP_INF:
+                    log_spu("Looping channel %x", &this - &spu.sound_channels[0]);
                     if (this.current_address >= this.source_address + this.loopstart * 4 + 4 * this.length) {
                         this.current_address = this.source_address + 4 * this.loopstart;
 
@@ -348,18 +376,18 @@ final class SPU {
 
                 if (sound_channels[x].enabled) { 
                     sound_channels[x].reset(); 
-                    // // log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
-                    //     x,
-                    //     cast(Format) sound_channels[x].format,
-                    //     ((cast(int) read_SOUNDxCNT(0, x) << 0) |
-                    //     (cast(int) read_SOUNDxCNT(1, x) << 8) |
-                    //     (cast(int) read_SOUNDxCNT(2, x) << 16) |
-                    //     (cast(int) read_SOUNDxCNT(3, x) << 24)),
-                    //     sound_channels[x].source_address,
-                    //     sound_channels[x].timer_value,
-                    //     sound_channels[x].loopstart,
-                    //     sound_channels[x].length,
-                    // );
+                    log_spu("Channel Enabled: %x. %s CNT: %08x SAD: %04x TMR: %04x PNT: %04x LEN: %08x", 
+                        x,
+                        cast(Format) sound_channels[x].format,
+                        ((cast(int) read_SOUNDxCNT(0, x) << 0) |
+                        (cast(int) read_SOUNDxCNT(1, x) << 8) |
+                        (cast(int) read_SOUNDxCNT(2, x) << 16) |
+                        (cast(int) read_SOUNDxCNT(3, x) << 24)),
+                        sound_channels[x].source_address,
+                        sound_channels[x].timer_value,
+                        sound_channels[x].loopstart,
+                        sound_channels[x].length,
+                    );
                 }
                 break;
         }
@@ -430,7 +458,7 @@ final class SPU {
     void set_push_sample_callback(void delegate(Sample s) push_sample_callback) {
         this.push_sample_callback = push_sample_callback;
     }
-    
+
     void sample() {
         s64 mixed_sample_L = 0;
         s64 mixed_sample_R = 0;
@@ -441,26 +469,24 @@ final class SPU {
             mixed_sample_R += channel_sample.R;
         }
 
-
-        // log_spu("Sample after mixing: %x %x", mixed_sample_L, mixed_sample_R);
+        log_spu("Sample after mixing: %x %x", mixed_sample_L, mixed_sample_R);
 
         mixed_sample_L *= (master_volume == 127) ? 128 : master_volume;
         mixed_sample_R *= (master_volume == 127) ? 128 : master_volume;
 
-        // log_spu("Sample after master volume: %x %x", mixed_sample_L, mixed_sample_R);
+        log_spu("Sample after master volume: %x %x %x", mixed_sample_L, mixed_sample_R, master_volume);
         mixed_sample_L >>= 21;
         mixed_sample_R >>= 21;
-
-        // log_spu("Sample after clipping: %x %x", mixed_sample_L, mixed_sample_R);
+        log_spu("Sample after clipping: %x %x", mixed_sample_L, mixed_sample_R);
 
         mixed_sample_L += sound_bias;
         mixed_sample_R += sound_bias;
 
-        // log_spu("Sample after bias: %x %x", mixed_sample_L, mixed_sample_R);
+        log_spu("Sample after bias: %x %x", mixed_sample_L, mixed_sample_R);
 
-        // mixed_sample_L = mixed_sample_L.clamp(0, 0x3FF);
-        // mixed_sample_R = mixed_sample_R.clamp(0, 0x3FF);
-        // log_spu("Samples: %x %x", mixed_sample_L, mixed_sample_R);
+        mixed_sample_L = mixed_sample_L.clamp(0, 0x3FF);
+        mixed_sample_R = mixed_sample_R.clamp(0, 0x3FF);
+        log_spu("Samples: %x %x", mixed_sample_L, mixed_sample_R);
         push_sample_callback(Sample(cast(short) mixed_sample_L, cast(short) mixed_sample_R));
         scheduler.add_event_relative_to_self(&sample, cycles_per_sample);
     }

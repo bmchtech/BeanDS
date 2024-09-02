@@ -68,6 +68,7 @@ final class SlowMem : MemStrategy {
 
         if (address[28..31]) error_unimplemented("Attempt from ARM7 to write %x to an invalid region of memory: %x", value, address);
 
+
         switch (region) {
             case 0x0: .. case 0x1: log_mem7("Attempt from ARM7 to write %x to BIOS: %x", value, address); break;
             case 0x2:              main_memory.write!T(address % MAIN_MEMORY_SIZE, value); break;
@@ -83,7 +84,25 @@ final class SlowMem : MemStrategy {
 
     T read_data9(T)(Word address) {
         scheduler.tick(1);
+        if (address == 0x2104f64) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("reading from bojack horseman: %x %x %x", T.sizeof,  main_memory.read!T(address % MAIN_MEMORY_SIZE), arm9.regs[15]);
+        }
 
+        if (address == 0x210A498) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("thingy read: %x %x %x", T.sizeof, arm9.regs[15], arm9.regs[14]);
+        }
+
+        if (address == 0x210A488) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("thinger read: %x %x %x", T.sizeof, arm9.regs[15], arm9.regs[14]);
+        }
+
+        if (address == 0x0210a5a4) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("vely read: %x %x %x", T.sizeof, arm9.regs[15], arm9.regs[14]);
+        }
         auto region = get_region(address);
 
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to read from an invalid region of memory: %x", address);
@@ -109,8 +128,72 @@ final class SlowMem : MemStrategy {
     void write_data9(T)(Word address, T value) {
         scheduler.tick(1);
         
+        // if (address == 0x020F8DFC ||
+        // address == 0x020F8DFD ||
+        //     address == 0x024F8DFC ||
+        //     address == 0x024F8DFD ||
+        //     address == 0x028F8DFC ||
+        //     address == 0x028F8DFD ||
+        //     address == 0x02CF8DFD ||
+        //     address == 0x02CF8DFC) {
+        //         log_arm7("Wrote to magic value: %x %x %x", value, address, T.sizeof);
+        //     }
+        
+        // if (address == 0x020fb660) {
+        //     log_arm7("Wrote to Mr. Bullshit: %x %x %x", value, address, T.sizeof);
+        // }
+        // if (address == 0x020fb668) {
+        //     log_arm7("Wrote to Mr. Bullshit's second cousin: %x %x %x", value, address, T.sizeof);
+        // }
         auto region = get_region(address);
+        // if (region == 2 && address % MAIN_MEMORY_SIZE == 0x239bf80 % MAIN_MEMORY_SIZE) {
+        //     log_spu("Write to sound shit: %x %x %x", value, read_data_byte7(address), read_data_byte9(address));
+        // }
 
+
+        if (address == 0x0210a57c) {
+            import emu.hw.nds;
+import emu.hw.cpu.arm946e_s;
+            log_arm7("big boy bullshit: %x %x %x", value, arm9.regs[15], arm9.regs[14]);
+            // shitpost the stack:
+            for (int i = 0; i < 0x100; i++) {
+                log_arm7("STACK[%d] = %x", i, arm9.read_word(arm9.regs[13] + i * 4));
+            }
+        }
+
+        if (address == 0x20fb5f4) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("magic mike: %x %x", value, arm9.regs[15]);
+        }
+
+        if (address == 0X20FB6A2) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("magiciansredu: %x %x", value, arm9.regs[15]);
+        }
+
+        if (address == 0x2104f64) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("bojack horseman: %x %x %x", T.sizeof, value, arm9.regs[15]);
+        }
+
+        if (address == 0x0210a5a4) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("vely write: %x %x %x %x", T.sizeof, value, arm9.regs[15], arm9.regs[14]);
+        }
+
+        if (address == 0x20fb676) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("mysterious: %x %x %x %x", T.sizeof, value, arm9.regs[15], arm9.regs[14]);
+        }
+
+        if (address == 0x210A498) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("thingy: %x %x %x %x", T.sizeof, value, arm9.regs[15], arm9.regs[14]);
+        }
+        if (address == 0x210A488) {
+import emu.hw.cpu.arm946e_s;
+            log_arm7("thinger write: %x %x %x %x", T.sizeof, value, arm9.regs[15], arm9.regs[14]);
+        }
         if (address[28..31] && region != 0xF) error_unimplemented("Attempt from ARM9 to write %x to an invalid region of memory: %x", value, address);
 
         switch (region) {
@@ -232,5 +315,16 @@ final class SlowMem : MemStrategy {
         Word oam_read_word(Word address) { return oam.read!Word(address); }
         Half oam_read_half(Word address) { return oam.read!Half(address); }
         Byte oam_read_byte(Word address) { return oam.read!Byte(address); }
+    }
+
+    void dump() {
+        import std.stdio;
+        import emu.debugger.dumper;
+            writefln("Shitt.");
+        emu.debugger.dumper.dump(main_memory,         "main_memory.dump");
+            writefln("Shit.tt");
+        emu.debugger.dumper.dump(wram.arm7_only_wram, "arm7_wram.dump");
+        emu.debugger.dumper.dump(wram.shared_bank_1,  "wram_bank1.dump");
+        emu.debugger.dumper.dump(wram.shared_bank_2,  "wram_bank2.dump");
     }
 }

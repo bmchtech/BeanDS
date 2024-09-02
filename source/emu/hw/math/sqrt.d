@@ -9,15 +9,19 @@ public class SqrtController {
     Word param_hi;
 
     Byte read_SQRTCNT(int target_byte) {
+        log_mmio("SQRTCNT[%d] read", target_byte);
+        
         if (target_byte == 0) return Byte(mode);
         return Byte(0);
     }
 
     void write_SQRTCNT(int target_byte, Byte data) {
+        log_mmio("SQRTCNT[%d] = %x", target_byte, data);
         if (target_byte == 0) mode = data[0];
     }
 
     Byte read_SQRT_PARAM(int target_byte) {
+        log_mmio("SQRT_PARAM[%d] read", target_byte);
         bool hi = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
@@ -26,6 +30,7 @@ public class SqrtController {
     }
 
     void write_SQRT_PARAM(int target_byte, Byte data) {
+        log_mmio("SQRT_PARAM[%d] = %x", target_byte, data);
         bool hi = target_byte.bit(2);
         int offset = target_byte.bits(0, 1);
         
@@ -34,16 +39,19 @@ public class SqrtController {
     }
 
     Byte read_SQRT_RESULT(int target_byte) {
+
         Word result = calculate_result();
         return Byte(result[target_byte * 8 .. (target_byte + 1) * 8 - 1]);
     }
 
     Word calculate_result() {
         import std.math;
+
         
         real operand = mode ? cast(u64) param_hi << 32 | cast(u64) param_lo : param_lo;
         real result = operand.sqrt().floor();
         while (result * result > operand) operand--;
+        log_mmio("SQRTRESULT: %x %x -> %x", cast(u32) param_hi, cast(u32) param_lo, cast(u32)result);
 
         return Word(result);
     }

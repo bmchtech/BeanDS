@@ -95,8 +95,20 @@ class RengMultimediaDevice : MultiMediaDevice {
         void push_sample(Sample s) {
             if (buffer_cursor >= NUM_CHANNELS * SAMPLES_PER_UPDATE * BUFFER_SIZE_MULTIPLIER) return;
 
-            buffer[buffer_cursor + 0] = cast(short) (s.L << 5);
-            buffer[buffer_cursor + 1] = cast(short) (s.R << 5);
+            auto sample_l = s.L;
+            auto sample_r = s.R;
+
+            // NDS samples are unsigned, with a midpoint at 0x200.
+            // The frontend uses signed samples, with a midpoint at 0.
+            // We need to convert the NDS samples to signed samples:
+            sample_l -= 0x200;
+            sample_r -= 0x200;
+
+            sample_l <<= 5;
+            sample_r <<= 5;
+
+            buffer[buffer_cursor + 0] = sample_l;
+            buffer[buffer_cursor + 1] = sample_r;
             buffer_cursor += 2;
         }
 
@@ -125,8 +137,8 @@ class RengMultimediaDevice : MultiMediaDevice {
             auto mouse_position = Input.mouse_position();
 
             update_touchscreen_position(
-                clamp(cast(int) mouse_position.x / screen_scale,                      0, 256),
-                clamp(cast(int) mouse_position.y / screen_scale - 192 * screen_scale, 0, 192 * screen_scale)
+                clamp(cast(int) mouse_position.x / screen_scale,       0, 256),
+                clamp(cast(int) mouse_position.y / screen_scale - 192, 0, 192)
             );
             
             static foreach (re_key, gba_key; keys) {
@@ -165,6 +177,11 @@ class RengMultimediaDevice : MultiMediaDevice {
             //     sine_cursor++;
             //     sine_cursor %= 100 * NUM_CHANNELS;
             // }
+
+            // Fill with zeros
+            for (int i = buffer_cursor; i < NUM_CHANNELS * SAMPLES_PER_UPDATE * (BUFFER_SIZE_MULTIPLIER - 1); i++) {
+                buffer[i] = 0;
+            }
 
             UpdateAudioStream(stream, cast(void*) buffer, SAMPLES_PER_UPDATE);
             

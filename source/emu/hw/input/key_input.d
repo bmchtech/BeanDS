@@ -31,6 +31,9 @@ final class KeyInput {
     
     void update_key(DSKeyCode key, bool pressed) {
         keys[key] = !pressed;
+        if (key == DSKeyCode.X && pressed) {
+            error_nds("X key pressed");
+        }
     }
 
     Byte read_KEYINPUT(int target_byte) {

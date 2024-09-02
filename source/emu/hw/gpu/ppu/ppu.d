@@ -306,6 +306,7 @@ final class PPU(EngineType E) {
 
                 if (texture.scaled) {
                     texture_pos = multiply_P_matrix(texture.reference_point, draw_pos, texture.p_matrix);
+
                     if ((texture_pos.x - topleft_texture_pos.x) < texture_bound_x_lower || (texture_pos.x - topleft_texture_pos.x) >= texture_bound_x_upper ||
                         (texture_pos.y - topleft_texture_pos.y) < texture_bound_y_lower || (texture_pos.y - topleft_texture_pos.y) >= texture_bound_y_upper)
                         continue;
@@ -321,12 +322,13 @@ final class PPU(EngineType E) {
 
                 int boundary_value = obj_character_vram_mapping ? (32 << tile_obj_boundary) : 32;
                 texture.base_tile_number &= 0x3FF;
+                log_ppu("Using a sussy boundary value of %x %x", boundary_value, bpp8);
 
                 int tile_number;
                 if (!obj_character_vram_mapping) {
+                    // may need to remove * boundary_value from these two.
                     if (bpp8) tile_number = 64 * ((2 * tile_x + texture.increment_per_row * tile_y + texture.base_tile_number) >> 1) * boundary_value;
                     else tile_number = 32 * (tile_x + texture.increment_per_row * tile_y) + texture.base_tile_number * boundary_value;
-
                 } else {
                     int tile_size = bpp8 ? 64 : 32;
                     tile_number = (tile_x + texture.increment_per_row * tile_y) * tile_size + texture.base_tile_number * boundary_value;
@@ -548,7 +550,7 @@ final class PPU(EngineType E) {
             OBJMode obj_mode = cast(OBJMode) attribute_0.bits(10, 11);
 
             uint base_tile_number = cast(ushort) attribute_2.bits(0, 9);
-            int tile_number_increment_per_row = obj_character_vram_mapping ? width : 32;
+            int tile_number_increment_per_row = obj_character_vram_mapping ? (attribute_0.bit(9) ? width / 2 : width) : 32;
 
             bool doesnt_use_color_palettes = attribute_0.bit(13);
             bool scaled    = attribute_0.bit(8);
@@ -556,6 +558,7 @@ final class PPU(EngineType E) {
             bool flipped_y = !scaled && attribute_1.bit(13);
 
             int scaling_number = attribute_1.bits(9, 13);
+
             // if (!obj_character_vram_mapping && doesnt_use_color_palettes) base_tile_number >>= 1;
 
             PMatrix p_matrix = PMatrix(
@@ -579,7 +582,7 @@ final class PPU(EngineType E) {
                                         character_base * 0x10000, 0x200 + (E == EngineType.B ? 0x400 : 0),
                                         attribute_2.bits(12, 16),
                                         flipped_x, flipped_y, attribute_0.bit(9));
-
+            log_ppu("Sprite %d with width %d height %d topleft pos (%d %d) and midpoint (%d %d)", sprite, width, height, topleft_x, topleft_y, middle_x, middle_y);
             if (doesnt_use_color_palettes) Render!(true,  false, false).texture(given_priority, texture, Point(topleft_x, topleft_y), Point(topleft_x, obj_scanline), obj_mode);
             else                           Render!(false, false, false).texture(given_priority, texture, Point(topleft_x, topleft_y), Point(topleft_x, obj_scanline), obj_mode);
         }

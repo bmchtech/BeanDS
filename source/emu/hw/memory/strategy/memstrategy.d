@@ -7,7 +7,7 @@ import emu.hw.memory.strategy.fastmem;
 import emu.hw.memory.strategy.slowmem;
 import util;
 
-alias Mem = FastMem;
+alias Mem = SlowMem;
 
 interface MemStrategy {
     Word read_data_word7(Word address);
@@ -51,4 +51,6 @@ interface MemStrategy {
     Word oam_read_word(Word address);
     Half oam_read_half(Word address);
     Byte oam_read_byte(Word address);
+
+    void dump();
 }

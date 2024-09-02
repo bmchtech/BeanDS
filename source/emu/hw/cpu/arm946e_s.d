@@ -352,6 +352,125 @@ final class ARM946E_S : ArmCPU {
     }
 
     void refill_pipeline() {
+        // if (regs[pc] == 0x020e09e0) {
+        //     log_arm9("sussy");
+        //     Word arg0 = regs[0];
+        //     Word arg1 = regs[1];
+
+        //     log_arm7("sussy(%08x, %08x)", arg0, arg1);
+        //     log_arm7("    arg0->0x16 = %04x", read_half(arg0 + 0x16));
+        //     log_arm7("    arg0->0x26 = %02x", read_byte(arg0 + 0x26));
+        //     log_arm7("    arg0->0x27 = %02x", read_byte(arg0 + 0x27));
+        //     log_arm7("    arg0->0x28 = %02x", read_byte(arg0 + 0x28));
+        //     log_arm7("    arg0->0x29 = %02x", read_byte(arg0 + 0x29));
+        // }
+        // if (regs[pc] == 0x20e0acc) {
+        //     log_arm9("sussy's daddy");
+        //     num_log = 20;
+        // }
+
+
+
+        if (regs[pc]  == 0x2098110) {
+            log_arm7("magic michael: %x %x", arm9.regs[15], arm9.regs[14]);
+                    for (int i = 0;  i < 100; i++) {
+                log_arm7("    magic %x", read_word(arm9.regs[13] + i * 4));
+            }
+        }
+        if (regs[pc]  == 0x2020608) {
+            log_arm7("elector(%x %x)", arm9.regs[0], arm9.regs[14]);
+        }
+        if (regs[pc]  == 0x20ef22c) {
+            log_arm7("magic michael caller: %x %x", arm9.regs[15], arm9.regs[14]);
+
+        }
+        if (regs[pc]  == 0x20f1eb8) {
+            log_arm7("magic michael caller1: %x %x", arm9.regs[15], arm9.regs[0]);
+
+        }
+        if (regs[pc]  == 0x20cff24) {
+            log_arm7("magic michael caller2: %x %x", arm9.regs[15], arm9.regs[0]);
+
+        }
+        if (regs[pc] == 0x020cf3a0) {
+            log_arm7("oi1(%08x)", regs[0]);
+        }
+
+        if (regs[pc] == 0x020ef378) {
+            log_arm7("should_i_go_back(%08x)", regs[0]);
+        }
+
+        if (regs[pc] == 0x02020608) {
+            log_arm7("update_all_objects(%08x %08x)", regs[0], regs[14]);
+            Word head = read_word(regs[0]);
+            log_arm7("update_all_objects    head = %08x", head);
+            Word curr = head;
+            while (curr != 0) {
+                log_arm7("update_all_objects    found element");
+                Word data = read_word(curr);
+                Word next = read_word(curr + 0x4);
+                log_arm7("update_all_objects        data = %08x", data);
+                log_arm7("update_all_objects        next = %08x", next);
+                curr = next;
+            }
+        }
+
+        if (regs[pc] == 0x0208a2c0) {
+            log_arm7("mister_dicks(%08x)", regs[0]);
+        }
+
+        if (regs[pc] == 0x20cbed8) {
+            log_arm7("aaa(%08x)", regs[0]);
+                    for (int i = 0;  i < 100; i++) {
+                log_arm7("    aaa %x", read_word(arm9.regs[13] + i * 4));
+            }
+        }
+
+        if (regs[pc] == 0x208aa7c) {
+            log_arm7("mariospos(%08x %08x)", regs[0], regs[1]);
+            Word x = regs[0];
+            log_arm7("mariospos    speeds: %x %x", read_word(x + 0x10), read_word(x + 0x14));
+            log_arm7("mariospos    svar: %x", read_half(x + 0xc));
+        }
+
+        if (regs[pc] == 0x208ab68) {
+        }
+
+        if (regs[pc] == 0x020cdb90) {
+            log_arm7("dicksfuckshti(%08x)", regs[0]);
+        }
+
+        if (regs[pc] == 0x0202066c) {
+            log_arm7("caller33/.....(%08x %08x)", regs[0], regs[1]);
+        }
+        if (regs[pc] == 0x020cdc00) {
+            // num_log = 20;
+        }
+
+        if (regs[pc] == 0x201f228) {
+            log_arm7("calcspeed1 = %08x", regs[0]);
+        }
+
+        if (regs[pc] == 0x201f264) {
+            log_arm7("calcspeed2 = %08x", regs[0]);
+                    for (int i = 0;  i < 100; i++) {
+                log_arm7("    aaa %x", read_word(arm9.regs[13] + i * 4));
+            }
+        }
+
+        if (regs[pc] >= 0x0201f218 && regs[pc] <= 0x0201f268) {
+            log_arm7("branch in hot range: %x %x", regs[pc], regs[lr]);
+        }
+
+        if (regs[pc] == 0x201ee54) {
+            log_arm7("Returned: %x", regs[0]);
+        }
+
+        if (regs[pc] == 0x201ec50 && scheduler.get_current_time_relative_to_cpu() > 0x50000000) {
+            log_arm7("Called: %x", regs[0]);
+            num_log = 30;
+        }
+
         if (instruction_set == InstructionSet.ARM) {
             fetch!Word();
             fetch!Word();

@@ -131,7 +131,7 @@ template execute_arm(T : ArmCPU) {
                 cpu.set_cpsr(cpu.get_spsr());
                 cpu.update_mode();
             } else {
-                cpu.set_flag(Flag.Z, result == 0);
+                cpu.set_flag(Flag.Z, (result & 0xFFFFFFFF) == 0);
                 cpu.set_flag(Flag.N, overflow);
             }
         }
@@ -145,7 +145,7 @@ template execute_arm(T : ArmCPU) {
     }
 
     static void create_multiply_xy(int operation, bool x, bool y)(T cpu, Word opcode) {
-        Reg rm = opcode[0 .. 4];
+        Reg rm = opcode[0 .. 3];
         Reg rs = opcode[8 ..11];
         Reg rn = opcode[12..15];
         Reg rd = opcode[16..19];
@@ -167,6 +167,8 @@ template execute_arm(T : ArmCPU) {
                     cpu.set_flag(Flag.Q, true);
                 }
 
+                log_arm7("smull %x = %x * %x + %x %x", result, operand1, operand2, add_operand_2, cpu.regs[pc]);
+
                 cpu.set_reg(rd, Word(result));
                 break;
             }
@@ -176,10 +178,10 @@ template execute_arm(T : ArmCPU) {
                 s64 operand2_w = sext_64(operand2, 32);
 
                 static if (x) {
-                    s32 result = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
+                    s32 result = cast(s32) (((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF);
                     cpu.set_reg(rd, Word(result));
                 } else {
-                    s32 add_operand_1 = cast(s32) ((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF;
+                    s32 add_operand_1 = cast(s32) (((operand1_w * operand2_w) >> 16) & 0xFFFF_FFFF);
                     
                     s32 add_operand_2 = cpu.get_reg(rn);
                     s32 result = add_operand_1 + add_operand_2;
@@ -209,6 +211,7 @@ template execute_arm(T : ArmCPU) {
             case 3: {
                 s32 result = operand1 * operand2;
                 cpu.set_reg(rd, Word(result));
+                log_arm7("mul %x = %x * %x", result, operand1, operand2);
                 break;
             }
 
@@ -533,6 +536,7 @@ template execute_arm(T : ArmCPU) {
         Reg rd = opcode[12..15];
         Reg rn = opcode[16..19];
 
+
         bool saturated = false;
 
         s32 operand1 = cpu.get_reg(rm);
@@ -658,8 +662,8 @@ template execute_arm(T : ArmCPU) {
                 jumptable[entry] = &create_mrs!transfer_spsr;
             } else
 
-            if (((entry & 0b1111_1011_0000) == 0b0011_0010_0000) ||
-                ((entry & 0b1111_1011_1111) == 0b0001_0010_0000)) {
+            if (((entry & 0b1111_1011_0000) == 0b00011_0010_0000) ||
+                ((entry & 0b1111_1011_1111) == 0b001_0010_0000)) {
                 enum is_immediate  = static_opcode[25];
                 enum transfer_spsr = static_opcode[22];
                 jumptable[entry] = &create_msr!(is_immediate, transfer_spsr);

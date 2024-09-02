@@ -7,8 +7,8 @@ import emu.hw.memory.main_memory;
 import emu.hw.memory.wram;
 import emu.hw.nds;
 import emu.scheduler;
-
-private __gshared NDS nds;
+import emu.hw.memory.strategy.slowmem.slowmem;
+import emu.hw.memory.strategy.memstrategy;
 
 enum LogSource {
     MEM7,
@@ -64,6 +64,9 @@ static ulong get_largest_logsource_length()(){
 
 // thanks https://github.com/dlang/phobos/blob/4239ed8ebd3525206453784908f5d37c82d338ee/std/outbuffer.d
 private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)[] fmt, A args) {
+    if (!fatal && log_source != LogSource.ARM7) {
+        return;
+    }
     import core.runtime;
     import core.stdc.stdio;
     import core.stdc.stdlib;
@@ -87,23 +90,20 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
 
         if (fatal) {
             // TODO: how to reinstate these with the memstrategy refactor?
-            // dump(wram.arm7_only_wram, "arm7_wram.dump");
-            // dump(wram.shared_bank_1,  "wram_bank1.dump");
-            // dump(wram.shared_bank_2,  "wram_bank2.dump");
-            // dump(main_memory.data,    "main_memory.dump");
+            // // dump(wram.arm7_only_wram, "arm7_wram.dump");
+            // // dump(wram.shared_bank_1,  "wram_bank1.dump");
+            // // dump(wram.shared_bank_2,  "wram_bank2.dump");
+            // nds.mem.dump();
 
-            auto trace = defaultTraceHandler(null);
-            foreach (line; trace) {
-                printf("%.*s\n", cast(int) line.length, line.ptr);
-            }
 
-            exit(-1);
+            // auto trace = defaultTraceHandler(null);
+            // foreach (line; trace) {
+            //     printf("%.*s\n", cast(int) line.length, line.ptr);
+            // }
+
+            // exit(-1);
         }
     }
-}
- 
-private void connect_nds(NDS nds_) {
-    nds = nds_;
 }
 
 static string pad_string_right(string s, ulong pad)() {
