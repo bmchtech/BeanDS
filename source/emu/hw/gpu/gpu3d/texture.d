@@ -26,12 +26,14 @@ final class TextureResolver {
     }
 
     T read_slot(T)(SlotType slot_type, Word address) {
-        int slot = address >> 17;
+        int shift = slot_type == SlotType.TEXTURE ? 17 : 14;
+
+        int slot = address >> shift;
         if (slot > 4) slot = 4;
 
-        static if (is (T == Word)) return mem.vram_read_slot_word(slot_type, slot, address % (1 << 17));
-        static if (is (T == Half)) return mem.vram_read_slot_half(slot_type, slot, address % (1 << 17));
-        static if (is (T == Byte)) return mem.vram_read_slot_byte(slot_type, slot, address % (1 << 17));
+        static if (is (T == Word)) return mem.vram_read_slot_word(slot_type, slot, address % (1 << shift));
+        static if (is (T == Half)) return mem.vram_read_slot_half(slot_type, slot, address % (1 << shift));
+        static if (is (T == Byte)) return mem.vram_read_slot_byte(slot_type, slot, address % (1 << shift));
     }
 
     float[4] get_color_from_texture(int s, int t, AnnotatedPolygon p, Word palette_base_address) {
@@ -122,14 +124,14 @@ final class TextureResolver {
                 ];
             
             case TextureFormat.TEXEL_COMPRESSED_4x4:
-                uint blocks_per_row = texture_s_size / 4;
-                uint block_x = s / 4;
-                uint block_y = t / 4;
-                uint block_fine_x = s % 4;
-                uint block_fine_y = t % 4;
+                uint blocks_per_row = texture_s_size / 4; // row_size
+                uint block_x = s / 4; // row_x
+                uint block_y = t / 4; // row_y
+                uint block_fine_x = s % 4; // tile_x
+                uint block_fine_y = t % 4; // tile_y
                 uint block_index = block_y * blocks_per_row + block_x;
 
-                Word compressed_block_base_address = (Word(p.orig.texture_vram_offset) << 3) + block_index * 4 + block_fine_y;
+                Word compressed_block_base_address = (Word(p.orig.texture_vram_offset) << 3) + block_index * 4 + block_fine_y; // data_address
 
                 Word compressed_block = read_slot!Byte(SlotType.TEXTURE, compressed_block_base_address);
                 int texel = (compressed_block >> (2 * block_fine_x)) & 3;
@@ -137,12 +139,17 @@ final class TextureResolver {
                 int compressed_block_slot = compressed_block_base_address >> 17;
                 if (compressed_block_slot != 0 && compressed_block_slot != 2) error_gpu3d("Invalid slot for compressed texture: (address: %x offset: %x, idx: %x)", compressed_block_base_address, p.orig.texture_vram_offset, texel_index);
                 
-                Word palette_info_address = (1 << 17) + compressed_block_slot * 0x8000 + compressed_block_base_address / 2;
+                Word palette_info_address = (1 << 17) + compressed_block_slot * 0x8000 + (compressed_block_base_address & 0x1FFFF) / 2;
                 Half palette_info = read_slot!Half(SlotType.TEXTURE, palette_info_address);
                 int palette_offset = palette_info[0 ..13];
                 int palette_mode   = palette_info[14..15];
 
                 Word color_addr = palette_base_address * 16 + palette_offset * 4;
+
+
+    //   auto data_slot_index  = data_address >> 18; // 0 or 1?
+    //   auto data_slot_offset = data_address & 0x1FFFF;
+    //   auto info_address = 0x20000 + (data_slot_offset >> 1) + (data_slot_index * 0x10000);
 
                 // From GBATek:
 

@@ -217,7 +217,7 @@ final class NDS {
 
     int get_backup_size() {
         // lol, fix this later
-        return 32 * 256;
+        return 262144;
     }
 
     void load_save_mmfile(MmFile save_mmfile) {

@@ -1,5 +1,6 @@
 module emu.hw.gpu.vramblock;
 
+import emu.hw.cpu.instructionblock;
 import emu.hw.gpu.slottype;
 import emu.hw.memory.mem;
 import util;
@@ -35,5 +36,9 @@ final class VRAMBlock {
 
     void write(T)(Word access_address, T value) {
         data.write!T(access_address - address, value);
+    }
+
+    InstructionBlock* instruction_read(Word access_address) {
+        return data.instruction_read(access_address - address);
     }
 }

@@ -100,6 +100,24 @@ struct FixedPoint(uint I, uint F) {
         return FixedPoint!(I2, F2).from_repr(new_value);
     }
 
+    FixedPoint!(I2, F2) saturating_convert(int I2, int F2)() inout {
+        log_gpu3d("Saturating convert %s %s %f", I2, F2, cast(float) this);
+
+        log_gpu3d("Saturating compare %f to %f", cast(float) this.integral_part, cast(float) ((1UL << I2) - 1UL));
+        if (cast(float) this.integral_part > cast(float) ((1UL << (I2 - 1)) - 1UL)) {
+            return FixedPoint!(I2, F2).from_repr(cast(int) ((1UL << (I2 + F2 - 1)) - 1UL));
+        }
+
+        log_gpu3d("Saturating compare %f to %f", cast(float) this.integral_part, cast(float) -(1L << I2));
+        if (this.integral_part < -(1L << (I2 - 1))) {
+            return FixedPoint!(I2, F2).from_repr(cast(int) -(1UL << (I2 + F2 - 1)));
+        }
+
+        log_gpu3d("Conversion: %f %f", cast(float) this, cast(float)  this.convert!(I2, F2));
+
+        return this.convert!(I2, F2);
+    }
+
     void set_value(int value) {
         this.value = sext_32(value, I + F);
     }
@@ -126,6 +144,14 @@ struct FixedPoint(uint I, uint F) {
 
     bool opEquals(int other) inout {
         return this.value == (other << F);
+    }
+
+    FixedPoint!(I, F) abs() {
+        if (this.value < 0) {
+            return -this;
+        } else {
+            return this;
+        }
     }
 }
 

@@ -61,18 +61,10 @@ final class GPU3D {
         void add(Pixel pixel, Coord_14_18 z, Coord_14_18 w, bool depth_buffering_mode, bool enable_alpha_blending) {
             if (z > w || z < -w) return;
             if (w < 0) return;
+            if (z < 0) return;
             // pixel.r = -(cast(float) w) > 31 ? 31 : - cast(int) cast(float) w;
             // pixel.g = 0;
             // pixel.b = 0;
-            if (w < 5) return;
-
-            if (cast(float) w < 5) {
-                pixel.r = 31;
-                pixel.g = 0;
-                pixel.b = 0;
-                pixel.a = 31;
-            }
-            
             if (enable_alpha_blending) {
                 // sort by either w or z depending on depth_buffering_mode
                 for (int i = 0; i < count; i++) {

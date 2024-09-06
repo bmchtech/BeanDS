@@ -5,7 +5,7 @@ import std.mmfile;
 import util;
 
 public class EEPROM(int page_size, int num_pages) : SPIDevice {
-    enum total_bytes = page_size * num_pages;
+    enum total_bytes = 262144;
 
     enum State {
         WAITING_FOR_COMMAND,
@@ -43,7 +43,7 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
         this.save_mmfile = save_mmfile;
         data = cast(Byte[]) save_mmfile[];
     }
-
+    int access_number = 0;
     override Byte write(Byte b) {
         Byte result = 0;
 
@@ -65,7 +65,18 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
                 break;
 
             case State.READING_JEDEC_ID:
-                result = 0xFF;
+                // result = 0xFF;
+                if (access_number > 3) access_number -= 3;
+
+                switch (access_number) {
+                    case 0: return Byte(0x20);
+                    case 1: return Byte(0x40);
+                    case 2: return Byte(0x12);
+
+                    default:
+                        error_firmware("this is an unreachable state, something really went wrong");
+                        return Byte(0);
+                }
                 break;
             
             // bad code
@@ -131,11 +142,11 @@ public class EEPROM(int page_size, int num_pages) : SPIDevice {
             case 0x05: state = State.READING_STATUS; break;
             case 0x01: state = state.WRITING_STATUS; break;
             case 0x03: state = State.READING_DATA; accesses_remaining = page_size + 2; break;
-            case 0x02: state = State.WRITING_DATA; accesses_remaining = page_size + 2; break;
+            case 0x0A: state = State.WRITING_DATA; accesses_remaining = page_size + 2; break;
             case 0x9F: state = State.READING_JEDEC_ID; break;
             case 0x06: write_enable_latch = true;  break;
             case 0x04: write_enable_latch = false; break;
-            default: log_eeprom("invalid eeprom command dummy: %x", b);
+            default: error_eeprom("invalid eeprom command dummy: %x", b);
         }
     }
 }

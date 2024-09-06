@@ -242,9 +242,7 @@ final class GeometryEngine {
         previous_point = point;
 
         auto clip_matrix_point = (projection_matrix * modelview_matrix) * expand_point(point);
-
-            if (polygon_index == 4) {
-            if ((input.keys & DSKeyCode.DOWN) == 0) {
+            if (polygon_index == 7) {
                 log_gpu3d("Current projection matrix:");
                 for (int i = 0; i < 4; i++) {
                     log_gpu3d("    %f %f %f %f", cast(float) projection_matrix[i][0], cast(float) projection_matrix[i][1], cast(float) projection_matrix[i][2], cast(float) projection_matrix[i][3]);
@@ -257,8 +255,8 @@ final class GeometryEngine {
 
                 log_gpu3d("Current point before projection: %f %f %f %f", cast(float) point[0], cast(float) point[1], cast(float) point[2], cast(float) point[3]);
                 log_gpu3d("Current point after projection: %f %f %f %f", cast(float) clip_matrix_point[0], cast(float) clip_matrix_point[1], cast(float) clip_matrix_point[2], cast(float) clip_matrix_point[3]);
-            }
-            }
+                log_gpu3d("raw point before proj: %x %x %x %x", point[0].repr, point[1].repr, point[2].repr, point[3].repr);
+                log_gpu3d("raw point after proj: %x %x %x %x", clip_matrix_point[0].repr, clip_matrix_point[1].repr, clip_matrix_point[2].repr, clip_matrix_point[3].repr);}
         // if (texture_transformation_mode == TextureTransformationMode.VERTEX) {
         //     texture_matrix[3][0] = texcoord[0];
         //     texture_matrix[3][1] = texcoord[1];

@@ -64,7 +64,7 @@ static ulong get_largest_logsource_length()(){
 
 // thanks https://github.com/dlang/phobos/blob/4239ed8ebd3525206453784908f5d37c82d338ee/std/outbuffer.d
 private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)[] fmt, A args) {
-    if (!fatal && log_source != LogSource.ARM7) {
+    if (!fatal && log_source != LogSource.VRAM) {
         return;
     }
     import core.runtime;
@@ -96,12 +96,12 @@ private void log(LogSource log_source, bool fatal, Char, A...)(scope const(Char)
             // nds.mem.dump();
 
 
-            // auto trace = defaultTraceHandler(null);
-            // foreach (line; trace) {
-            //     printf("%.*s\n", cast(int) line.length, line.ptr);
-            // }
+            auto trace = defaultTraceHandler(null);
+            foreach (line; trace) {
+                printf("%.*s\n", cast(int) line.length, line.ptr);
+            }
 
-            // exit(-1);
+            exit(-1);
         }
     }
 }

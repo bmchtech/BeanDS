@@ -108,7 +108,7 @@ final class VirtualMemoryManager {
         map_generic(space, memory_region, address, size, stride, 0);
     }
 
-    void map_with_offset(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 offset) {
+    void map_with_offset(VirtualMemorySpace* space, MemoryRegion* memory_region, u64 address, u64 size, u64 offset) {
         map_generic(space, memory_region, address, memory_region.size, memory_region.size, offset);
     }
 

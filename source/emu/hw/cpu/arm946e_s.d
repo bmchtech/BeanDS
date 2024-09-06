@@ -468,7 +468,7 @@ final class ARM946E_S : ArmCPU {
 
         if (regs[pc] == 0x201ec50 && scheduler.get_current_time_relative_to_cpu() > 0x50000000) {
             log_arm7("Called: %x", regs[0]);
-            num_log = 30;
+            // num_log = 30;
         }
 
         if (instruction_set == InstructionSet.ARM) {

@@ -1,6 +1,6 @@
 module emu.hw.gpu.slottype;
 
-enum SLOT_SIZE_BG  = 1 << 13;
+enum SLOT_SIZE_BG  = 1 << 14;
 enum SLOT_SIZE_TEX = 1 << 17;
 
 enum SlotType {

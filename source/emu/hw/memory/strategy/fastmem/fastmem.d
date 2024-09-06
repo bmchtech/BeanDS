@@ -126,6 +126,17 @@ final class FastMem : MemStrategy {
         return vmem.read!T(vram_slots[slot_type], address + (slot << 17));
     }
 
+    int slot_shift_for_type(SlotType slot_type) {
+        final switch (slot_type) {
+            case SlotType.BG_PAL_A:    return 17;
+            case SlotType.BG_PAL_B:    return 17;
+            case SlotType.OBJ_PAL_A:   return 17;
+            case SlotType.OBJ_PAL_B:   return 17;
+            case SlotType.TEXTURE_PAL: return 14;
+            case SlotType.TEXTURE:     return 17;
+        }
+    }
+
     override {
         void vram_remap_slots(VRAMBlock[10] blocks) {
             for (int i = 0; i < 10; i++) {
@@ -137,18 +148,21 @@ final class FastMem : MemStrategy {
             vram_c_address = blocks[2].address;
             vram_d_address = blocks[3].address;
 
-            for (int i = 0; i < 10; i++) {
-                if (i == 7) continue;
+            for (int slot_type = 0; slot_type < 6; slot_type++) {
+                for (int i = 0; i < 10; i++) {
+                    if (i == 7) continue;
 
-                int num_times_mapped = 0;
-                VRAMBlock block = blocks[i];
-                if (block.slot_mapped) {
-                    for (int j = 0; j < 5; j++) {
-                        if (block.slot.bit(j)) {
-                            u32 offset = block.slot_ofs + num_times_mapped * SLOT_SIZE_BG;
-                            u32 address = (j << 17);
-                            vmem.map_with_offset(vram_slots[block.slot_type], vram_regions[i], address, offset);
-                            num_times_mapped++;
+                    int num_times_mapped = 0;
+                    VRAMBlock block = blocks[i];
+                    if (block.slot_mapped && block.slot_type == slot_type) {
+                        for (int j = 0; j < 5; j++) {
+                            int slot_size = 1 << slot_shift_for_type(cast(SlotType) slot_type);
+                            if (block.slot.bit(j)) {
+                                u32 offset = block.slot_ofs + num_times_mapped * slot_size;
+                                u32 address = (j << 17);
+                                vmem.map_with_offset(vram_slots[block.slot_type], vram_regions[i], address, slot_size, offset);
+                                num_times_mapped++;
+                            }
                         }
                     }
                 }

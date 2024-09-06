@@ -1,5 +1,6 @@
 module emu.hw.memory.strategy.slowmem.vram;
 
+import emu.hw.cpu.instructionblock;
 import emu.hw.gpu.engines;
 import emu.hw.gpu.slottype;
 import emu.hw.gpu.vramblock;
@@ -33,21 +34,39 @@ final class SlowMemVRAM {
     bool vram_c_in_ram;
     bool vram_d_in_ram;
 
+    int slot_shift_for_type(SlotType slot_type) {
+        final switch (slot_type) {
+            case SlotType.BG_PAL_A:    return 17;
+            case SlotType.BG_PAL_B:    return 17;
+            case SlotType.OBJ_PAL_A:   return 17;
+            case SlotType.OBJ_PAL_B:   return 17;
+            case SlotType.TEXTURE_PAL: return 14;
+            case SlotType.TEXTURE:     return 17;
+        }
+    }
+
     void remap_slots(VRAMBlock[10] blocks) {
         this.blocks = blocks;
 
-        for (int i = 0; i < 10; i++) {
-            int num_times_mapped = 0;
-            VRAMBlock block = blocks[i];
-            if (block.slot_mapped) {
-                for (int j = 0; j < 5; j++) {
-                    if (block.slot.bit(j)) {
-                        all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * (SLOT_SIZE_BG)]);
-                        num_times_mapped++;
+        for (int slot_type = 0; slot_type < 6; slot_type++) {
+            for (int i = 0; i < 10; i++) {
+                int num_times_mapped = 0;
+                VRAMBlock block = blocks[i];
+                log_vram("Checking block %d. Slot type: %d, slot mapped: %d (%d)", i, block.slot_type, block.slot_mapped, slot_type);
+                if (block.slot_mapped && block.slot_type == slot_type) {
+                    log_vram("Block has bits: %d", block.slot);
+                    for (int j = 0; j < 5; j++) {
+                        int slot_size = 1 << slot_shift_for_type(cast(SlotType) slot_type);
+                        if (block.slot.bit(j)) {
+                            log_vram("Mapping slot %d of type %s to block %d %d %d %d", j, slot_type, i, block.slot_ofs, num_times_mapped, SLOT_SIZE_BG);
+                            all_slots[block.slot_type][j] = cast(Slot*) (&block.data[block.slot_ofs + num_times_mapped * slot_size]);
+                            num_times_mapped++;
+                        }
                     }
                 }
             }
         }
+
     }
 
     T read_slot(T)(SlotType slot_type, int slot, Word address) {
@@ -143,12 +162,23 @@ final class SlowMemVRAM {
 
             if (vram_c_in_ram && blocks[2].in_range(address)) result |= blocks[2].read!T(address);
             if (vram_d_in_ram && blocks[3].in_range(address)) result |= blocks[3].read!T(address);
-            if (!vram_c_in_ram && !vram_d_in_ram) {
-                error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
-            }
+            // if (!vram_c_in_ram && !vram_d_in_ram) {
+            //     error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
+            // }
             
             return result;
         }
+    }
+
+    InstructionBlock* instruction_read7(Word address) {
+        if (vram_c_in_ram && blocks[2].in_range(address)) return blocks[2].instruction_read(address);
+        if (vram_d_in_ram && blocks[3].in_range(address)) return blocks[3].instruction_read(address);
+        // if (!vram_c_in_ram && !vram_d_in_ram) {
+        //     error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
+        // }
+
+        // cope and seethe
+        return blocks[3].instruction_read(address);
     }
 
     void write_data7(T)(Word address, T value) {
@@ -157,9 +187,9 @@ final class SlowMemVRAM {
         } else {
             if (vram_c_in_ram && blocks[2].in_range(address)) blocks[2].write!T(address, value);
             if (vram_d_in_ram && blocks[3].in_range(address)) blocks[3].write!T(address, value);
-            if (!vram_c_in_ram && !vram_d_in_ram) {
-                error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
-            }
+            // if (!vram_c_in_ram && !vram_d_in_ram) {
+                // error_vram("Tried to read from VRAM C/D when they're not mapped to RAM!");
+            // }
         }
     }
 }

@@ -231,6 +231,7 @@ import emu.hw.cpu.arm946e_s;
                 case 0x0: .. case 0x1: return bios7.instruction_read(address);
                 case 0x2:              return main_memory.instruction_read(address % MAIN_MEMORY_SIZE);
                 case 0x3:              return wram.instruction_read7(address);
+                case 0x6:              return vram.instruction_read7(address);
                 
                 default: error_unimplemented("Attempt from ARM7 to perform an instruction read from an invalid region of memory: %x", address); break;
             }
